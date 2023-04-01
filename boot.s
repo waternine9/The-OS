@@ -12,12 +12,21 @@ Boot:
 
   ; NOTE: Load the next sector into memory
   mov   ah, 0x02     ; Function 02h of Int 13h is used for reading sectors
-  mov   al, 0x08     ; Read four sectors
+  mov   al, 0x08     ; Read eight sectors
   mov   ch, 0x00     ; Cylinder 0
   mov   cl, 0x02     ; Sector 2
   mov   dh, 0x00     ; Head 0
   mov   bx, 0x7E00   ; Destination address is 0000:7E00
   int   0x13         ; Call the disk interrupt to read the sector
+
+  ; NOTE: SETUP VBE
+
+  jmp SetupVbe
+
+  %include "vesa_vbe_setup.s"
+
+SetupVbe:
+  call VesaVbeSetup
 
   ; NOTE: Load GDT and activate protected mode
   cli
@@ -68,8 +77,9 @@ DriveNumber db 0
 times 510-($-$$) db 0
 dw 0xAA55
 
-Start:
+%include "vesa_vbe_setup_vars.s"
 
+Start:
 
 ;
 ; ----------------------------------------------------------------------------
@@ -77,5 +87,6 @@ Start:
 ; Includes here
 ;
 ;
+
 
 

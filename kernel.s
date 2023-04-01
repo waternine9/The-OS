@@ -1,9 +1,5 @@
 %include "boot.s"
-%include "vesa_vbe_setup.s"
-
-call VesaVbeSetup
-
-; TESTING
-mov dword [VbeModeInfo.PhysBasePtr], 0xFFFFFFFF
+mov eax, 0
+mov al, VbeModeInfo.BitsPerPixel
 cli
 hlt
