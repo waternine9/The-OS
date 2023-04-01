@@ -1,5 +1,5 @@
-[ORG 0x7C00]
 [BITS 16]
+section .boot
 
 Boot:
   ; NOTE: At boot the boot drive number is stored in DL,
@@ -77,9 +77,14 @@ DriveNumber db 0
 times 510-($-$$) db 0
 dw 0xAA55
 
-%include "vesa_vbe_setup_vars.s"
+extern OS_Start
 
 Start:
+  call OS_Start
+  cli
+  hlt
+
+section .text
 
 ;
 ; ----------------------------------------------------------------------------
@@ -87,6 +92,8 @@ Start:
 ; Includes here
 ;
 ;
+
+%include "vesa_vbe_setup.s"
 
 
 
