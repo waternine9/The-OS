@@ -19,6 +19,8 @@ Boot:
   mov   bx, 0x7E00   ; Destination address is 0000:7E00
   int   0x13         ; Call the disk interrupt to read the sector
 
+  call VesaVbeSetup
+
   ; NOTE: Load GDT and activate protected mode
   cli
   lgdt  [GDTDesc]
@@ -83,5 +85,7 @@ section .text
 ; Includes here
 ;
 ;
+
+%include "vesa_vbe_setup.s"
 
 
