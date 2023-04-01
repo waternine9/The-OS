@@ -83,6 +83,8 @@ Start:
   call OS_Start
   cli
   hlt
+  
+%include "vesa_vbe_setup_vars.s"
 
 section .text
 
@@ -93,7 +95,6 @@ section .text
 ;
 ;
 
-%include "vesa_vbe_setup.s"
 
 
 
