@@ -17,7 +17,7 @@ mov [VbeCurrentMode], cx
 cmp cx, 0xFFFF ; Check if at end of the list
 je .loop_done
 
-add si, 2 ; Each element in the list is 2 bytes
+add si, 2  ; Each element in the list is 2 bytes
 
 push si
 
@@ -25,6 +25,8 @@ push si
 mov ax, 0x4F01
 mov di, VbeModeInfo
 int 0x10
+
+pop si
 
 ; Checking if resolution and bits per pixel matches the requirements, if not restart
 mov ax, [VbeModeInfo.XResolution]
@@ -56,61 +58,56 @@ ret
 
 
 VbeControllerInfo:
-    VbeSignature db 'VESA' ; VBE Signature
-    VbeVersion dw 0200h ; VBE Version
-    OemStringPtr dd ? ; Pointer to OEM String
-    Capabilities db 4 dup (?) ; Capabilities of graphics controller
-    VideoModePtr dd ? ; Pointer to VideoModeList
-    TotalMemory dw ? ; Number of 64kb memory blocks
+    .VbeSignature db 'VESA' ; VBE Signature
+    .VbeVersion dw 0200h ; VBE Version
+    .OemStringPtr dd 0 ; Pointer to OEM String
+    .Capabilities db 4 dup (0) ; Capabilities of graphics controller
+    .VideoModePtr dd 0 ; Pointer to VideoModeList
+    .TotalMemory dw 0 ; Number of 64kb memory blocks
     ; Added for VBE 2.0
-    OemSoftwareRev dw ? ; VBE implementation Software revision
-    OemVendorNamePtr dd ? ; Pointer to Vendor Name String
-    OemProductNamePtr dd ? ; Pointer to Product Name String
-    OemProductRevPtr dd ? ; Pointer to Product Revision String
-    Reserved db 222 dup (?) ; Reserved for VBE implementation scratch
+    .OemSoftwareRev dw 0 ; VBE implementation Software revision
+    .OemVendorNamePtr dd 0 ; Pointer to Vendor Name String
+    .OemProductNamePtr dd 0 ; Pointer to Product Name String
+    .OemProductRevPtr dd 0 ; Pointer to Product Revision String
+    .Reserved db 222 dup (0) ; Reserved for VBE implementation scratch
     ; area
-    OemData db 256 dup (?) ; Data Area for OEM Strings
-VbeCurrentMode: dw ?
+    .OemData db 256 dup (0) ; Data Area for OEM Strings
+VbeCurrentMode: dw 0
 VbeModeInfo:
     ; Mandatory information for all VBE revisions
-    ModeAttributes dw ? ; mode attributes
-    WinAAttributes db ? ; window A attributes
-    WinBAttributes db ? ; window B attributes
-    WinGranularity dw ? ; window granularity
-    WinSize dw ? ; window size
-    WinASegment dw ? ; window A start segment
-    WinBSegment dw ? ; window B start segment
-    WinFuncPtr dd ? ; pointer to window function
-    BytesPerScanLine dw ? ; bytes per scan line
+    .ModeAttributes dw 0 ; mode attributes
+    .WinAAttributes db 0 ; window A attributes
+    .WinBAttributes db 0 ; window B attributes
+    .WinGranularity dw 0 ; window granularity
+    .WinSize dw 0 ; window size
+    .WinASegment dw 0 ; window A start segment
+    .WinBSegment dw 0 ; window B start segment
+    .WinFuncPtr dd 0 ; pointer to window function
+    .BytesPerScanLine dw 0 ; bytes per scan line
     ; Mandatory information for VBE 1.2 and above
-    XResolution dw ? ; horizontal resolution in pixels or characters3
-    YResolution dw ? ; vertical resolution in pixels or characters
-    XCharSize db ? ; character cell width in pixels
-    YCharSize db ? ; character cell height in pixels
-    NumberOfPlanes db ? ; number of memory planes
-    3Pixels in graphics modes, characters in text modes.
-    VBE Functions
-    03h Return Current VBE Mode
-    VBE CORE FUNCTIONS VERSION 2.0 Page 17
-    DOCUMENT REVISION 1.1
-    BitsPerPixel db ? ; bits per pixel
-    NumberOfBanks db ? ; number of banks
-    MemoryModel db ? ; memory model type
-    BankSize db ? ; bank size in KB
-    NumberOfImagePages db ? ; number of images
-    Reserved db 1 ; reserved for page function
+    .XResolution dw 0 ; horizontal resolution in pixels or characters3
+    .YResolution dw 0 ; vertical resolution in pixels or characters
+    .XCharSize db 0 ; character cell width in pixels
+    .YCharSize db 0 ; character cell height in pixels
+    .NumberOfPlanes db 0 ; number of memory planes
+    .BitsPerPixel db 0 ; bits per pixel
+    .NumberOfBanks db 0 ; number of banks
+    .MemoryModel db 0 ; memory model type
+    .BankSize db 0 ; bank size in KB
+    .NumberOfImagePages db 0 ; number of images
+    .Reserved1 db 1 ; reserved for page function
     ; Direct Color fields (required for direct/6 and YUV/7 memory models)
-    RedMaskSize db ? ; size of direct color red mask in bits
-    RedFieldPosition db ? ; bit position of lsb of red mask
-    GreenMaskSize db ? ; size of direct color green mask in bits
-    GreenFieldPosition db ? ; bit position of lsb of green mask
-    BlueMaskSize db ? ; size of direct color blue mask in bits
-    BlueFieldPosition db ? ; bit position of lsb of blue mask
-    RsvdMaskSize db ? ; size of direct color reserved mask in bits
-    RsvdFieldPosition db ? ; bit position of lsb of reserved mask
-    DirectColorModeInfo db ? ; direct color mode attributes
+    .RedMaskSize db 0 ; size of direct color red mask in bits
+    .RedFieldPosition db 0 ; bit position of lsb of red mask
+    .GreenMaskSize db 0 ; size of direct color green mask in bits
+    .GreenFieldPosition db 0 ; bit position of lsb of green mask
+    .BlueMaskSize db 0 ; size of direct color blue mask in bits
+    .BlueFieldPosition db 0 ; bit position of lsb of blue mask
+    .RsvdMaskSize db 0 ; size of direct color reserved mask in bits
+    .RsvdFieldPosition db 0 ; bit position of lsb of reserved mask
+    .DirectColorModeInfo db 0 ; direct color mode attributes
     ; Mandatory information for VBE 2.0 and above
-    PhysBasePtr dd ? ; physical address for flat memory frame buffer
-    OffScreenMemOffset dd ? ; pointer to start of off screen memory
-    OffScreenMemSize dw ? ; amount of off screen memory in 1k units
-    Reserved db 206 dup (?) ; remainder of ModeInfoBlock
+    .PhysBasePtr dd 0 ; physical address for flat memory frame buffer
+    .OffScreenMemOffset dd 0 ; pointer to start of off screen memory
+    .OffScreenMemSize dw 0 ; amount of off screen memory in 1k units
+    .Reserved2 db 206 dup (0) ; remainder of ModeInfoBlock
