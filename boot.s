@@ -69,9 +69,6 @@ times 510-($-$$) db 0
 dw 0xAA55
 
 Start:
-  mov   [0xB8000], byte 'A'
-  cli
-  hlt
 
 
 ;
