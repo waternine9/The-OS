@@ -1,5 +1,5 @@
-[ORG 0x7C00]
 [BITS 16]
+section .boot
 
 Boot:
   ; NOTE: At boot the boot drive number is stored in DL,
@@ -68,11 +68,14 @@ DriveNumber db 0
 times 510-($-$$) db 0
 dw 0xAA55
 
+extern OS_Start
+
 Start:
-  mov   [0xB8000], byte 'A'
+  call OS_Start
   cli
   hlt
 
+section .text
 
 ;
 ; ----------------------------------------------------------------------------
