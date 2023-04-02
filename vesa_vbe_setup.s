@@ -10,6 +10,44 @@ int 0x10
 ; Loop through the returned video modes to find one with 640x480 Resolution.
 
 mov si, VbeControllerInfo.VideoModePtr
+jmp .loop
+
+.checkClosest:
+
+; Accumulator
+mov bx, 0
+
+; Check diff X
+mov ax, [VbeModeInfo.XResolution]
+sub ax, [.closestResX]
+; Taking absolute value then adding to accumulator
+mov cx, ax
+shr cx, 15
+xor ax, cx
+sub ax, cx
+add bx, ax
+
+; Check diff Y
+mov ax, [VbeModeInfo.YResolution]
+sub ax, [.closestResY]
+; Taking absolute value then adding to accumulator
+mov cx, ax
+shr cx, 15
+xor ax, cx
+sub ax, cx
+add bx, ax
+
+cmp bx, [.closestAccum]
+jg .loop
+
+mov [.closestAccum], bx
+mov ax, [VbeCurrentMode]
+mov [.closestModeNumber], ax
+mov ax, [VbeModeInfo.XResolution]
+mov [.closestResX], ax
+mov ax, [VbeModeInfo.YResolution]
+mov [.closestResY], ax
+
 .loop:
 
 mov cx, [si] ; Our current mode number
@@ -30,26 +68,6 @@ int 0x10
 pop si
 
 ; Checking if resolution and bits per pixel matches the requirements, if not restart
-mov ax, [VbeModeInfo.XResolution]
-cmp ax, 640
-jne .loop
-
-mov ax, [VbeModeInfo.YResolution]
-cmp ax, 480
-jne .loop
-
-; Check if supports linear frame buffer
-mov ax, [VbeModeInfo.ModeAttributes]
-and ax, 0x90
-cmp ax, 0x90
-
-jne .loop
-
-; Check if RGB
-mov ax, [VbeModeInfo.MemoryModel]
-cmp ax, 0x06
-
-jne .loop
 
 ; Check if 24 bit
 mov al, [VbeModeInfo.BitsPerPixel]
@@ -57,10 +75,34 @@ cmp al, 24
 
 jne .loop
 
+mov ax, [VbeModeInfo.XResolution]
+cmp ax, 640
+jne .checkClosest
+
+mov ax, [VbeModeInfo.YResolution]
+cmp ax, 480
+jne .checkClosest
+
+; Check if supports linear frame buffer
+mov ax, [VbeModeInfo.ModeAttributes]
+and ax, 0x90
+cmp ax, 0x90
+
+jne .checkClosest
+
+; Check if RGB
+mov ax, [VbeModeInfo.MemoryModel]
+cmp ax, 0x06
+
+jne .checkClosest
+
+mov ax, [VbeCurrentMode]
+mov [.closestModeNumber], ax
+
 .loop_done:
 
 ; Set video mode IF FOUND
-mov bx, [VbeCurrentMode]
+mov bx, [.closestModeNumber]
 cmp bx, 0xFFFF
 je .done
 
@@ -71,3 +113,8 @@ int 0x10
 
 .done:
 ret
+
+.closestResX: dw 0
+.closestResY: dw 0
+.closestAccum: dw 0xFFFF
+.closestModeNumber: dw -1

@@ -24,6 +24,8 @@ void ConsoleWrite(console *Console, const char *Text)
       Console->Lines[Console->Line][Console->Col] = Text[I];
     }
     switch (Text[I]) {
+      case BACKSPACE_PS2_KEYCODE:
+        if (Console->Col != 0) Console->Col--;
       case '\n':
         Console->Line += 1;
         Console->Col = 0;
