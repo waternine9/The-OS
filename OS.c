@@ -2,6 +2,7 @@
 #include "sysfont.h"
 #include "console.h"
 #include "kernel.h"
+#include "format.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -70,13 +71,23 @@ void UpdateScreen()
     *Framebuffer++ = BackBuffer[i]>>16;
   }
 }
-void DrawConsole(console *Console, int X, int Y, int Color) {
+void DrawConsole(console *Console, int X, int Y, int Color)
+{
   for (uint32_t i = 0; i < CONSOLE_MAX_LINES; i++) {
     Y += DrawString(X, Y, Console->Lines[i], 1, Color);
   }
 }
-
 console Console;
+
+int KPrintf(const char *Fmt, ...) {
+  va_list Args;
+  va_start(Args, Fmt);
+  char DestStr[256];
+  FormatWriteStringVa(DestStr, 256, Fmt, Args);
+  ConsoleWrite(&Console, DestStr);
+  va_end(Args);
+}
+
 
 void OS_Start()
 {
@@ -85,6 +96,10 @@ void OS_Start()
   for (int i = 0; i < 32; i++) {
     ConsoleWrite(&Console, "OVERFLOW");
   }
+  ConsoleWrite(&Console, "\n");
+  
+  KPrintf("HELLO WORLD! %s %d\n", "SUBSTRING", 123);
+
   int Color = 0xFF33FF;
   int OffsetX = 0;
   while (1)
@@ -92,7 +107,7 @@ void OS_Start()
     ClearScreen();
   
     DrawConsole(&Console, 0, 0, Color);
-    
+
     if (OffsetX > 400) OffsetX = 0;
     UpdateScreen();
     

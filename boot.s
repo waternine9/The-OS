@@ -12,7 +12,7 @@ Boot:
 
   ; NOTE: Load the next sector into memory
   mov   ah, 0x02     ; Function 02h of Int 13h is used for reading sectors
-  mov   al, 0x08     ; Read eight sectors
+  mov   al, 0x0F     ; Read 16 sectors
   mov   ch, 0x00     ; Cylinder 0
   mov   cl, 0x02     ; Sector 2
   mov   dh, 0x00     ; Head 0

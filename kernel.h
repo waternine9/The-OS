@@ -60,3 +60,5 @@ char ps2tochar(char ps2in)
 {
     return mapPS2toChar[ps2in - 1];
 }
+
+int KPrintf(const char *fmt, ...);

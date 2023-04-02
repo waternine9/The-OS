@@ -8,13 +8,13 @@ SECTIONS {
     *(.boot)
     *(.text)
   }
-  .data : 
-  {
-    *(.data)
-  }
   .rodata : 
   {
     *(.rodata)
+  }
+  .data : 
+  {
+    *(.data)
   }
   . = 0x100000;
   .bss : 
