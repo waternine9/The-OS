@@ -3,6 +3,7 @@
 #include "console.h"
 #include "kernel.h"
 #include "format.h"
+#include "logo.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -87,10 +88,51 @@ int KPrintf(const char *Fmt, ...) {
   va_end(Args);
 }
 
+void DrawLogoAt(uint32_t x, uint32_t y, int scale)
+{
+  for (int Y = 0;Y < 8 * scale;Y++)
+  {
+    uint8_t BlackRow = BananaLogoBlack[Y / scale];
+    uint8_t YellowRow = BananaLogoYellow[Y / scale];
+    uint8_t BrownRow = BananaLogoBrown[Y / scale];
+    for (int X = 0;X < 8 * scale;X++)
+    {
+      uint8_t CurBlack = (BlackRow >> (X / scale)) & 0b1;
+      uint8_t CurYellow = (YellowRow >> (X / scale)) & 0b1;
+      uint8_t CurBrown = (BrownRow >> (X / scale)) & 0b1;
+      if (CurBrown)
+      {
+        SetPixel((8 * scale - X) + x, Y + y, 0x773300);
+      }
+      else if (CurBlack)
+      {
+        SetPixel((8 * scale - X) + x, Y + y, 0x000001);
+      }
+      else if (CurYellow)
+      {
+        SetPixel((8 * scale - X) + x, Y + y, 0xFFFF00);
+      }
+    }
+  }
+}
+
+void Lockscreen()
+{
+  int Count = 100;
+  while (Count--)
+  {
+    ClearScreen();
+    DrawLogoAt(240, 100, 20);
+    DrawString(160, 300, "BananaOS", 4, 0x000001);
+    UpdateScreen();
+  }
+}
 
 void OS_Start()
 {
-  KPrintf("HELLO WORLD! %s %d\n", "SUBSTRING", 123);
+  Lockscreen();
+
+  KPrintf("Welcome to BananaOS\n-------------------\n");
 
   int Color = 0x000001;
   int OffsetX = 0;
