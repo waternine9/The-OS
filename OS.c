@@ -35,7 +35,7 @@ uint32_t DrawString(int x, int y, const char* s, int scale, uint32_t color)
   for (int i = 0;s[i];i++)
   {
     DrawGlyph(x, y, s[i], scale, color);
-    x += 8 * scale + 2 * scale;
+    x += 8 * scale;
     if (x + 8 * scale > OUT_RES_X)
     {
       x = InitX;
@@ -48,7 +48,6 @@ uint32_t DrawString(int x, int y, const char* s, int scale, uint32_t color)
 }
 void ClearScreen()
 {
-
   for (int i = 0;i < OUT_RES_Y;i++)
   {
     uint32_t* FramebufferStep = BackBuffer + i * OUT_RES_X;

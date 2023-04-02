@@ -15,7 +15,9 @@ static void ConScroll(console *Console)
   if (Console->Line > 0) {
     Console->Line -= 1;
   }
-  Console->Lines[CONSOLE_MAX_LINES-1][0] = 0;
+  for (uint32_t j = 0; j < CONSOLE_MAX_LINE_LENGTH; j++) {
+    Console->Lines[CONSOLE_MAX_LINES-1][j] = 0;
+  }
 }
 void ConsoleWrite(console *Console, const char *Text)
 {
