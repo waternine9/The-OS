@@ -87,6 +87,27 @@ Start:
 align 16
 %include "vesa_vbe_setup_vars.s"
 
+; PS2 keyboard functions
+
+global kernel_WaitForKey
+kernel_WaitForKey:
+  loop:
+  in al, 0x60
+  cmp al, 0x0
+  jl loop
+  ret
+
+global kernel_GetKeyPressed
+kernel_GetKeyPressed:
+  in al, 0x60
+  cmp al, 0x0
+  jl .error
+  jmp .return
+.error:
+  mov al, -1
+.return:
+  ret
+
 section .text
 
 ;

@@ -2,7 +2,8 @@
 #include "console.h"
 
 // NOTE: Scorolls 1 up
-static void ConScroll(console *Console) {
+static void ConScroll(console *Console)
+{
   for (uint32_t i = 0; i < CONSOLE_MAX_LINES-1; i++) {
     for (uint32_t j = 0; j < CONSOLE_MAX_LINE_LENGTH; j++) {
       Console->Lines[i][j] = Console->Lines[i+1][j];
