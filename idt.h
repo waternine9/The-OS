@@ -2,14 +2,14 @@
 #define H_BOS_IDT
 
 typedef struct {
-  unsigned short OffsetLow;
-  unsigned short Selector;
-  unsigned char Zero;
-  unsigned char TypeAttr;
-  unsigned short OffsetHi;
-} idt_entry __attribute__((packed));
+  unsigned short int OffsetLow;
+  unsigned short int Selector;
+  unsigned char      Zero;
+  unsigned char      TypeAttr;
+  unsigned short int OffsetHi;
+} __attribute__((packed)) idt_entry;
 
-idt_entry IDT[256];
+extern idt_entry IDT[256];
 
 void IDT_Init();
 

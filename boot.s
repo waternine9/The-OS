@@ -80,12 +80,14 @@ dw 0xAA55
 extern OS_Start
 
 Start:
+  sti
   call OS_Start
   cli
   hlt
   
 align 16
 %include "vesa_vbe_setup_vars.s"
+%include "irq_handlers.s"
 
 ; PS2 keyboard functions
 

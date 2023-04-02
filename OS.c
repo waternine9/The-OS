@@ -4,6 +4,9 @@
 #include "kernel.h"
 #include "format.h"
 #include "logo.h"
+#include "pic.h"
+#include "idt.h"
+#include "io.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -20,7 +23,7 @@ void SetPixel(uint32_t x, uint32_t y, uint32_t color)
 }
 void DrawGlyph(int x, int y, char character, int scale, uint32_t color)
 {
-  uint8_t* glyph = SysFont[character];
+  const uint8_t* glyph = SysFont[character];
   for (int i = 0;i < 8 * scale;i++)
   {
     for (int j = 0;j < 8 * scale;j++)
@@ -127,9 +130,13 @@ void Lockscreen()
     UpdateScreen();
   }
 }
-
 void OS_Start()
 {
+  PIC_Init();
+  PIC_SetMask(0xFFFF); // Disable all irqs
+  IDT_Init();
+  PIC_SetMask(0x0000); // Enable all irqs
+
   Lockscreen();
 
   KPrintf("Welcome to BananaOS\n-------------------\n");
