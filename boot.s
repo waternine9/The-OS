@@ -91,10 +91,10 @@ align 16
 
 global kernel_WaitForKey
 kernel_WaitForKey:
-  loop:
+.loop:
   in al, 0x60
   cmp al, 0x0
-  jl loop
+  jl .loop
   ret
 
 global kernel_GetKeyPressed
@@ -107,6 +107,39 @@ kernel_GetKeyPressed:
   mov al, -1
 .return:
   ret
+
+LastKey: db -1
+
+global kernel_WaitForKeyNoRepeat
+kernel_WaitForKeyNoRepeat:
+  jmp .loop
+.loop_reset:
+  mov byte [LastKey], -1
+.loop:
+  in al, 0x60
+  cmp al, 0x0
+  jl .loop_reset
+  cmp al, [LastKey]
+  je .loop
+  mov [LastKey], al
+  ret
+
+global kernel_GetKeyPressedNoRepeat
+kernel_GetKeyPressedNoRepeat:
+  in al, 0x60
+  cmp al, 0x0
+  jl .error_lt_0
+  cmp al, [LastKey]
+  je .error
+  mov [LastKey], al
+  jmp .return
+.error_lt_0:
+  mov byte [LastKey], -1
+.error:
+  mov al, -1
+.return:
+  ret
+
 
 section .text
 

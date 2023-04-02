@@ -111,7 +111,7 @@ void OS_Start()
     UpdateScreen();
     
     char B[2] = { 0 };
-    B[0] = ps2tochar(kernel_WaitForKey());
+    B[0] = ps2tochar(kernel_WaitForKeyNoRepeat());
     ConsoleWrite(&Console, B);
   }
 }
