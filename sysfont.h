@@ -1,5 +1,12 @@
 #include <stdint.h>
 
+const uint8_t SysFont_Unknown[8] = {
+  0b11111,
+  0b11011,
+  0b10101,
+  0b11011,
+  0b11111
+};
 const uint8_t SysFont_Blank[8] = {
     0b00000,
     0b00000,
@@ -259,7 +266,27 @@ const uint8_t SysFont_9[8] = {
     0b00100,
     0b01000
 };
-
+const uint8_t SysFont_Percent[8] = {
+  0b01001,
+  0b10010,
+  0b00100,
+  0b01001,
+  0b10010
+};
+const uint8_t SysFont_Minus[8] = {
+  0b00000,
+  0b00000,
+  0b01110,
+  0b00000,
+  0b00000
+};
+const uint8_t SysFont_Comma[8] = {
+  0b00000,
+  0b00000,
+  0b00000,
+  0b01000,
+  0b10000
+};
 const uint8_t* SysFont_GetGlyph(char c)
 {
     if (c == 'A')
@@ -406,5 +433,21 @@ const uint8_t* SysFont_GetGlyph(char c)
     {
         return SysFont_9;
     }
-    return SysFont_Blank;
+    if (c == ' ')
+    {
+      return SysFont_Blank;
+    }
+    if (c == '%')
+    {
+      return SysFont_Percent;
+    }
+    if (c == '-')
+    {
+      return SysFont_Minus;
+    }
+    if (c == ',')
+    {
+      return SysFont_Comma;
+    }
+    return SysFont_Unknown;
 }
