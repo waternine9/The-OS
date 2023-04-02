@@ -51,7 +51,7 @@ void ClearScreen()
   for (int i = 0;i < OUT_RES_Y;i++)
   {
     uint32_t* FramebufferStep = BackBuffer + i * OUT_RES_X;
-    uint32_t StepValue = i / 4 * 0x010102;
+    uint32_t StepValue = 0xFFFFFF - (i / 4 * 0x010102);
     for (int j = 0;j < OUT_RES_X;j++)
     {
       FramebufferStep[j] = StepValue;
@@ -73,7 +73,7 @@ void UpdateScreen()
 void DrawConsole(console *Console, int X, int Y, int Color)
 {
   for (uint32_t i = 0; i < CONSOLE_MAX_LINES; i++) {
-    Y += DrawString(X, Y, Console->Lines[i], 2, Color);
+    Y += DrawString(X, Y, Console->Lines[i], 1, Color);
   }
 }
 console Console;
@@ -91,15 +91,14 @@ int KPrintf(const char *Fmt, ...) {
 void OS_Start()
 {
   KPrintf("HELLO WORLD! %s %d\n", "SUBSTRING", 123);
-  KPrintf("CURRENT PS/2 KEY: %d\n", kernel_GetKeyPressed());
 
-  int Color = 0xFFFFFF;
+  int Color = 0x000001;
   int OffsetX = 0;
   while (1)
   {
     ClearScreen();
   
-    DrawConsole(&Console, 0, 0, Color);
+    DrawConsole(&Console, 10, 10, Color);
 
     if (OffsetX > 400) OffsetX = 0;
     UpdateScreen();
