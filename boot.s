@@ -20,12 +20,12 @@ Boot:
   int   0x13         ; Call the disk interrupt to read the sector
 
   ; NOTE: SETUP VBE
-
   jmp SetupVbe
 
   %include "vesa_vbe_setup.s"
 
 SetupVbe:
+
   call VesaVbeSetup
 
   ; NOTE: Load GDT and activate protected mode
@@ -84,6 +84,7 @@ Start:
   cli
   hlt
   
+align 16
 %include "vesa_vbe_setup_vars.s"
 
 section .text

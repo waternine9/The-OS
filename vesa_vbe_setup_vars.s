@@ -3,7 +3,7 @@ VbeControllerInfo:
     .VbeSignature db 'VESA' ; VBE Signature
     .VbeVersion dw 0200h ; VBE Version
     .OemStringPtr dd 0 ; Pointer to OEM String
-    .Capabilities db 4 dup (0) ; Capabilities of graphics controller
+    .Capabilities times 4 db 0 ; Capabilities of graphics controller
     .VideoModePtr dd 0 ; Pointer to VideoModeList
     .TotalMemory dw 0 ; Number of 64kb memory blocks
     ; Added for VBE 2.0
@@ -11,9 +11,9 @@ VbeControllerInfo:
     .OemVendorNamePtr dd 0 ; Pointer to Vendor Name String
     .OemProductNamePtr dd 0 ; Pointer to Product Name String
     .OemProductRevPtr dd 0 ; Pointer to Product Revision String
-    .Reserved db 222 dup (0) ; Reserved for VBE implementation scratch
+    .Reserved times 222 db 0  ; Reserved for VBE implementation scratch
     ; area
-    .OemData db 256 dup (0) ; Data Area for OEM Strings
+    .OemData times 256 db 0 ; Data Area for OEM Strings
 VbeCurrentMode: dw 0
 global VbeModeInfo
 VbeModeInfo:
@@ -53,4 +53,4 @@ VbeModeInfo:
     .PhysBasePtr dd 0 ; physical address for flat memory frame buffer
     .OffScreenMemOffset dd 0 ; pointer to start of off screen memory
     .OffScreenMemSize dw 0 ; amount of off screen memory in 1k units
-    .Reserved2 db 206 dup (0) ; remainder of ModeInfoBlock
+    .Reserved2 times 206 db 0 ; remainder of ModeInfoBlock
