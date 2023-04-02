@@ -31,13 +31,24 @@ pop si
 ; Checking if resolution and bits per pixel matches the requirements, if not restart
 mov ax, [VbeModeInfo.XResolution]
 cmp ax, 640
-jne .loop
+jl .loop
 
 mov ax, [VbeModeInfo.YResolution]
 cmp ax, 480
+jl .loop
+
+; Check if supports linear frame buffer
+mov ax, [VbeModeInfo.ModeAttributes]
+and ax, 0x90
+cmp ax, 0x90
+
 jne .loop
 
+; Check if RGB
+mov ax, [VbeModeInfo.MemoryModel]
+cmp ax, 0x06
 
+jne .loop
 
 .loop_done:
 
