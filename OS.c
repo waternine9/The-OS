@@ -98,7 +98,7 @@ void OS_Start()
   {
     ClearScreen();
   
-    DrawConsole(&Console, 10, 10, Color);
+    DrawConsole(&Console, 12, 12, Color);
 
     if (OffsetX > 400) OffsetX = 0;
     UpdateScreen();
