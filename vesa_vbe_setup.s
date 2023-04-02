@@ -1,4 +1,3 @@
-%define VESA_MODE_NUMBER 0x112
 
 ;; Set up VESA VBE with 640x480 Resolution.
 VesaVbeSetup:
@@ -26,7 +25,6 @@ push si
 ; Get current mode information. 
 mov ax, 0x4F01
 mov di, VbeModeInfo
-mov cx, VESA_MODE_NUMBER
 int 0x10
 
 pop si
@@ -34,11 +32,11 @@ pop si
 ; Checking if resolution and bits per pixel matches the requirements, if not restart
 mov ax, [VbeModeInfo.XResolution]
 cmp ax, 640
-jl .loop
+jne .loop
 
 mov ax, [VbeModeInfo.YResolution]
 cmp ax, 480
-jl .loop
+jne .loop
 
 ; Check if supports linear frame buffer
 mov ax, [VbeModeInfo.ModeAttributes]
@@ -53,6 +51,12 @@ cmp ax, 0x06
 
 jne .loop
 
+; Check if 24 bit
+mov al, [VbeModeInfo.BitsPerPixel]
+cmp al, 24
+
+jne .loop
+
 .loop_done:
 
 ; Set video mode IF FOUND
@@ -61,7 +65,6 @@ cmp bx, 0xFFFF
 je .done
 
 mov ax, 0x4F02
-mov bx, VESA_MODE_NUMBER
 or bx, 0x4000          
 mov di, 0
 int 0x10

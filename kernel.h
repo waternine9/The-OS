@@ -45,6 +45,8 @@ extern vesa_vbe_mode_info VbeModeInfo;
 // PS2 keyboard functions
 extern char kernel_WaitForKey();
 extern char kernel_GetKeyPressed();
+extern char kernel_WaitForKeyNoRepeat();
+extern char kernel_GetKeyPressedNoRepeat();
 
 #define ESC_PS2_KEYCODE 0x01
 #define BACKSPACE_PS2_KEYCODE 0x0E
