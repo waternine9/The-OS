@@ -16,13 +16,14 @@ void SetPixel(uint32_t x, uint32_t y, uint32_t color)
   if (color == 0) return;
   BackBuffer[x + y * OUT_RES_X] = color;
 }
-void DrawGlyph(int x, int y, const uint8_t* glyph, int scale, uint32_t color)
+void DrawGlyph(int x, int y, char character, int scale, uint32_t color)
 {
-  for (int i = 0;i < 5 * scale;i++)
+  uint8_t* glyph = SysFont[character];
+  for (int i = 0;i < 8 * scale;i++)
   {
-    for (int j = 0;j < 5 * scale;j++)
+    for (int j = 0;j < 8 * scale;j++)
     {
-      SetPixel(i + x, j + y, (uint32_t)((glyph[j / scale] >> (4 - i / scale)) & 0b1) * color); 
+      SetPixel(i + x, j + y, (uint32_t)((glyph[j / scale] >> (i / scale)) & 0b1) * color); 
     }
   }
 }
@@ -32,15 +33,15 @@ uint32_t DrawString(int x, int y, const char* s, int scale, uint32_t color)
   int InitX = x, InitY = y;
   for (int i = 0;s[i];i++)
   {
-    DrawGlyph(x, y, SysFont_GetGlyph(s[i]), scale, color);
-    x += 5 * scale + 1 * scale;
-    if (x + 5 * scale > OUT_RES_X)
+    DrawGlyph(x, y, s[i], scale, color);
+    x += 8 * scale + 2 * scale;
+    if (x + 8 * scale > OUT_RES_X)
     {
       x = InitX;
-      y += 8 * scale + 2 * scale; 
+      y += 8 * scale + 4 * scale; 
     }
   }
-  y += 8 * scale + 2 * scale; 
+  y += 8 * scale + 4 * scale; 
 
   return y - InitY;
 }

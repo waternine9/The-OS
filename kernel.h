@@ -1,4 +1,6 @@
+#pragma once
 #include <stdint.h>
+#include "kernel_constants.h"
 
 // TODO: CHANGE SNAKE CASE TO PASCAL CASE!
 
@@ -47,16 +49,6 @@ extern char kernel_WaitForKey();
 extern char kernel_GetKeyPressed();
 extern char kernel_WaitForKeyNoRepeat();
 extern char kernel_GetKeyPressedNoRepeat();
-
-#define ESC_PS2_KEYCODE 0x01
-#define BACKSPACE_PS2_KEYCODE 0x0E
-#define TAB_PS2_KEYCODE 0x0F
-#define ENTER_PS2_KEYCODE 0x1C
-#define LEFT_CONTROL_PS2_KEYCODE 0x1D
-#define LEFT_SHIFT_PS2_KEYCODE 0x2A
-#define RIGHT_SHIFT_PS2_KEYCODE 0x36
-#define LEFT_ALT_PS2_KEYCODE 0x36
-#define SPACE_PS2_KEYCODE 0x36
 
 char mapPS2toChar[] = { ESC_PS2_KEYCODE, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', BACKSPACE_PS2_KEYCODE, TAB_PS2_KEYCODE,
                             'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', ENTER_PS2_KEYCODE, LEFT_CONTROL_PS2_KEYCODE, 'A', 'S', 'D', 'F', 'G', 'H', 'J', 

@@ -1,7 +1,9 @@
 #include <stdint.h>
 #include "console.h"
 
-// NOTE: Scorolls 1 up
+#include "kernel_constants.h"
+
+// NOTE: Scrolls 1 up
 static void ConScroll(console *Console)
 {
   for (uint32_t i = 0; i < CONSOLE_MAX_LINES-1; i++) {
@@ -18,13 +20,25 @@ static void ConScroll(console *Console)
 void ConsoleWrite(console *Console, const char *Text)
 {
   for (int I = 0; Text[I]; I++) {
-    if (Text[I] != '\n') {
+    if (Text[I] != '\n' && Text[I] != ESC_PS2_KEYCODE && Text[I] != LEFT_CONTROL_PS2_KEYCODE && Text[I] != LEFT_SHIFT_PS2_KEYCODE && Text[I] != LEFT_ALT_PS2_KEYCODE && Text[I] != RIGHT_SHIFT_PS2_KEYCODE && Text[I] != TAB_PS2_KEYCODE) {
       Console->Lines[Console->Line][Console->Col] = Text[I];
     }
     switch (Text[I]) {
       case '\n':
         Console->Line += 1;
         Console->Col = 0;
+        break;
+      case ESC_PS2_KEYCODE:
+        break;
+      case LEFT_CONTROL_PS2_KEYCODE:
+        break;
+      case LEFT_SHIFT_PS2_KEYCODE:
+        break;
+      case LEFT_ALT_PS2_KEYCODE:
+        break;
+      case RIGHT_SHIFT_PS2_KEYCODE:
+        break;
+      case TAB_PS2_KEYCODE:
         break;
       default:
         Console->Col += 1;
