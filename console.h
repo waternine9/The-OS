@@ -4,8 +4,8 @@
 #define CONSOLE_MAX_LINES 38
 
 typedef struct {
-  char Lines[CONSOLE_MAX_LINES][CONSOLE_MAX_LINE_LENGTH+1];
-  int Col, Line;
+    char Lines[CONSOLE_MAX_LINES][CONSOLE_MAX_LINE_LENGTH + 1];
+    int Col, Line;
 } console;
 
 void ConsoleWrite(console *Console, const char *Text);

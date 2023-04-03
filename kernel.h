@@ -51,14 +51,14 @@ extern char kernel_WaitForKeyNoRepeat();
 extern char kernel_GetKeyPressedNoRepeat();
 
 static char mapPS2toChar[] = { ESC_PS2_KEYCODE, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', BACKSPACE_PS2_KEYCODE, TAB_PS2_KEYCODE,
-                            'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', ENTER_PS2_KEYCODE, LEFT_CONTROL_PS2_KEYCODE, 'A', 'S', 'D', 'F', 'G', 'H', 'J', 
-                            'K', 'L', ';', 0x27, '`', LEFT_SHIFT_PS2_KEYCODE, 0x5C, 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 
-                            RIGHT_SHIFT_PS2_KEYCODE, 0, LEFT_ALT_PS2_KEYCODE, SPACE_PS2_KEYCODE };
+'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', ENTER_PS2_KEYCODE, LEFT_CONTROL_PS2_KEYCODE, 'A', 'S', 'D', 'F', 'G', 'H', 'J',
+'K', 'L', ';', 0x27, '`', LEFT_SHIFT_PS2_KEYCODE, 0x5C, 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/',
+RIGHT_SHIFT_PS2_KEYCODE, 0, LEFT_ALT_PS2_KEYCODE, SPACE_PS2_KEYCODE };
 
 // PS2 helper functions
 static char ps2tochar(char ps2in)
 {
-  return mapPS2toChar[ps2in - 1];
+	return mapPS2toChar[ps2in - 1];
 }
 
 int KPrintf(const char *fmt, ...);
