@@ -1,5 +1,8 @@
 #include "pic.h"
 #include "kernel.h"
+#include "mouse.h"
+
+int32_t MouseX, MouseY;
 
 /* PIT Timer */
 void CHandlerIRQ0()
@@ -64,7 +67,12 @@ void CHandlerIRQ11()
 /* PS/2 Mouse */
 void CHandlerIRQ12()
 {
-    PIC_EndOfInterrupt(12);
+  uint8_t Byte0 = IO_In8(0x60);
+  int8_t Byte1 = IO_In8(0x60);
+  int8_t Byte2 = IO_In8(0x60);
+  MouseX += Byte1;
+  MouseY -= Byte2;
+  PIC_EndOfInterrupt(12);
 }
 /* FPU */
 void CHandlerIRQ13()

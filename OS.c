@@ -9,6 +9,8 @@
 #include "io.h"
 #include "mouse.h"
 
+extern int32_t MouseX, MouseY;
+
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
@@ -153,9 +155,11 @@ void OS_Start()
   
         DrawConsole(&Console, 12, 12, Color);
 
-        if (OffsetX > 400) OffsetX = 0;
-        DrawLogoAt(MouseX, MouseY, 2);
-        MouseHandler(5);
-        UpdateScreen();
-    }
+    if (OffsetX > 400) OffsetX = 0;
+    DrawLogoAt(MouseX, MouseY, 2);
+    UpdateScreen();
+    
+    
+
+  }
 }
