@@ -159,7 +159,7 @@ void OS_Start()
     DrawLogoAt(MouseX, MouseY, 2);
     UpdateScreen();
     
-    
+    char b[2] = { 0, 0 };
 
   }
 }
