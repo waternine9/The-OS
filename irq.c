@@ -9,7 +9,6 @@ void CHandlerIRQ0()
 /* Keyboard Interrupt */
 void CHandlerIRQ1()
 {
-  KPrintf("Keyboard Interrupt ");
   PIC_EndOfInterrupt(1);
 }
 /* Channel for Secondary PIC, don't use. */
@@ -65,7 +64,6 @@ void CHandlerIRQ11()
 /* PS/2 Mouse */
 void CHandlerIRQ12()
 {
-  KPrintf("Mouse event\n");
   PIC_EndOfInterrupt(12);
 }
 /* FPU */

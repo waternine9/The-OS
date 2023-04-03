@@ -7,6 +7,7 @@
 #include "pic.h"
 #include "idt.h"
 #include "io.h"
+#include "mouse.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -126,18 +127,22 @@ void Lockscreen()
   {
     ClearScreen();
     DrawLogoAt(240, 100, 20);
-    DrawString(160, 300, "BananaOS", 4, 0x000001);
+    DrawString(180, 300, "BananaOS", 4, 0x000001);
     UpdateScreen();
   }
 }
+
 void OS_Start()
 {
+  
   PIC_Init();
   PIC_SetMask(0xFFFF); // Disable all irqs
+
+  MouseInstall();
+
   IDT_Init();
   PIC_SetMask(0x0000); // Enable all irqs
-
-  Lockscreen();
+  
 
   KPrintf("Welcome to BananaOS\n-------------------\n");
 
@@ -150,10 +155,11 @@ void OS_Start()
     DrawConsole(&Console, 12, 12, Color);
 
     if (OffsetX > 400) OffsetX = 0;
+    DrawLogoAt(MouseX, MouseY, 2);
+    MouseHandler(5);
     UpdateScreen();
     
-    char B[2] = { 0 };
-    B[0] = ps2tochar(kernel_WaitForKeyNoRepeat());
-    ConsoleWrite(&Console, B);
+    
+
   }
 }
