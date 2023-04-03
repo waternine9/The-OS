@@ -55,6 +55,7 @@ static char mapPS2toChar[] = { ESC_PS2_KEYCODE, '1', '2', '3', '4', '5', '6', '7
                             'K', 'L', ';', 0x27, '`', LEFT_SHIFT_PS2_KEYCODE, 0x5C, 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 
                             RIGHT_SHIFT_PS2_KEYCODE, 0, LEFT_ALT_PS2_KEYCODE, SPACE_PS2_KEYCODE };
 
+
 // PS2 helper functions
 static char ps2tochar(char ps2in)
 {

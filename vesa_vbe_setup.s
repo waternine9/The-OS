@@ -101,6 +101,9 @@ mov [.closestModeNumber], ax
 
 .loop_done:
 
+; TESTING PURPOSES
+mov word [.closestModeNumber], 0x112
+
 ; Set video mode IF FOUND
 mov bx, [.closestModeNumber]
 cmp bx, 0xFFFF

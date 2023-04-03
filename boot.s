@@ -142,46 +142,6 @@ kernel_GetKeyPressedNoRepeat:
 .return:
   ret
 
-WaitFor64Bit2:
-  in al, 0x64
-  shr al, 1
-  and al, 1
-  cmp al, 1
-  je WaitFor64Bit2
-  ret
-global kernel_InitMouse
-kernel_InitMouse:
-  push ax
-  push bx
-  call WaitFor64Bit2
-  mov al, 0x60
-  mov dx, 0x64
-  out dx, al
-  call WaitFor64Bit2
-
-  mov al, 0b0000_0011
-  mov dx, 0x60
-  out dx, al
-  call WaitFor64Bit2
-
-  mov al, 0xA8
-  mov dx, 0x64
-  out dx, al
-  call WaitFor64Bit2
-
-
-  mov al, 0xD4
-  mov dx, 0x64
-  out dx, al
-  call WaitFor64Bit2
-
-  mov al, 0xFA
-  mov dx, 0x60
-  out dx, al
-  call WaitFor64Bit2
-  pop bx
-  pop ax
-  ret
 
 
 
