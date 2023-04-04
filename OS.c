@@ -7,9 +7,16 @@
 #include "pic.h"
 #include "idt.h"
 #include "io.h"
+#include "rtc.h"
 #include "mouse.h"
 
+extern click_animation ClickAnimation;
+extern uint8_t MousePointerBlack[8];
+extern uint8_t MousePointerFull[8];
+extern uint8_t KeyboardCharPressed;
+
 extern int32_t MouseX, MouseY;
+extern uint8_t MouseRmbClicked, MouseLmbClicked;
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -21,6 +28,8 @@ uint32_t BackBuffer[640 * 480];
 
 void SetPixel(uint32_t x, uint32_t y, uint32_t color)
 {
+    if (x >= OUT_RES_X) return;
+    if (y >= OUT_RES_Y) return;
     if (color == 0) return;
     BackBuffer[x + y * OUT_RES_X] = color;
 }
@@ -122,6 +131,28 @@ void DrawLogoAt(uint32_t x, uint32_t y, int scale)
     }
 }
 
+void DrawPointerAt(uint32_t x, uint32_t y, int scale)
+{
+    for (int Y = 0; Y < 8 * scale; Y++)
+    {
+        uint8_t BlackRow = MousePointerBlack[Y / scale];
+        uint8_t FullRow = MousePointerFull[Y / scale];
+        for (int X = 0; X < 8 * scale; X++)
+        {
+            uint8_t CurBlack = (BlackRow >> (X / scale)) & 0b1;
+            uint8_t CurFull = (FullRow >> (X / scale)) & 0b1;
+            if (CurBlack)
+            {
+                SetPixel((8 * scale - X) + x, Y + y, 0x000001);
+            }
+            else if (CurFull)
+            {
+                SetPixel((8 * scale - X) + x, Y + y, 0xFFFFFF);
+            }
+        }
+    }
+}
+
 void Lockscreen()
 {
     int Count = 100;
@@ -133,7 +164,72 @@ void Lockscreen()
         UpdateScreen();
     }
 }
+void StartClickAnimation()
+{
+    ClickAnimation.x = MouseX;
+    ClickAnimation.y = MouseY;
+    ClickAnimation.size = 1;
+}
+void ClickAnimationStep()
+{
+    if (ClickAnimation.size > 0)
+    {
+        float T = (float)ClickAnimation.size / 100.0f;
+        for (int i = ClickAnimation.x - ClickAnimation.size / 4;i < ClickAnimation.x + ClickAnimation.size / 4;i++)
+        {
+            for (int j = ClickAnimation.y - ClickAnimation.size / 4;j < ClickAnimation.y + ClickAnimation.size / 4;j++)
+            {
+                if (i < 0) continue;
+                if (j < 0) continue;
+                if (i >= OUT_RES_X) continue;
+                if (j >= OUT_RES_Y) continue;
+                uint32_t Current = BackBuffer[i + j * OUT_RES_X];
+                uint8_t CurrentR = (Current & 0xFF);
+                uint8_t CurrentG = (Current & 0xFF00) >> 8;
+                uint8_t CurrentB = (Current & 0xFF0000) >> 16;
+                uint32_t NextR = 0xFF + T * (CurrentR - 0xFF);
+                uint32_t NextG = 0xFF + T * (CurrentG - 0xFF);
+                uint32_t NextB = 0xFF + T * (CurrentB - 0xFF);
+                BackBuffer[i + j * OUT_RES_X] = NextR | (NextG << 8) | (NextB << 16);
+            }   
+        }
+        ClickAnimation.size++;
+        if (ClickAnimation.size == 100) ClickAnimation.size = 0;
+    }
+}
+void ClickHandler()
+{
+    if (MouseLmbClicked == 1) 
+    {
+        KPrintf("LMB CLICKED\n");
 
+        MouseLmbClicked = 0;
+        StartClickAnimation();
+    }
+    if (MouseRmbClicked == 1) 
+    {
+        KPrintf("RMB CLICKED\n");
+        MouseRmbClicked = 0;
+    }
+}
+void KeyboardHandler()
+{
+    if (KeyboardCharPressed != 0xFF)
+    {
+        char B[2];
+        B[0] = ps2tochar(KeyboardCharPressed);
+        B[1] = 0;
+        KPrintf(B);
+        KeyboardCharPressed = 0xFF;
+    }
+}
+void KeepMouseInScreen()
+{
+    if (MouseX < 0) MouseX = 0;
+    if (MouseX > OUT_RES_X) MouseX = OUT_RES_X;
+    if (MouseY < 0) MouseY = 0;
+    if (MouseY > OUT_RES_Y) MouseY = OUT_RES_Y;
+}
 void OS_Start()
 {
     PIC_Init();
@@ -141,11 +237,15 @@ void OS_Start()
 
     MouseInstall();
 
+    MouseX = 320;
+    MouseY = 240;
+
     IDT_Init();
     PIC_SetMask(0x0000); // Enable all irqs
   
+    Lockscreen();
 
-    KPrintf("Welcome to BananaOS %d\n-------------------\n", -100);
+    KPrintf("Welcome to BananaOS\n-------------------\n");
 
     int Color = 0x000001;
     int OffsetX = 0;
@@ -153,13 +253,16 @@ void OS_Start()
     {
         ClearScreen();
   
+        KeyboardHandler();
+        ClickHandler();
+
         DrawConsole(&Console, 12, 12, Color);
+        ClickAnimationStep();
+        KeepMouseInScreen();
+        DrawPointerAt(MouseX, MouseY, 1);
+        UpdateScreen();
 
-    if (OffsetX > 400) OffsetX = 0;
-    DrawLogoAt(MouseX, MouseY, 2);
-    UpdateScreen();
+        if (OffsetX > 400) OffsetX = 0;
     
-    char b[2] = { 0, 0 };
-
-  }
+    }
 }
