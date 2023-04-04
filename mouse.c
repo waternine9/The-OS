@@ -1,6 +1,30 @@
 #include "io.h"
 #include "format.h"
-extern void kernel_InitMouse();
+#include "mouse.h"
+
+const uint8_t MousePointerBlack[8] = {
+    0b11111111,
+    0b10000010,
+    0b10000100,
+    0b10000100,
+    0b10000010,
+    0b10110001,
+    0b11001001,
+    0b10000111
+};
+const uint8_t MousePointerFull[8] = {
+    0b11111111,
+    0b11111110,
+    0b11111100,
+    0b11111100,
+    0b11111110,
+    0b11111111,
+    0b11001111,
+    0b10000111
+};
+
+click_animation ClickAnimation; 
+
 
 int8_t MouseByte[3];
 
