@@ -106,3 +106,13 @@ void FormatWriteString(char *Dest, size_t N, const char *Fmt, ...)
     FormatWriteStringVa(Dest, N, Fmt, Args);
     va_end(Args);
 }
+size_t FormatCStringLength(const char *String)
+{
+    size_t L = 0;
+    while (*String) {
+        String++;
+        L++;
+    }
+
+    return L;
+}

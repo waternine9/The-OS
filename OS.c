@@ -10,6 +10,7 @@
 #include "rtc.h"
 #include "mouse.h"
 #include "ata.h"
+#include "pci.h"
 
 extern click_animation ClickAnimation;
 extern uint8_t MousePointerBlack[8];
@@ -29,8 +30,10 @@ uint32_t BackBuffer[640 * 480];
 
 void SetPixel(uint32_t x, uint32_t y, uint32_t color)
 {
-    if (x >= OUT_RES_X) return;
-    if (y >= OUT_RES_Y) return;
+    if (x < 0) return;
+    if (y < 0) return;
+    if (x >= 640) return;
+    if (y >= 480) return;
     if (color == 0) return;
     BackBuffer[x + y * OUT_RES_X] = color;
 }
@@ -62,6 +65,16 @@ uint32_t DrawString(int x, int y, const char* s, int scale, uint32_t color)
     y += 8 * scale + 4 * scale;
 
     return y - InitY;
+}
+void DrawRect(int X, int Y, int W, int H, uint32_t Color) {
+    int InitX = X;
+    int X2 = X+W, Y2 = Y+H;
+    for (; Y < Y2; Y++) {
+        for (; X < X2; X++) {
+            SetPixel(X, Y, Color);
+        } 
+        X = InitX;
+    }
 }
 void ClearScreen()
 {
@@ -198,12 +211,65 @@ void ClickAnimationStep()
         if (ClickAnimation.size == 100) ClickAnimation.size = 0;
     }
 }
+
+void ProbeAllPCIDevices() {
+    for (int Bus = 0; Bus < 256; Bus++) {
+        for (int Device = 0; Device < 32; Device++) {
+            pci_device_path Path;
+            Path.Bus = Bus;
+            Path.Device = Device;
+            Path.Function = 0;
+
+            int F = 1;
+            if (PCI_QueryDeviceHeader(Path).MultiFunction) {
+                F = 8;
+            }
+
+            for (int I = 0; I < F; I++) {
+                Path.Function = I;
+
+                pci_device_header Header = PCI_QueryDeviceHeader(Path);
+                if (Header.VendorId == 0xFFFF || Header.VendorId == 0x0000) {
+                    continue;
+                }
+
+                KPrintf("TYP ");
+                switch (PCI_QueryDeviceSpecialty(Header)) {
+                    case PCI_DEVICE_UNKNOWN:
+                        KPrintf("Unknown device");
+                        break;
+                    case PCI_DEVICE_VGA:
+                        KPrintf("VGA-compatible");
+                        break;
+                    case PCI_DEVICE_ETHERNET:
+                         KPrintf("Ethernet-compatible");
+                         break;
+                    case PCI_DEVICE_IDE:
+                         KPrintf("IDE-compatible");
+                         break;
+                    case PCI_DEVICE_HOST_BRIDGE:
+                         KPrintf("Host bridge");
+                         break;
+                    case PCI_DEVICE_ISA_BRIDGE:
+                         KPrintf("ISA bridge");
+                         break;
+                }
+                KPrintf("\nBUS %d | DEV %d | FUN %d | VEN %d | CLS %d | SUB %d | HED %d | +(",
+                        Bus, Device, I, Header.VendorId, Header.Class, Header.Subclass, Header.HeaderType);
+                if (Header.MultiFunction || I != 0) {
+                    KPrintf("MUF");
+                }
+                KPrintf(")\n");
+            }
+        }
+    }
+}
+
 void ClickHandler()
 {
     if (MouseLmbClicked == 1) 
     {
         KPrintf("LMB CLICKED\n");
-
         MouseLmbClicked = 0;
         StartClickAnimation();
     }
@@ -231,16 +297,16 @@ void KeepMouseInScreen()
     if (MouseY < 0) MouseY = 0;
     if (MouseY > OUT_RES_Y) MouseY = OUT_RES_Y;
 }
-void HandleTime()
-{
-    uint8_t second;
-    uint8_t minute;
-    uint8_t hour;
-    uint8_t day;
-    uint8_t month;
-    uint8_t year;
+void DrawToolBar() {
+    DrawRect(0, 0, 640, 12, 0xFF000000);
+    
+    uint8_t second, minute, hour, day, month, year;
     GetRTC(&second, &minute, &hour, &day, &month, &year);
 
+    char ClockBuffer[128] = { 0 };
+    FormatWriteString(ClockBuffer, sizeof ClockBuffer, "%s %d %d:%d:%d", MonthName(month), 2000+year, hour, minute, second);
+    int RightOffset = FormatCStringLength(ClockBuffer) * 8;
+    DrawString(640-RightOffset-2, 2, ClockBuffer, 1, 0xFFFFFFFF);
 }
 void OS_Start()
 {
@@ -258,19 +324,20 @@ void OS_Start()
     Lockscreen();
 
     KPrintf("Welcome to BananaOS\n-------------------\n");
+    ProbeAllPCIDevices();
 
     int Color = 0x000001;
     int OffsetX = 0;
     while (1)
     {
         ClearScreen();
-  
         KeyboardHandler();
         ClickHandler();
 
-        DrawConsole(&Console, 12, 12, Color);
+        DrawConsole(&Console, 12, 20, Color);
         ClickAnimationStep();
         KeepMouseInScreen();
+        DrawToolBar();
         DrawPointerAt(MouseX, MouseY, 1);
         
         
