@@ -9,6 +9,7 @@
 #include "io.h"
 #include "rtc.h"
 #include "mouse.h"
+#include "ata.h"
 
 extern click_animation ClickAnimation;
 extern uint8_t MousePointerBlack[8];
@@ -230,6 +231,17 @@ void KeepMouseInScreen()
     if (MouseY < 0) MouseY = 0;
     if (MouseY > OUT_RES_Y) MouseY = OUT_RES_Y;
 }
+void HandleTime()
+{
+    uint8_t second;
+    uint8_t minute;
+    uint8_t hour;
+    uint8_t day;
+    uint8_t month;
+    uint8_t year;
+    GetRTC(&second, &minute, &hour, &day, &month, &year);
+
+}
 void OS_Start()
 {
     PIC_Init();
@@ -260,6 +272,8 @@ void OS_Start()
         ClickAnimationStep();
         KeepMouseInScreen();
         DrawPointerAt(MouseX, MouseY, 1);
+        
+        
         UpdateScreen();
 
         if (OffsetX > 400) OffsetX = 0;
