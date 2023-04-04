@@ -356,7 +356,7 @@ void OS_Start()
 
     int Color = 0x000001;
     int OffsetX = 0;
-    uint8_t buff[512];
+    uint8_t buff[1028];
     ReadATASector((void*)buff, 0);
     KPrintf(buff);
     while (1)
