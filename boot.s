@@ -144,7 +144,6 @@ kernel_GetKeyPressedNoRepeat:
 
 
 
-
 section .text
 
 ;
@@ -153,7 +152,4 @@ section .text
 ; Includes here
 ;
 ;
-
-
-
 
