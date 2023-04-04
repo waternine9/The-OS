@@ -320,7 +320,9 @@ void OS_Start()
 
     IDT_Init();
     PIC_SetMask(0x0000); // Enable all irqs
-  
+
+    ATASetPIO();
+
     Lockscreen();
 
     KPrintf("Welcome to BananaOS\n-------------------\n");
