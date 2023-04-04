@@ -7,7 +7,7 @@ void ATASetPIO()
     IO_Out8(0x1F2, 0x0C); // Set PIO mode 4 (0x08 for mode 3, 0x0C for mode 4)
     while (IO_In8(0x1F7) & 0x80); // Wait for the BSY bit to be cleared
 }
-void ReadATASector(uint32_t amount, void* buffer, uint8_t primaryorslave, uint32_t lba)
+void ReadATASector(void* buffer, uint8_t primaryorslave, uint32_t lba)
 {
     // Wait for the BSY bit to be cleared
     while (IO_In8(0x1F7) & 0x80);
@@ -37,8 +37,13 @@ void ReadATASector(uint32_t amount, void* buffer, uint8_t primaryorslave, uint32
 
     // Check for errors
     if (status & 0x01) {
-        // Handle error (e.g., print an error message or return an error code)
+        KPrintf("ERROR LOADING ATA!\n");
         return;
     }
 
+    
+    for (int i = 0;i < 256;i++)
+    {
+        *((uint8_t*)buffer + i) = IO_In8(0x1F0);
+    }
 }
