@@ -325,26 +325,34 @@ void KeepMouseInScreen()
     if (MouseY > OUT_RES_Y)
         MouseY = OUT_RES_Y;
 }
-const char *Numst(int num) {
-    if (num == 1) return "st";
-    if (num == 2) return "nd";
-    if (num == 3) return "rd";
+const char *Numst(int num)
+{
+    if (num == 1)
+        return "st";
+    if (num == 2)
+        return "nd";
+    if (num == 3)
+        return "rd";
     return "th";
-} 
-void DrawToolBar() {
+}
+void DrawToolBar()
+{
     DrawRect(0, 0, 640, 12, 0xFF000000);
-    
+
     uint8_t second, minute, hour, day, weekday, month, year;
     GetRTC(&second, &minute, &hour, &day, &weekday, &month, &year);
 
-    char ClockBuffer[128] = { 0 };
-    FormatWriteString(ClockBuffer, sizeof ClockBuffer, "%s, %s %d%s %d %d:%02d:%02d", WeekDayName(weekday), MonthName(month), day, Numst(day), 2000+year, hour, minute, second);
+    char ClockBuffer[128] = {0};
+    FormatWriteString(ClockBuffer, sizeof ClockBuffer, "%s, %s %d%s %d %d:%02d:%02d", WeekDayName(weekday), MonthName(month), day, Numst(day), 2000 + year, hour, minute, second);
 
     int RightOffset = FormatCStringLength(ClockBuffer) * 8;
     DrawString(640 - RightOffset - 2, 2, ClockBuffer, 1, 0xFFFFFFFF);
 }
 void OS_Start()
 {
+    ClearScreen();
+    DrawString(240, 220, "LOADING :)", 2, 0xFFFFFF);
+    UpdateScreen();
     PIC_Init();
     PIC_SetMask(0xFFFF); // Disable all irqs
 
@@ -366,15 +374,16 @@ void OS_Start()
 
     bmp_bitmap_info Info;
 
-    uint32_t *Destination = (uint32_t*)0x2000000;
-    
-    for (int i = 0; i < 1412; i++) {
-        ReadATASector((uint8_t*)(0x1000000+i*512), i);
+    uint32_t *Destination = (uint32_t *)0x2000000;
+
+    for (int i = 0; i < 1412; i++)
+    {
+        ReadATASector((uint8_t *)(0x1000000 + i * 512), i);
     }
 
-    BMP_Read((uint8_t*)(0x1000000), &Info, Destination);
+    BMP_Read((uint8_t *)(0x1000000), &Info, Destination);
     KPrintf("Reading BitMap, Size: %d %d", Info.Width, Info.Height);
-    
+
     while (1)
     {
         ClearScreen();
@@ -385,14 +394,15 @@ void OS_Start()
         ClickAnimationStep();
         KeepMouseInScreen();
         DrawToolBar();
-        for (int X = 0; X < Info.Width; X++) {
-            for (int Y = 0; Y < Info.Height; Y++) {
-                SetPixel(X+50, (Info.Height-Y)+20, Destination[X+Y*Info.Width]);
+        for (int X = 0; X < Info.Width; X++)
+        {
+            for (int Y = 0; Y < Info.Height; Y++)
+            {
+                SetPixel(X + 50, (Info.Height - Y) + 20, Destination[X + Y * Info.Width]);
             }
         }
         DrawPointerAt(MouseX, MouseY, 1);
 
-        
         UpdateScreen();
         if (OffsetX > 400)
             OffsetX = 0;

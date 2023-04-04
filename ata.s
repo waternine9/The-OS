@@ -45,6 +45,7 @@ ReadATASector:
     pop ebp
     ret
 
+global WriteATASector
 WriteATASector:
 ; Save the base pointer (EBP) on the stack
     push ebp
