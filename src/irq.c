@@ -1,6 +1,6 @@
-#include "pic.h"
-#include "kernel.h"
-#include "mouse.h"
+#include "include/pic.h"
+#include "include/kernel.h"
+#include "include/mouse.h"
 
 int32_t MouseX, MouseY;
 uint8_t MouseRmbClicked, MouseLmbClicked;

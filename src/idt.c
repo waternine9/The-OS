@@ -1,4 +1,4 @@
-#include "idt.h"
+#include "include/idt.h"
 
 #define KERNEL_CODE_SEGMENT_OFFSET 0x08
 #define INTERRUPT_GATE             0x8E

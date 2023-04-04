@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "io.h": "c",
+        "console.h": "c",
+        "kernel_constants.h": "c",
+        "format.h": "c",
+        "kernel.h": "c",
+        "mouse.h": "c",
+        "sysfont.h": "c",
+        "pic.h": "c",
+        "rtc.h": "c"
+    }
+}

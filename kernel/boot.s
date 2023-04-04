@@ -22,7 +22,7 @@ Boot:
     ; NOTE: SETUP VBE
     jmp SetupVbe
     
-    %include "vesa_vbe_setup.s"
+    %include "kernel/vesa_vbe_setup.s"
 
 SetupVbe:
     call VesaVbeSetup
@@ -85,62 +85,8 @@ Start:
     hlt
   
 align 16
-%include "vesa_vbe_setup_vars.s"
-%include "irq_handlers.s"
-%include "ata.s"
-
-; PS2 keyboard functions
-
-global kernel_WaitForKey
-kernel_WaitForKey:
-.loop:
-    in al, 0x60
-    cmp al, 0x0
-    jl .loop
-    ret
-
-global kernel_GetKeyPressed
-kernel_GetKeyPressed:
-    in al, 0x60
-    cmp al, 0x0
-    jl .error
-    jmp .return
-.error:
-    mov al, -1
-.return:
-    ret
-
-LastKey: db -1
-
-global kernel_WaitForKeyNoRepeat
-kernel_WaitForKeyNoRepeat:
-    jmp .loop
-.loop_reset:
-    mov byte [LastKey], -1
-.loop:
-    in al, 0x60
-    cmp al, 0x0
-    jl .loop_reset
-    cmp al, [LastKey]
-    je .loop
-    mov [LastKey], al
-    ret
-
-global kernel_GetKeyPressedNoRepeat
-kernel_GetKeyPressedNoRepeat:
-    in al, 0x60
-    cmp al, 0x0
-    jl .error_lt_0
-    cmp al, [LastKey]
-    je .error
-    mov [LastKey], al
-    jmp .return
-.error_lt_0:
-    mov byte [LastKey], -1
-.error:
-    mov al, -1
-.return:
-    ret
+%include "kernel/vesa_vbe_setup_vars.s"
+%include "kernel/irq_handlers.s"
 
 
 
