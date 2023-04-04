@@ -144,7 +144,6 @@ kernel_GetKeyPressedNoRepeat:
 
 
 
-
 section .text
 
 ;
@@ -154,6 +153,3 @@ section .text
 ;
 ;
 
-
-section .afterdata
-incbin "image.bmp"

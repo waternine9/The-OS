@@ -366,15 +366,14 @@ void OS_Start()
 
     bmp_bitmap_info Info;
 
-    uint32_t ByteAt = 0x100000;
-
-    BMP_Read((uint8_t)(0x1000000), &Info, NULL);
-
-    KPrintf("Reading BitMap, Loc: %x, Size: %d %d", ByteAt, Info.Width, Info.Height);
+    uint32_t *Destination = (uint32_t*)0x2000000;
     
-    uint8_t buff[512];
-    ReadATASector((void*)buff, 0);
-    KPrintf(buff);
+    for (int i = 0; i < 1412; i++) {
+        ReadATASector((uint8_t*)(0x1000000+i*512), i);
+    }
+
+    BMP_Read((uint8_t*)(0x1000000), &Info, Destination);
+    KPrintf("Reading BitMap, Size: %d %d", Info.Width, Info.Height);
     
     while (1)
     {
@@ -386,6 +385,11 @@ void OS_Start()
         ClickAnimationStep();
         KeepMouseInScreen();
         DrawToolBar();
+        for (int X = 0; X < Info.Width; X++) {
+            for (int Y = 0; Y < Info.Height; Y++) {
+                SetPixel(X+50, (Info.Height-Y)+20, Destination[X+Y*Info.Width]);
+            }
+        }
         DrawPointerAt(MouseX, MouseY, 1);
 
         
