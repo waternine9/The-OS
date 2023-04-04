@@ -16,12 +16,7 @@ SECTIONS {
     {
         *(.data)
     }
-    . = 0x10000+0x7C00;
-    .afterdata :
-    {
-        *(.afterdata)
-    }
-    . = 0x900000+0x10000+0x7C00;
+    . = 0x100000+0x7C00;
     .bss : 
     {
         *(.bss)    
