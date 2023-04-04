@@ -65,6 +65,16 @@ uint32_t DrawString(int x, int y, const char* s, int scale, uint32_t color)
 
     return y - InitY;
 }
+void DrawRect(int X, int Y, int W, int H, uint32_t Color) {
+    int InitX = X;
+    int X2 = X+W, Y2 = Y+H;
+    for (; Y < Y2; Y++) {
+        for (; X < X2; X++) {
+            SetPixel(X, Y, Color);
+        } 
+        X = InitX;
+    }
+}
 void ClearScreen()
 {
     for (int i = 0; i < OUT_RES_Y; i++)
@@ -286,6 +296,17 @@ void KeepMouseInScreen()
     if (MouseY < 0) MouseY = 0;
     if (MouseY > OUT_RES_Y) MouseY = OUT_RES_Y;
 }
+void DrawToolBar() {
+    DrawRect(0, 0, 640, 12, 0xFF000000);
+    
+    uint8_t second, minute, hour, day, month, year;
+    GetRTC(&second, &minute, &hour, &day, &month, &year);
+
+    char ClockBuffer[128] = { 0 };
+    FormatWriteString(ClockBuffer, sizeof ClockBuffer, "%s %d %d:%d:%d", MonthName(month), 2000+year, hour, minute, second);
+    int RightOffset = FormatCStringLength(ClockBuffer) * 8;
+    DrawString(640-RightOffset-2, 2, ClockBuffer, 1, 0xFFFFFFFF);
+}
 void OS_Start()
 {
     PIC_Init();
@@ -312,9 +333,10 @@ void OS_Start()
         KeyboardHandler();
         ClickHandler();
 
-        DrawConsole(&Console, 12, 12, Color);
+        DrawConsole(&Console, 12, 20, Color);
         ClickAnimationStep();
         KeepMouseInScreen();
+        DrawToolBar();
         DrawPointerAt(MouseX, MouseY, 1);
         UpdateScreen();
 
