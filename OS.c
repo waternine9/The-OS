@@ -39,7 +39,7 @@ void SetPixel(uint32_t x, uint32_t y, uint32_t color)
         return;
     if (y >= 480)
         return;
-    if (color == 0)
+    if ((color>>24) == 0)
         return;
     BackBuffer[x + y * OUT_RES_X] = color;
 }
@@ -142,15 +142,15 @@ void DrawLogoAt(uint32_t x, uint32_t y, int scale)
             uint8_t CurBrown = (BrownRow >> (X / scale)) & 0b1;
             if (CurBrown)
             {
-                SetPixel((8 * scale - X) + x, Y + y, 0x773300);
+                SetPixel((8 * scale - X) + x, Y + y, 0xFF773300);
             }
             else if (CurBlack)
             {
-                SetPixel((8 * scale - X) + x, Y + y, 0x000001);
+                SetPixel((8 * scale - X) + x, Y + y, 0xFF000000);
             }
             else if (CurYellow)
             {
-                SetPixel((8 * scale - X) + x, Y + y, 0xFFFF00);
+                SetPixel((8 * scale - X) + x, Y + y, 0xFFFFFF00);
             }
         }
     }
@@ -168,11 +168,11 @@ void DrawPointerAt(uint32_t x, uint32_t y, int scale)
             uint8_t CurFull = (FullRow >> (X / scale)) & 0b1;
             if (CurBlack)
             {
-                SetPixel((8 * scale - X) + x, Y + y, 0x000001);
+                SetPixel((8 * scale - X) + x, Y + y, 0xFF000000);
             }
             else if (CurFull)
             {
-                SetPixel((8 * scale - X) + x, Y + y, 0xFFFFFF);
+                SetPixel((8 * scale - X) + x, Y + y, 0xFFFFFFFF);
             }
         }
     }
@@ -180,14 +180,10 @@ void DrawPointerAt(uint32_t x, uint32_t y, int scale)
 
 void Lockscreen()
 {
-    int Count = 100;
-    while (Count--)
-    {
-        ClearScreen();
-        DrawLogoAt(240, 100, 20);
-        DrawString(180, 300, "BananaOS", 4, 0x000001);
-        UpdateScreen();
-    }
+    ClearScreen();
+    DrawLogoAt(240, 100, 20);
+    DrawString(180, 300, "BananaOS", 4, 0xFF000000);
+    UpdateScreen();
 }
 void StartClickAnimation()
 {
@@ -348,6 +344,34 @@ void DrawToolBar()
     int RightOffset = FormatCStringLength(ClockBuffer) * 8;
     DrawString(640 - RightOffset - 2, 2, ClockBuffer, 1, 0xFFFFFFFF);
 }
+typedef struct {
+    int X, Y, W, H;
+} rect;
+int IsMouseInRect(rect R) {
+    return MouseX > R.X && MouseY > R.Y && MouseX <= (R.X + R.W) && MouseY <= (R.Y + R.H);
+}
+
+int DrawPaintProgram(uint8_t *PixBuf, int PX, int PY, uint32_t W, uint32_t H, uint32_t S) {
+    int Dirty = 0;
+    for (int Y = 0; Y < H; Y++) {
+        for (int X = 0; X < W; X++) {
+            rect R = { PX + X*S, PY + Y*S, S, S };
+            if (PixBuf[X + Y*W]) {
+                DrawRect(R.X, R.Y, R.W, R.H, 0xFF000000);
+            } else {
+                DrawRect(R.X, R.Y, R.W, R.H, 0xFFFFFFFF);
+            }
+
+            if (IsMouseInRect(R) && MouseLmbClicked) {
+                Dirty = 1;
+                PixBuf[X + Y*W] = !PixBuf[X + Y*W];
+            }
+        }
+    }
+
+    return Dirty;
+}
+
 void OS_Start()
 {
     ClearScreen();
@@ -366,42 +390,52 @@ void OS_Start()
 
     ATASetPIO();
 
+    Lockscreen();
     KPrintf("Welcome to BananaOS\n-------------------\n");
     ProbeAllPCIDevices();
 
     int Color = 0x000001;
     int OffsetX = 0;
-
-    bmp_bitmap_info Info;
-
-    uint32_t *Destination = (uint32_t *)0x2000000;
-
-    for (int i = 0; i < 1412; i++)
-    {
-        ReadATASector((uint8_t *)(0x1000000 + i * 512), i);
+    
+    uint32_t *Destination = (uint32_t*)0x2000000;
+    uint8_t *Buf = (uint8_t*)0x1000000;
+    for (int I = 0; I < 626; I++) {
+        ReadATASector(Buf+I*512, I);
     }
 
-    BMP_Read((uint8_t *)(0x1000000), &Info, Destination);
-    KPrintf("Reading BitMap, Size: %d %d", Info.Width, Info.Height);
+    bmp_bitmap_info Info;
+    BMP_Read(Buf + 1024, &Info, Destination);
 
     while (1)
     {
         ClearScreen();
         KeyboardHandler();
-        ClickHandler();
+        ClickAnimationStep();
 
         DrawConsole(&Console, 12, 20, Color);
-        ClickAnimationStep();
         KeepMouseInScreen();
         DrawToolBar();
-        for (int X = 0; X < Info.Width; X++)
-        {
-            for (int Y = 0; Y < Info.Height; Y++)
-            {
-                SetPixel(X + 50, (Info.Height - Y) + 20, Destination[X + Y * Info.Width]);
+        
+        
+        
+        if (DrawPaintProgram(Buf, 50, 50, 32, 32, 8)) {
+            WriteATASector(Buf, 0);
+            // FIXME: I don't know any better way to do this, but
+            //        we need to know when we are ready to write.
+            //        .still_going in WriteATASector doesn't work so I commented it out.
+            for (int I = 0; I < 1024; I++) {
+                IO_Wait();
+            }
+            WriteATASector(Buf+512, 1);
+        }
+        for (int X = 0; X < Info.Width; X++) {
+            for (int Y = 0; Y < Info.Height; Y++) {
+                SetPixel(X+45, (Info.Height-Y)+8, Destination[X+Y*Info.Width]);
             }
         }
+      
         DrawPointerAt(MouseX, MouseY, 1);
+        ClickHandler();
 
         UpdateScreen();
         if (OffsetX > 400)
