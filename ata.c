@@ -1,5 +1,5 @@
 #include "io.h"
-
+#include "format.h"
 void ATASetPIO()
 {
     while (IO_In8(0x1F7) & 0x80); // Wait for the BSY bit to be cleared   
@@ -9,13 +9,36 @@ void ATASetPIO()
 }
 void ReadATASector(uint32_t amount, void* buffer, uint8_t primaryorslave, uint32_t lba)
 {
-    while (IO_In8(0x1F7) & 0x80); // Wait for the BSY bit to be cleared   
+    // Wait for the BSY bit to be cleared
+    while (IO_In8(0x1F7) & 0x80);
+
+    // Select the drive
     IO_Out8(0x1F6, 0xE0 | ((primaryorslave & 1) << 4) | (lba >> 24 & 0x0F));
-    IO_Out8(0x1F7, 0x20);
-    while (!(IO_In8(0x1F7) & 0x08)); // Wait for the DRQ bit to be set
-    int step = 256;
-    while (step--)
-    {
-        *((uint8_t*)buffer + step) = IO_In8(0x1F0);
+
+    // Small delay
+    for (int i = 0; i < 4; i++) {
+        IO_In8(0x1F7);
     }
+
+    // Set up the remaining parameters (sector count, LBA low, mid, and high ports)
+    IO_Out8(0x1F2, 1);
+    IO_Out8(0x1F3, lba & 0xFF);
+    IO_Out8(0x1F4, (lba >> 8) & 0xFF);
+    IO_Out8(0x1F5, (lba >> 16) & 0xFF);
+
+    // Send the read command
+    IO_Out8(0x1F7, 0x20);
+
+    // Wait for BSY to be cleared and DRQ to be set, or ERR to be set
+    uint8_t status;
+    do {
+        status = IO_In8(0x1F7);
+    } while ((status & 0x80) && !(status & 0x08) && !(status & 0x01));
+
+    // Check for errors
+    if (status & 0x01) {
+        // Handle error (e.g., print an error message or return an error code)
+        return;
+    }
+
 }

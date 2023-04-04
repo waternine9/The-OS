@@ -323,13 +323,15 @@ void OS_Start()
 
     ATASetPIO();
 
-    Lockscreen();
-
     KPrintf("Welcome to BananaOS\n-------------------\n");
     ProbeAllPCIDevices();
 
     int Color = 0x000001;
     int OffsetX = 0;
+    uint8_t Buff[256];
+    ReadATASector(0, (void*)Buff, 0, 0x100);
+    
+    KPrintf(Buff);
     while (1)
     {
         ClearScreen();
@@ -342,6 +344,7 @@ void OS_Start()
         DrawToolBar();
         DrawPointerAt(MouseX, MouseY, 1);
         
+
         
         UpdateScreen();
 
