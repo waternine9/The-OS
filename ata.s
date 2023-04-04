@@ -44,20 +44,20 @@ ReadATASector:
     rep     insw
     pop ebp
     ret
-
+global WriteATASector
 WriteATASector:
 ; Save the base pointer (EBP) on the stack
     push ebp
     ; Set the new base pointer to the current stack pointer (ESP)
     mov ebp, esp
-    mov edi, [ebp + 8]
+    mov esi, [ebp + 8]
     mov ebx, [ebp + 12]
     mov     dx,1f6h         ;Drive and head port
     mov     al,0b11100000         ;Drive 0, head 0
     out     dx,al
 
     mov     dx,1f2h         ;Sector count port
-    mov     al,1            ;Read one sector
+    mov     al,1            ;Write one sector
     out     dx,al
 
     mov edx, 0x1F3       ; Port to send bit 0 - 7 of LBA
@@ -76,15 +76,16 @@ WriteATASector:
     out dx, al
 
     mov     dx,1f7h         ;Command port
-    mov     al,30h          ;Write with retry.
+    mov     al,0x30          ;Write with retry.
     out     dx,al
-.still_going:
-    in      al,dx
-    test    al,8            ;This means the sector buffer requires
-            ;servicing.
-    jz      .still_going     ;Don't continue until the sector buffer
-            ;is ready.
 
+;.still_going:
+;    in      al,dx
+;    test    al,8            
+;    jnz      .ready    ;Don't continue until the sector buffer
+;    jmp .still_going
+;           ;is ready.
+.ready:
     mov ecx, 256
     mov     dx,1f0h         ;Data port - data comes in and out of here.
     rep     outsw
