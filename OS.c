@@ -11,6 +11,7 @@
 #include "mouse.h"
 #include "ata.h"
 #include "pci.h"
+#include "bmp.h"
 
 extern click_animation ClickAnimation;
 extern uint8_t MousePointerBlack[8];
@@ -297,14 +298,20 @@ void KeepMouseInScreen()
     if (MouseY < 0) MouseY = 0;
     if (MouseY > OUT_RES_Y) MouseY = OUT_RES_Y;
 }
+const char *Numst(int num) {
+    if (num == 1) return "st";
+    if (num == 2) return "nd";
+    if (num == 3) return "rd";
+    return "th";
+} 
 void DrawToolBar() {
     DrawRect(0, 0, 640, 12, 0xFF000000);
     
-    uint8_t second, minute, hour, day, month, year;
-    GetRTC(&second, &minute, &hour, &day, &month, &year);
+    uint8_t second, minute, hour, day, weekday, month, year;
+    GetRTC(&second, &minute, &hour, &day, &weekday, &month, &year);
 
     char ClockBuffer[128] = { 0 };
-    FormatWriteString(ClockBuffer, sizeof ClockBuffer, "%s %d %d:%d:%d", MonthName(month), 2000+year, hour, minute, second);
+    FormatWriteString(ClockBuffer, sizeof ClockBuffer, "%s, %s %d%s %d %d:%02d:%02d", WeekDayName(weekday), MonthName(month), day, Numst(day), 2000+year, hour, minute, second);
     int RightOffset = FormatCStringLength(ClockBuffer) * 8;
     DrawString(640-RightOffset-2, 2, ClockBuffer, 1, 0xFFFFFFFF);
 }
@@ -330,6 +337,14 @@ void OS_Start()
 
     int Color = 0x000001;
     int OffsetX = 0;
+
+    bmp_bitmap_info Info;
+
+    uint32_t ByteAt = 0x100000;
+
+    BMP_Read((uint8_t)(0x1000000), &Info, NULL);
+
+    KPrintf("Reading BitMap, Loc: %x, Size: %d %d", ByteAt, Info.Width, Info.Height);
     while (1)
     {
         ClearScreen();

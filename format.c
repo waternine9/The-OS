@@ -6,8 +6,19 @@ typedef struct {
     size_t I;
 } destination;
 
+typedef struct {
+    size_t Number;
+    size_t Sign;
+} num;
+
 const char *BASE_CHARS = "0123456789ABCDEF";
 
+static num Int2Num(int i) {
+    return (num){(i < 0) ? -i : i, i < 0};
+}
+static num Uint2Num(unsigned int i) {
+    return (num){i, 0};
+}
 static void WriteDestination(destination *Dest, char C)
 {
     if (Dest->I < Dest->N) {
@@ -21,17 +32,25 @@ static void WriteDestinationStr(destination *Dest, const char *S)
         WriteDestination(Dest, *S++);
     }
 }
+static int NumWidthBaseN(size_t Value, size_t Base)
+{
+    if (Base == 1) return 0;
+    if (Base > 16) return 0;
+
+    size_t End = 0;
+    do {
+        Value /= Base;
+        End += 1;
+    } while (Value);
+
+    return End;
+}
 static void WriteDestinationBaseN(destination *Dest, size_t Value, size_t Base)
 {
     if (Base == 1) return;
     if (Base > 16) return;
 
-    size_t ValueCopy = Value;
-    size_t End = 0;
-    do {
-        ValueCopy /= Base;
-        End += 1;
-    } while (ValueCopy);
+    size_t End = NumWidthBaseN(Value, Base);
 
     char Buf[64] = { 0 };
     do {
@@ -43,22 +62,39 @@ static void WriteDestinationBaseN(destination *Dest, size_t Value, size_t Base)
 
     WriteDestinationStr(Dest, Buf);
 }
-static void WriteDestinationInt(destination *Dest, int Value)
+static int IsDigit(int c)
 {
-    if (Value < 0) {
+    return c >= '0' && c <= '9';
+}
+static int DigitValue(int c)
+{
+    return c - '0';
+}
+static void Number(destination *Dest, int Width, int ZeroPad, num Num, int Base)
+{
+    if (Num.Sign) {
         WriteDestination(Dest, '-');
-        Value = -Value;
     }
 
-    WriteDestinationBaseN(Dest, Value, 10);
-}
-static void WriteDestinationUint(destination *Dest, unsigned int Value)
+    int L = NumWidthBaseN(Num.Number, Base);
+    for (; L < Width; L++) {
+        if (ZeroPad) WriteDestination(Dest, '0');
+        else         WriteDestination(Dest, ' ');
+    }
+
+    WriteDestinationBaseN(Dest, Num.Number, Base);
+} 
+static void String(destination *Dest, int Width, int ZeroPad, const char *Str)
 {
-    WriteDestinationBaseN(Dest, Value, 10);
-}
-static void WriteDestinationHex(destination *Dest, unsigned int Value)
-{
-    WriteDestinationBaseN(Dest, Value, 16);
+    // TODO: This can be optimized if we just fetch first Width characters.
+    size_t L = FormatCStringLength(Str);
+
+    for (; L < Width; L++) {
+        if (ZeroPad) WriteDestination(Dest, '0');
+        else         WriteDestination(Dest, ' ');
+    }   
+
+    WriteDestinationStr(Dest, Str);
 }
 void FormatWriteStringVa(char *Dest, size_t N, const char *Fmt, va_list Va)
 {
@@ -67,23 +103,33 @@ void FormatWriteStringVa(char *Dest, size_t N, const char *Fmt, va_list Va)
     destination Buffer = { 0 };
     Buffer.Dest = Dest;
     Buffer.N = N-1;
+    int Width = 0;
+    int ZeroPad = 0;
 
     for (int I = 0; Fmt[I]; I++) {
+        Width = 0;
         switch (Fmt[I]) {
             case '%':
                 I++;
+                if (Fmt[I] == '0') {
+                    ZeroPad = 1;
+                    I++;
+                }
+                while (IsDigit(Fmt[I])) {
+                    Width += DigitValue(Fmt[I++]);
+                }
                 switch (Fmt[I]) {
                     case 's':
-                        WriteDestinationStr(&Buffer, va_arg(Va, const char *));
+                        String(&Buffer, Width, ZeroPad, va_arg(Va, const char *));
                         break;
                     case 'd':
-                        WriteDestinationInt(&Buffer, va_arg(Va, int));
+                        Number(&Buffer, Width, ZeroPad, Int2Num(va_arg(Va, int)), 10);
                         break;
                     case 'u':
-                        WriteDestinationUint(&Buffer, va_arg(Va, unsigned int));
+                        Number(&Buffer, Width, ZeroPad, Uint2Num(va_arg(Va, unsigned int)), 10);
                         break;
                     case 'x':
-                        WriteDestinationHex(&Buffer, va_arg(Va, unsigned int));
+                        Number(&Buffer, Width, ZeroPad, Uint2Num(va_arg(Va, unsigned int)), 16);
                         break;
                     default:
                     case '%':
