@@ -30,16 +30,21 @@ uint32_t BackBuffer[640 * 480];
 
 void SetPixel(uint32_t x, uint32_t y, uint32_t color)
 {
-    if (x < 0) return;
-    if (y < 0) return;
-    if (x >= 640) return;
-    if (y >= 480) return;
-    if (color == 0) return;
+    if (x < 0)
+        return;
+    if (y < 0)
+        return;
+    if (x >= 640)
+        return;
+    if (y >= 480)
+        return;
+    if (color == 0)
+        return;
     BackBuffer[x + y * OUT_RES_X] = color;
 }
 void DrawGlyph(int x, int y, char character, int scale, uint32_t color)
 {
-    const uint8_t* glyph = SysFont[character];
+    const uint8_t *glyph = SysFont[character];
     for (int i = 0; i < 8 * scale; i++)
     {
         for (int j = 0; j < 8 * scale; j++)
@@ -49,7 +54,7 @@ void DrawGlyph(int x, int y, char character, int scale, uint32_t color)
     }
 }
 /* Returns Y stride */
-uint32_t DrawString(int x, int y, const char* s, int scale, uint32_t color)
+uint32_t DrawString(int x, int y, const char *s, int scale, uint32_t color)
 {
     int InitX = x, InitY = y;
     for (int i = 0; s[i]; i++)
@@ -66,13 +71,16 @@ uint32_t DrawString(int x, int y, const char* s, int scale, uint32_t color)
 
     return y - InitY;
 }
-void DrawRect(int X, int Y, int W, int H, uint32_t Color) {
+void DrawRect(int X, int Y, int W, int H, uint32_t Color)
+{
     int InitX = X;
-    int X2 = X+W, Y2 = Y+H;
-    for (; Y < Y2; Y++) {
-        for (; X < X2; X++) {
+    int X2 = X + W, Y2 = Y + H;
+    for (; Y < Y2; Y++)
+    {
+        for (; X < X2; X++)
+        {
             SetPixel(X, Y, Color);
-        } 
+        }
         X = InitX;
     }
 }
@@ -80,7 +88,7 @@ void ClearScreen()
 {
     for (int i = 0; i < OUT_RES_Y; i++)
     {
-        uint32_t* FramebufferStep = BackBuffer + i * OUT_RES_X;
+        uint32_t *FramebufferStep = BackBuffer + i * OUT_RES_X;
         uint32_t StepValue = 0xFFFFFF - (i / 4 * 0x010102);
         for (int j = 0; j < OUT_RES_X; j++)
         {
@@ -90,25 +98,27 @@ void ClearScreen()
 }
 void UpdateScreen()
 {
-    uint8_t* Framebuffer = ((uint8_t*)VbeModeInfo.framebuffer);
+    uint8_t *Framebuffer = ((uint8_t *)VbeModeInfo.framebuffer);
 
-    for (int i = 0; i < OUT_RES_X*OUT_RES_Y; i++)
+    for (int i = 0; i < OUT_RES_X * OUT_RES_Y; i++)
     {
         // NOTE: BackBuffer stores ARGB, with little endian its BGRA byte order.
         *Framebuffer++ = BackBuffer[i];
-        *Framebuffer++ = BackBuffer[i]>> 8;
-        *Framebuffer++ = BackBuffer[i]>> 16;
+        *Framebuffer++ = BackBuffer[i] >> 8;
+        *Framebuffer++ = BackBuffer[i] >> 16;
     }
 }
 void DrawConsole(console *Console, int X, int Y, int Color)
 {
-    for (uint32_t i = 0; i < CONSOLE_MAX_LINES; i++) {
+    for (uint32_t i = 0; i < CONSOLE_MAX_LINES; i++)
+    {
         Y += DrawString(X, Y, Console->Lines[i], 1, Color);
     }
 }
 console Console;
 
-int KPrintf(const char *Fmt, ...) {
+int KPrintf(const char *Fmt, ...)
+{
     va_list Args;
     va_start(Args, Fmt);
     char DestStr[256];
@@ -189,14 +199,18 @@ void ClickAnimationStep()
     if (ClickAnimation.size > 0)
     {
         float T = (float)ClickAnimation.size / 100.0f;
-        for (int i = ClickAnimation.x - ClickAnimation.size / 4;i < ClickAnimation.x + ClickAnimation.size / 4;i++)
+        for (int i = ClickAnimation.x - ClickAnimation.size / 4; i < ClickAnimation.x + ClickAnimation.size / 4; i++)
         {
-            for (int j = ClickAnimation.y - ClickAnimation.size / 4;j < ClickAnimation.y + ClickAnimation.size / 4;j++)
+            for (int j = ClickAnimation.y - ClickAnimation.size / 4; j < ClickAnimation.y + ClickAnimation.size / 4; j++)
             {
-                if (i < 0) continue;
-                if (j < 0) continue;
-                if (i >= OUT_RES_X) continue;
-                if (j >= OUT_RES_Y) continue;
+                if (i < 0)
+                    continue;
+                if (j < 0)
+                    continue;
+                if (i >= OUT_RES_X)
+                    continue;
+                if (j >= OUT_RES_Y)
+                    continue;
                 uint32_t Current = BackBuffer[i + j * OUT_RES_X];
                 uint8_t CurrentR = (Current & 0xFF);
                 uint8_t CurrentG = (Current & 0xFF00) >> 8;
@@ -205,58 +219,67 @@ void ClickAnimationStep()
                 uint32_t NextG = 0xFF + T * (CurrentG - 0xFF);
                 uint32_t NextB = 0xFF + T * (CurrentB - 0xFF);
                 BackBuffer[i + j * OUT_RES_X] = NextR | (NextG << 8) | (NextB << 16);
-            }   
+            }
         }
         ClickAnimation.size++;
-        if (ClickAnimation.size == 100) ClickAnimation.size = 0;
+        if (ClickAnimation.size == 100)
+            ClickAnimation.size = 0;
     }
 }
 
-void ProbeAllPCIDevices() {
-    for (int Bus = 0; Bus < 256; Bus++) {
-        for (int Device = 0; Device < 32; Device++) {
+void ProbeAllPCIDevices()
+{
+    for (int Bus = 0; Bus < 256; Bus++)
+    {
+        for (int Device = 0; Device < 32; Device++)
+        {
             pci_device_path Path;
             Path.Bus = Bus;
             Path.Device = Device;
             Path.Function = 0;
 
             int F = 1;
-            if (PCI_QueryDeviceHeader(Path).MultiFunction) {
+            if (PCI_QueryDeviceHeader(Path).MultiFunction)
+            {
                 F = 8;
             }
 
-            for (int I = 0; I < F; I++) {
+            for (int I = 0; I < F; I++)
+            {
                 Path.Function = I;
 
                 pci_device_header Header = PCI_QueryDeviceHeader(Path);
-                if (Header.VendorId == 0xFFFF || Header.VendorId == 0x0000) {
+                if (Header.VendorId == 0xFFFF || Header.VendorId == 0x0000)
+                {
                     continue;
                 }
 
                 KPrintf("TYP ");
-                switch (PCI_QueryDeviceSpecialty(Header)) {
-                    case PCI_DEVICE_UNKNOWN:
-                        KPrintf("Unknown device");
-                        break;
-                    case PCI_DEVICE_VGA:
-                        KPrintf("VGA-compatible");
-                        break;
-                    case PCI_DEVICE_ETHERNET:
-                         KPrintf("Ethernet-compatible");
-                         break;
-                    case PCI_DEVICE_IDE:
-                         KPrintf("IDE-compatible");
-                         break;
-                    case PCI_DEVICE_HOST_BRIDGE:
-                         KPrintf("Host bridge");
-                         break;
-                    case PCI_DEVICE_ISA_BRIDGE:
-                         KPrintf("ISA bridge");
-                         break;
+                switch (PCI_QueryDeviceSpecialty(Header))
+                {
+                case PCI_DEVICE_UNKNOWN:
+                    KPrintf("Unknown device");
+                    break;
+                case PCI_DEVICE_VGA:
+                    KPrintf("VGA-compatible");
+                    break;
+                case PCI_DEVICE_ETHERNET:
+                    KPrintf("Ethernet-compatible");
+                    break;
+                case PCI_DEVICE_IDE:
+                    KPrintf("IDE-compatible");
+                    break;
+                case PCI_DEVICE_HOST_BRIDGE:
+                    KPrintf("Host bridge");
+                    break;
+                case PCI_DEVICE_ISA_BRIDGE:
+                    KPrintf("ISA bridge");
+                    break;
                 }
                 KPrintf("\nBUS %d | DEV %d | FUN %d | VEN %d | CLS %d | SUB %d | HED %d | +(",
                         Bus, Device, I, Header.VendorId, Header.Class, Header.Subclass, Header.HeaderType);
-                if (Header.MultiFunction || I != 0) {
+                if (Header.MultiFunction || I != 0)
+                {
                     KPrintf("MUF");
                 }
                 KPrintf(")\n");
@@ -267,13 +290,13 @@ void ProbeAllPCIDevices() {
 
 void ClickHandler()
 {
-    if (MouseLmbClicked == 1) 
+    if (MouseLmbClicked == 1)
     {
         KPrintf("LMB CLICKED\n");
         MouseLmbClicked = 0;
         StartClickAnimation();
     }
-    if (MouseRmbClicked == 1) 
+    if (MouseRmbClicked == 1)
     {
         KPrintf("RMB CLICKED\n");
         MouseRmbClicked = 0;
@@ -292,21 +315,26 @@ void KeyboardHandler()
 }
 void KeepMouseInScreen()
 {
-    if (MouseX < 0) MouseX = 0;
-    if (MouseX > OUT_RES_X) MouseX = OUT_RES_X;
-    if (MouseY < 0) MouseY = 0;
-    if (MouseY > OUT_RES_Y) MouseY = OUT_RES_Y;
+    if (MouseX < 0)
+        MouseX = 0;
+    if (MouseX > OUT_RES_X)
+        MouseX = OUT_RES_X;
+    if (MouseY < 0)
+        MouseY = 0;
+    if (MouseY > OUT_RES_Y)
+        MouseY = OUT_RES_Y;
 }
-void DrawToolBar() {
+void DrawToolBar()
+{
     DrawRect(0, 0, 640, 12, 0xFF000000);
-    
+
     uint8_t second, minute, hour, day, month, year;
     GetRTC(&second, &minute, &hour, &day, &month, &year);
 
-    char ClockBuffer[128] = { 0 };
-    FormatWriteString(ClockBuffer, sizeof ClockBuffer, "%s %d %d:%d:%d", MonthName(month), 2000+year, hour, minute, second);
+    char ClockBuffer[128] = {0};
+    FormatWriteString(ClockBuffer, sizeof ClockBuffer, "%s %d %d:%d:%d", MonthName(month), 2000 + year, hour, minute, second);
     int RightOffset = FormatCStringLength(ClockBuffer) * 8;
-    DrawString(640-RightOffset-2, 2, ClockBuffer, 1, 0xFFFFFFFF);
+    DrawString(640 - RightOffset - 2, 2, ClockBuffer, 1, 0xFFFFFFFF);
 }
 void OS_Start()
 {
@@ -328,10 +356,9 @@ void OS_Start()
 
     int Color = 0x000001;
     int OffsetX = 0;
-    uint8_t Buff[256];
-    ReadATASector((void*)Buff, 0, 0);
-    
-    KPrintf(Buff);
+    uint8_t buff[512];
+    ReadATASector((void*)buff, 0);
+    KPrintf(buff);
     while (1)
     {
         ClearScreen();
@@ -343,12 +370,10 @@ void OS_Start()
         KeepMouseInScreen();
         DrawToolBar();
         DrawPointerAt(MouseX, MouseY, 1);
-        
 
         
         UpdateScreen();
-
-        if (OffsetX > 400) OffsetX = 0;
-    
+        if (OffsetX > 400)
+            OffsetX = 0;
     }
 }

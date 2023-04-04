@@ -87,6 +87,7 @@ Start:
 align 16
 %include "vesa_vbe_setup_vars.s"
 %include "irq_handlers.s"
+%include "ata.s"
 
 ; PS2 keyboard functions
 
