@@ -8,6 +8,7 @@
         "mouse.h": "c",
         "sysfont.h": "c",
         "pic.h": "c",
-        "rtc.h": "c"
+        "rtc.h": "c",
+        "stdint.h": "c"
     }
 }
