@@ -9,33 +9,37 @@ typedef struct {
     const char *Start;
 } recorder;
 
-typedef struct {
-    const char *Pointer;
-    int Length;
-} token;
 
 typedef struct {
-    token Name;
-    token Value;
-} batch_variable;
-
-typedef struct {
-    batch_variable Variables[32];
-    size_t VariableCount;
     const char *Source;
     size_t Position;
+    batch_script *Script;
 } batch_executive;
 
 static recorder StartRecording(batch_executive *Executive)
 {
     return (recorder) { Executive->Source + Executive->Position };
 }
-static token EndRecording(batch_executive *Executive, recorder Recorder)
+static batch_token EndRecording(batch_executive *Executive, recorder Recorder)
 {
-    return (token) { Recorder.Start, (Executive->Source + Executive->Position)-Recorder.Start };
+    return (batch_token) { Recorder.Start, (Executive->Source + Executive->Position)-Recorder.Start };
 }
 
-static bool TokensEqual(token A, token B)
+const char *PutStringBuf(batch_script *S, batch_token Token) {
+    const char *Ptr = NULL;
+    
+    if (Token.Length >= (256-S->StringBufLength)) return NULL; // TODO: Error
+    
+    Ptr = S->StringBuf+S->StringBufLength;
+
+    for (int I = 0; I < Token.Length; I++) {
+        S->StringBuf[S->StringBufLength++] = Token.Pointer[I];
+    }
+    
+    return Ptr;
+}
+
+static bool TokensEqual(batch_token A, batch_token B)
 {
     if (A.Length != B.Length) {
         return false;
@@ -48,7 +52,7 @@ static bool TokensEqual(token A, token B)
     }
     return true;
 }
-static bool TokensEqualString(token A, const char *S)
+static bool TokensEqualString(batch_token A, const char *S)
 {
     for (int I = 0; I < A.Length && A.Pointer[I] && S[I]; I++) {
         if (A.Pointer[I] != S[I]) {
@@ -58,10 +62,10 @@ static bool TokensEqualString(token A, const char *S)
     return true;
 }
 
-static int FindVariable(batch_executive *Executive, token Name)
+static int FindVariable(batch_executive *Executive, batch_token Name)
 {
-    for (size_t I = 0; I < Executive->VariableCount; I++) {
-        if (TokensEqual(Executive->Variables[I].Name, Name)) {
+    for (size_t I = 0; I < Executive->Script->VariableCount; I++) {
+        if (TokensEqual(Executive->Script->Variables[I].Name, Name)) {
             return I;
         }
     }
@@ -71,29 +75,29 @@ static void SetVariable(batch_executive *Executive, batch_variable Var)
 {
     int V = FindVariable(Executive, Var.Name);
     if (V != -1) {
-        Executive->Variables[V] = Var;
+        Executive->Script->Variables[V] = Var;
     } else {
-        if (Executive->VariableCount < 32) {
-            Executive->Variables[Executive->VariableCount++] = Var;
+        if (Executive->Script->VariableCount < 32) {
+            Executive->Script->Variables[Executive->Script->VariableCount++] = Var;
         } else {
             // TODO: Handle error!
             return;
         }
     }
 }
-static token *GetVariable(batch_executive *Executive, token Name)
+static batch_token *GetVariable(batch_executive *Executive, batch_token Name)
 {
     int V = FindVariable(Executive, Name);
     if (V != -1) {
-        return &Executive->Variables[V].Value;
+        return &Executive->Script->Variables[V].Value;
     }
     return NULL;
 }
 
 static void AllocVariable(batch_executive *Executive, batch_variable Var)
 {
-    if (Executive->VariableCount < 32) {
-        Executive->Variables[Executive->VariableCount++] = Var;
+    if (Executive->Script->VariableCount < 32) {
+        Executive->Script->Variables[Executive->Script->VariableCount++] = Var;
     }
 }
 
@@ -107,7 +111,7 @@ static void NextCh(batch_executive *Executive)
         Executive->Position += 1;
     }
 }
-static void ExecuteCommandC(batch_executive *E, size_t Argc, token *Argv)
+static void ExecuteCommandC(batch_executive *E, size_t Argc, batch_token *Argv)
 {
     if (TokensEqualString(Argv[0], "echo")) {
         for (size_t I = 1; I < Argc; I++) {
@@ -120,24 +124,32 @@ static void ExecuteCommandC(batch_executive *E, size_t Argc, token *Argv)
             return;
         }
 
-        SetVariable(E, (batch_variable) { Argv[1], Argv[2] });
+        batch_token Name = Argv[1];
+        Name.Pointer = PutStringBuf(E->Script, Name);
+        batch_token Value = Argv[2];
+        Value.Pointer = PutStringBuf(E->Script, Value);
+        
+
+        SetVariable(E, (batch_variable) { Name, Value });
     } else if (TokensEqualString(Argv[0], "val")) {
         if (Argc != 2) {
             // TODO: Error
             return;
         }
 
-        token *Var = GetVariable(E, Argv[1]);
+        batch_token *Var = GetVariable(E, Argv[1]);
         if (Var == NULL) {
             KPrintf("Error: variable doesn't exist\n");
         } else {
             KPrintf("%.*s\n", (int)Var->Length, Var->Pointer);
         }
+    } else {
+        KPrintf("Error: Command doesn't exist\n");
     }
 }
 static void ExecuteCommand(batch_executive *E)
 {
-    token Args[32];
+    batch_token Args[32];
     size_t ArgsLength = 0;
    
     while (GetCh(E) != '\0' && GetCh(E) != '\n') {
@@ -145,7 +157,7 @@ static void ExecuteCommand(batch_executive *E)
         while (GetCh(E) && GetCh(E) != ' ' && GetCh(E) != '\n') {
             NextCh(E);
         }
-        token Arg = EndRecording(E, R);
+        batch_token Arg = EndRecording(E, R);
 
         if (GetCh(E) == ' ') {
             NextCh(E);
@@ -178,6 +190,7 @@ void Bee_ExecuteBatchScript(batch_script *Script)
     batch_executive Executive = { 0 };
     Executive.Source = Script->Source;
     Executive.Position = 0;
+    Executive.Script = Script;
 
     while (GetCh(&Executive) != '\0') {
         ExecuteCommand(&Executive);

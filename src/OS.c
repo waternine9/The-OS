@@ -410,12 +410,8 @@ void OS_Start()
     KPrintf("Welcome to BananaOS\n-------------------\n");
     ProbeAllPCIDevices();
 
-    batch_script Script = {
-        "echo Command Line Interpreter\n"
-        "set x 32\n"
-        "val x\n"};
+    batch_script Script = {};
 
-    Bee_ExecuteBatchScript(&Script);
 
     int ConsoleColor = 0xFF000000;
     int OffsetX = 0;
@@ -429,6 +425,8 @@ void OS_Start()
 
     bmp_bitmap_info BMPInfo;
     BMP_Read(Buf, &BMPInfo, Destination);
+    char CmdLine[129] = { 0 };
+    int CmdLineLen = 0;
 
     InitCMD();
 
@@ -451,7 +449,17 @@ void OS_Start()
         Keyboard_CollectEvents(&Kbd, Keys, 32, &KeysCount);
         for (int I = 0; I < KeysCount; I++) {
             if (Keys[I].ASCII) {
-                CmdAddChar(Keys[I].ASCII);
+                if (CmdLineLen < 128) {
+                    KPrintf("%c", Keys[I].ASCII);
+                    CmdAddChar(Keys[I].ASCII);
+                    CmdLine[CmdLineLen++] = Keys[I].ASCII;
+                }
+            }
+            if (Keys[I].ASCII == '\n') {
+                CmdLine[CmdLineLen] = 0;
+                Script.Source = CmdLine;
+                Bee_ExecuteBatchScript(&Script);
+                CmdLineLen = 0;
             }
         }
 

@@ -137,6 +137,9 @@ void FormatWriteStringVa(char *Dest, size_t N, const char *Fmt, va_list Va)
                     I += 2;
                 }
                 switch (Fmt[I]) {
+                    case 'c':
+                        WriteDestination(&Buffer, va_arg(Va, int));
+                        break;
                     case 's':
                         String(&Buffer, Width, ZeroPad, Precision, va_arg(Va, const char *));
                         break;
