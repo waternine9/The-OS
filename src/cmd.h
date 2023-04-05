@@ -9,6 +9,7 @@ extern uint32_t CmdDrawBuffer[CONSOLE_RES_X * CONSOLE_RES_Y];
 
 void InitCMD();
 void CmdAddChar(char thechar);
+void CmdBackspace();
 void CmdClear();
 void CmdDraw(uint32_t color);
 

@@ -41,12 +41,20 @@ void InitCMD()
     *CmdTextBuffer = 0;
 }
 
+
 void CmdAddChar(char thechar)
 {
     if (thechar == 0) return;
     *CmdBufferEnd = thechar;
     CmdBufferEnd++;
     *CmdBufferEnd = 0;
+}
+void CmdBackspace()
+{
+    CmdBufferEnd--;
+
+    *CmdBufferEnd = 0;
+    if (CmdBufferEnd < CmdTextBuffer) CmdBufferEnd = CmdTextBuffer;
 }
 
 void CmdClear()

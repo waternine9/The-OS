@@ -303,7 +303,7 @@ void ClickHandler()
     if (MouseRmbClicked == 1)
     {
         KPrintf("RMB CLICKED\n");
-        CmdAddChar('\n');
+        CmdBackspace();
         MouseRmbClicked = 0;
     }
 }
@@ -455,6 +455,8 @@ void OS_Start()
             }
         }
 
+
+        
         KeepMouseInScreen();
         DrawPointerAt(MouseX, MouseY, 1);
         ClickHandler();
