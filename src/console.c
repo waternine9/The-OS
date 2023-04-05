@@ -1,7 +1,7 @@
 #include <stdint.h>
-#include "include/console.h"
+#include "console.h"
 
-#include "include/kernel_constants.h"
+#include "kernel_constants.h"
 
 // NOTE: Scrolls 1 up
 static void ConScroll(console *Console)

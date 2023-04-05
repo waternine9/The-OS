@@ -1,4 +1,4 @@
-#include "include/bmp.h"
+#include "bmp.h"
 
 /* 
  * NOTE: IT CAN ONLY READ 32 BIT ARGB BMPS!

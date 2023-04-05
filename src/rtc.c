@@ -1,5 +1,5 @@
-#include "include/rtc.h"
-#include "include/io.h"
+#include "rtc.h"
+#include "io.h"
 
 uint8_t RtcRead(uint8_t reg)
 {

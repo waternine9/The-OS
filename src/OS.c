@@ -1,17 +1,18 @@
 #include <stdint.h>
 #include "fonts/sysfont.h"
-#include "include/console.h"
-#include "include/kernel.h"
-#include "include/format.h"
-#include "include/logo.h"
-#include "include/pic.h"
-#include "include/idt.h"
-#include "include/io.h"
-#include "include/rtc.h"
-#include "include/mouse.h"
+#include "console.h"
+#include "kernel.h"
+#include "format.h"
+#include "logo.h"
+#include "pic.h"
+#include "idt.h"
+#include "io.h"
+#include "rtc.h"
+#include "mouse.h"
 #include "drivers/ata/ata.h"
-#include "include/pci.h"
-#include "include/bmp.h"
+#include "pci.h"
+#include "bmp.h"
+#include "beescript.h"
 
 extern click_animation ClickAnimation;
 extern uint8_t MousePointerBlack[8];
@@ -413,6 +414,14 @@ void OS_Start()
     KPrintf("Welcome to BananaOS\n-------------------\n");
     ProbeAllPCIDevices();
 
+    batch_script Script = {
+        "echo Command Line Interpreter\n"
+        "set x 32\n"
+        "val x\n"
+    };
+
+    Bee_ExecuteBatchScript(&Script);
+
     int ConsoleColor = 0xFF000000;
     int OffsetX = 0;
 
@@ -422,8 +431,7 @@ void OS_Start()
     {
         ReadATASector(Buf + I * 512, I);
     }
-
-
+    
     bmp_bitmap_info BMPInfo;
     BMP_Read(Buf, &BMPInfo, Destination);
 

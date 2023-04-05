@@ -1,6 +1,6 @@
-#include "include/io.h"
-#include "include/format.h"
-#include "include/mouse.h"
+#include "io.h"
+#include "format.h"
+#include "mouse.h"
 
 const uint8_t MousePointerBlack[8] = {
     0b11111111,

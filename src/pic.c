@@ -1,5 +1,5 @@
-#include "include/pic.h"
-#include "include/io.h"
+#include "pic.h"
+#include "io.h"
 
 #define PRIM_COMMAND 0x20
 #define PRIM_DATA    0x21

@@ -1,4 +1,4 @@
-#include "include/format.h"
+#include "format.h"
 
 typedef struct {
     char *Dest;
@@ -30,6 +30,12 @@ static void WriteDestinationStr(destination *Dest, const char *S)
 {
     while (*S) {
         WriteDestination(Dest, *S++);
+    }
+}
+static void WriteDestinationStrN(destination *Dest, const char *S, int N)
+{
+    for (int I = 0; S[I] && I < N; I++) {
+        WriteDestination(Dest, S[I]);
     }
 }
 static int NumWidthBaseN(size_t Value, size_t Base)
@@ -84,18 +90,25 @@ static void Number(destination *Dest, int Width, int ZeroPad, num Num, int Base)
 
     WriteDestinationBaseN(Dest, Num.Number, Base);
 } 
-static void String(destination *Dest, int Width, int ZeroPad, const char *Str)
+static void String(destination *Dest, int Width, int ZeroPad, int Precision, const char *Str)
 {
     // TODO: This can be optimized if we just fetch first Width characters.
     size_t L = FormatCStringLength(Str);
+    if (Precision < 0) Precision = 0;
+    if (Precision != 0 && L > Precision) L = Precision;
 
     for (; L < Width; L++) {
         if (ZeroPad) WriteDestination(Dest, '0');
         else         WriteDestination(Dest, ' ');
     }   
 
-    WriteDestinationStr(Dest, Str);
+    if (Precision == 0) {
+        WriteDestinationStr(Dest, Str);
+    } else {
+        WriteDestinationStrN(Dest, Str, Precision);
+    }
 }
+
 void FormatWriteStringVa(char *Dest, size_t N, const char *Fmt, va_list Va)
 {
     if (N == 0) return;
@@ -105,6 +118,7 @@ void FormatWriteStringVa(char *Dest, size_t N, const char *Fmt, va_list Va)
     Buffer.N = N-1;
     int Width = 0;
     int ZeroPad = 0;
+    int Precision = 0;
 
     for (int I = 0; Fmt[I]; I++) {
         Width = 0;
@@ -118,9 +132,13 @@ void FormatWriteStringVa(char *Dest, size_t N, const char *Fmt, va_list Va)
                 while (IsDigit(Fmt[I])) {
                     Width += DigitValue(Fmt[I++]);
                 }
+                if (Fmt[I] == '.' && Fmt[I+1] == '*') {
+                    Precision = va_arg(Va, int);
+                    I += 2;
+                }
                 switch (Fmt[I]) {
                     case 's':
-                        String(&Buffer, Width, ZeroPad, va_arg(Va, const char *));
+                        String(&Buffer, Width, ZeroPad, Precision, va_arg(Va, const char *));
                         break;
                     case 'd':
                         Number(&Buffer, Width, ZeroPad, Int2Num(va_arg(Va, int)), 10);
