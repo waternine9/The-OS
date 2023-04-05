@@ -13,6 +13,7 @@
 #include "pci.h"
 #include "bmp.h"
 #include "beescript.h"
+#include "cmd.h"
 
 extern click_animation ClickAnimation;
 extern uint8_t MousePointerBlack[8];
@@ -29,6 +30,8 @@ const uint32_t OUT_RES_X = 640;
 const uint32_t OUT_RES_Y = 480;
 
 uint32_t BackBuffer[640 * 480];
+
+uint8_t Locked = 1;
 
 volatile void SetPixel(uint32_t x, uint32_t y, uint32_t color)
 {
@@ -181,10 +184,11 @@ void DrawPointerAt(uint32_t x, uint32_t y, int scale)
 
 void Lockscreen()
 {
+    if (Locked == 0xFF)
     ClearScreen();
-    DrawLogoAt(240, 100, 20);
-    DrawString(180, 300, "BananaOS", 4, 0xFF000000);
+    DrawString(250, 200, "Start", 4, 0xFF000000);
     UpdateScreen();
+
 }
 void StartClickAnimation()
 {
@@ -293,11 +297,13 @@ void ClickHandler()
         KPrintf("LMB CLICKED\n");
         MouseLmbClicked = 0;
         StartClickAnimation();
+        CmdAddChar('D');
     }
     if (MouseRmbClicked == 1)
     {
         KPrintf("RMB CLICKED\n");
         MouseRmbClicked = 0;
+        CmdAddChar('\n');
     }
 }
 void KeyboardHandler()
@@ -435,20 +441,26 @@ void OS_Start()
     bmp_bitmap_info BMPInfo;
     BMP_Read(Buf, &BMPInfo, Destination);
 
+    InitCMD();
+
     while (1)
     {
         ClearScreen();
         DrawImage(0, 0, 640, 480, Destination);
         KeyboardHandler();
-        ClickAnimationStep();
-
+        
         DrawConsole(&Console, 12, 20, ConsoleColor);
         DrawToolBar();
-
+        
+        
+        CmdClear();
+        CmdDraw(0xFFFFFFFF);
+        DrawImage(340, 280, CONSOLE_RES_X, CONSOLE_RES_Y, CmdDrawBuffer);
+        
         KeepMouseInScreen();
         DrawPointerAt(MouseX, MouseY, 1);
-
         ClickHandler();
+        ClickAnimationStep();
 
         UpdateScreen();
         if (OffsetX > 400)
