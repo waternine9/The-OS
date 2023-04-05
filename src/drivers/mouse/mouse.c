@@ -1,5 +1,5 @@
-#include "io.h"
-#include "format.h"
+#include "../../io.h"
+#include "../../format.h"
 #include "mouse.h"
 
 const uint8_t MousePointerBlack[8] = {
@@ -102,15 +102,28 @@ void MouseInstall()
   MouseWrite(0xF4);
   MouseRead();  //Acknowledge
 
-  // Enable IRQ 12
-  IO_Out8(0x64, 0x20);
-  MouseWait(1);
-  uint8_t status = IO_In8(0x64);
   
-  status |= 0b10;
-  status &= ~(0x20);
-  IO_Out8(0x64, 0x60);
-  MouseWait(1);
-  IO_Out8(0x60, status);
-  MouseWait(0);
+
+  // Enable IRQ 12
+  IO_Out8(0x64, 0xAD); // Disable first PS/2 port (keyboard)
+  IO_Out8(0x64, 0xA7); // Disable second PS/2 port (mouse)
+
+  IO_Out8(0x64, 0x20); // Request current configuration byte
+  uint8_t config = IO_In8(0x60); // Read the configuration byte from the data port (0x60)
+
+  config |= 0x03; // Enable IRQ1 (keyboard) and IRQ12 (mouse) by setting bits 0 and 1
+  config &= ~0x30; // Clear bits 4 and 5 to enable translation for the first PS/2 port (keyboard)
+
+  IO_Out8(0x64, 0x60); // Set the new configuration byte
+  IO_Out8(0x60, config);
+
+  IO_Out8(0x64, 0xAE); // Enable first PS/2 port (keyboard)
+  IO_Out8(0x64, 0xA8); // Enable second PS/2 port (mouse)
+  
+  IO_Out8(0x60, 0xF4); // Enable keyboard data reporting (scanning)
+  // Wait for the keyboard's ACK (0xFA)
+
+  IO_Out8(0x64, 0xD4); // Prepare to send command to the mouse
+  IO_Out8(0x60, 0xF4); // Enable mouse data reporting (movement and button events)
+  // Wait for the mouse's ACK (0xFA)
 }

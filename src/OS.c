@@ -8,13 +8,14 @@
 #include "idt.h"
 #include "io.h"
 #include "rtc.h"
-#include "mouse.h"
 #include "drivers/ata/ata.h"
 #include "pci.h"
 #include "bmp.h"
 #include "beescript.h"
 #include "cmd.h"
-#include "keyboard.h"
+#include "drivers/keyboard/keyboard.h"
+#include "drivers/mouse/mouse.h"
+#include "ps2help.h"
 
 extern click_animation ClickAnimation;
 extern uint8_t MousePointerBlack[8];
@@ -186,10 +187,9 @@ void DrawPointerAt(uint32_t x, uint32_t y, int scale)
 void Lockscreen()
 {
     if (Locked == 0xFF)
-    ClearScreen();
+        ClearScreen();
     DrawString(250, 200, "Start", 4, 0xFF000000);
     UpdateScreen();
-
 }
 void StartClickAnimation()
 {
@@ -297,11 +297,13 @@ void ClickHandler()
     {
         KPrintf("LMB CLICKED\n");
         MouseLmbClicked = 0;
+        CmdAddChar('D');
         StartClickAnimation();
     }
     if (MouseRmbClicked == 1)
     {
         KPrintf("RMB CLICKED\n");
+        CmdAddChar('\n');
         MouseRmbClicked = 0;
     }
 }
@@ -411,8 +413,7 @@ void OS_Start()
     batch_script Script = {
         "echo Command Line Interpreter\n"
         "set x 32\n"
-        "val x\n"
-    };
+        "val x\n"};
 
     Bee_ExecuteBatchScript(&Script);
 
@@ -425,13 +426,13 @@ void OS_Start()
     {
         ReadATASector(Buf + I * 512, I);
     }
-    
+
     bmp_bitmap_info BMPInfo;
     BMP_Read(Buf, &BMPInfo, Destination);
 
     InitCMD();
 
-    keyboard Kbd = { 0 };
+    keyboard Kbd = {0};
     keyboard_key Keys[32];
     uint32_t KeysCount = 0;
 
@@ -439,21 +440,20 @@ void OS_Start()
     {
         ClearScreen();
         DrawImage(0, 0, 640, 480, Destination);
-        
+
         DrawConsole(&Console, 12, 20, ConsoleColor);
         DrawToolBar();
 
         CmdClear();
         CmdDraw(0xFFFFFFFF);
         DrawImage(340, 280, CONSOLE_RES_X, CONSOLE_RES_Y, CmdDrawBuffer);
-        
+
         Keyboard_CollectEvents(&Kbd, Keys, 32, &KeysCount);
         for (int I = 0; I < KeysCount; I++) {
             if (Keys[I].ASCII) {
                 CmdAddChar(Keys[I].ASCII);
             }
         }
-
 
         KeepMouseInScreen();
         DrawPointerAt(MouseX, MouseY, 1);

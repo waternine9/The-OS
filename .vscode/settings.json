@@ -9,6 +9,7 @@
         "sysfont.h": "c",
         "pic.h": "c",
         "rtc.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "keyboard.h": "c"
     }
 }

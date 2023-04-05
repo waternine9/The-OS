@@ -1,5 +1,5 @@
 #include "keyboard.h"
-#include "io.h"
+#include "../../io.h"
 
 // KEYBOARD DRIVER
 // TODO: Handle fake shifts properly
@@ -44,6 +44,7 @@ static uint8_t ReadKey() {
     
     if (IsFull()) {
         Ret = IO_In8(0x60);
+        if (Ret & 0b10000000) Ret = 0;
     }
     
     return Ret;

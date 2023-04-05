@@ -1,6 +1,6 @@
 #include "pic.h"
 #include "kernel.h"
-#include "mouse.h"
+#include "drivers/mouse/mouse.h"
 
 int32_t MouseX, MouseY;
 uint8_t MouseRmbClicked, MouseLmbClicked;
@@ -15,8 +15,6 @@ void CHandlerIRQ0()
 /* Keyboard Interrupt */
 void CHandlerIRQ1()
 {
-  KPrintf("KEYBOARD\n");
-  KeyboardCharPressed = IO_In8(0x60);
   PIC_EndOfInterrupt(1);
 }
 /* Channel for Secondary PIC, don't use. */

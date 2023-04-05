@@ -43,7 +43,7 @@ void InitCMD()
 
 void CmdAddChar(char thechar)
 {
-    
+    if (thechar == 0) return;
     *CmdBufferEnd = thechar;
     CmdBufferEnd++;
     *CmdBufferEnd = 0;
@@ -107,6 +107,7 @@ void CmdDraw(uint32_t color)
                         char C = *CmdTextBuffer;
                         CmdTextBuffer++;
                         if (C == '\n') break;
+                        if (C == 0) break;
                     }
                 }
                 break;
