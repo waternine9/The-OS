@@ -133,6 +133,17 @@ int KPrintf(const char *Fmt, ...)
     ConsoleWrite(&Console, DestStr);
     va_end(Args);
 }
+int ConPrintf(const char *Fmt, ...)
+{
+    va_list Args;
+    va_start(Args, Fmt);
+    char DestStr[256];
+    FormatWriteStringVa(DestStr, 256, Fmt, Args);
+    for (int I = 0; DestStr[I]; I++)
+        CmdAddChar(DestStr[I]);
+    ConsoleWrite(&Console, DestStr);
+    va_end(Args);
+}
 
 void DrawLogoAt(uint32_t x, uint32_t y, int scale)
 {
@@ -448,18 +459,26 @@ void OS_Start()
 
         Keyboard_CollectEvents(&Kbd, Keys, 32, &KeysCount);
         for (int I = 0; I < KeysCount; I++) {
-            if (Keys[I].ASCII) {
-                if (CmdLineLen < 128) {
-                    KPrintf("%c", Keys[I].ASCII);
-                    CmdAddChar(Keys[I].ASCII);
-                    CmdLine[CmdLineLen++] = Keys[I].ASCII;
+            if (!Keys[I].Released) {
+                if (Keys[I].Scancode == KEY_BACKSPACE) {
+                    if (CmdLineLen > 0) {
+                        CmdBackspace();
+                        CmdLineLen--;
+                    }
                 }
-            }
-            if (Keys[I].ASCII == '\n') {
-                CmdLine[CmdLineLen] = 0;
-                Script.Source = CmdLine;
-                Bee_ExecuteBatchScript(&Script);
-                CmdLineLen = 0;
+                if (Keys[I].ASCII) {
+                    if (CmdLineLen < 128) {
+                        KPrintf("%c", Keys[I].ASCII);
+                        CmdAddChar(Keys[I].ASCII);
+                        CmdLine[CmdLineLen++] = Keys[I].ASCII;
+                    }
+                }
+                if (Keys[I].ASCII == '\n') {
+                    CmdLine[CmdLineLen] = 0;
+                    Script.Source = CmdLine;
+                    Bee_ExecuteBatchScript(&Script);
+                    CmdLineLen = 0;
+                }
             }
         }
 
