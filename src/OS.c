@@ -14,6 +14,7 @@
 #include "bmp.h"
 #include "beescript.h"
 #include "cmd.h"
+#include "keyboard.h"
 
 extern click_animation ClickAnimation;
 extern uint8_t MousePointerBlack[8];
@@ -297,24 +298,11 @@ void ClickHandler()
         KPrintf("LMB CLICKED\n");
         MouseLmbClicked = 0;
         StartClickAnimation();
-        CmdAddChar('D');
     }
     if (MouseRmbClicked == 1)
     {
         KPrintf("RMB CLICKED\n");
         MouseRmbClicked = 0;
-        CmdAddChar('\n');
-    }
-}
-void KeyboardHandler()
-{
-    if (KeyboardCharPressed != 0xFF)
-    {
-        char B[2];
-        B[0] = ps2tochar(KeyboardCharPressed);
-        B[1] = 0;
-        KPrintf(B);
-        KeyboardCharPressed = 0xFF;
     }
 }
 void KeepMouseInScreen()
@@ -443,20 +431,30 @@ void OS_Start()
 
     InitCMD();
 
+    keyboard Kbd = { 0 };
+    keyboard_key Keys[32];
+    uint32_t KeysCount = 0;
+
     while (1)
     {
         ClearScreen();
         DrawImage(0, 0, 640, 480, Destination);
-        KeyboardHandler();
         
         DrawConsole(&Console, 12, 20, ConsoleColor);
         DrawToolBar();
-        
-        
+
         CmdClear();
         CmdDraw(0xFFFFFFFF);
         DrawImage(340, 280, CONSOLE_RES_X, CONSOLE_RES_Y, CmdDrawBuffer);
         
+        Keyboard_CollectEvents(&Kbd, Keys, 32, &KeysCount);
+        for (int I = 0; I < KeysCount; I++) {
+            if (Keys[I].ASCII) {
+                CmdAddChar(Keys[I].ASCII);
+            }
+        }
+
+
         KeepMouseInScreen();
         DrawPointerAt(MouseX, MouseY, 1);
         ClickHandler();
