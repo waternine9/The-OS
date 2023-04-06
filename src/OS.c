@@ -406,7 +406,7 @@ void DrawImageInterp(uint32_t x, uint32_t y, uint32_t resX, uint32_t resY, uint3
             SetPixel(X + x, Y + y, 0xFF000000 | *data++);
         }
         
-        data -= resX - targetresX;
+        data += resX - targetresX;
     }
 }
 
