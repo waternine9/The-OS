@@ -14,7 +14,7 @@
 #define PRIM_IDT     32
 #define SECN_IDT     32 + 8
 
-void PIC_Init()
+volatile void PIC_Init()
 {
     /* Save masks */
     uint8_t Mask1, Mask2;
@@ -51,14 +51,14 @@ void PIC_Init()
     IO_Out8(SECN_DATA, Mask2);
     IO_Wait();
 }
-void PIC_SetMask(uint16_t Mask)
+volatile void PIC_SetMask(uint16_t Mask)
 {
     IO_Out8(PRIM_DATA, Mask & 0xFF);
     IO_Wait();
     IO_Out8(SECN_DATA, (Mask >> 8) & 0xFF);
     IO_Wait();
 }
-void PIC_EndOfInterrupt(uint8_t Interrupt)
+volatile void PIC_EndOfInterrupt(uint8_t Interrupt)
 {
     if (Interrupt >= 8) {
         IO_Out8(SECN_COMMAND, WORD_EOI);

@@ -7,7 +7,10 @@ char* CmdBufferEnd = (char*)0x3000000;
 
 int CmdBlinker = 0;
 
-uint32_t CmdDrawBuffer[CONSOLE_RES_X * CONSOLE_RES_Y];
+extern uint16_t VESA_RES_X;
+extern uint16_t VESA_RES_Y;
+
+uint32_t CmdDrawBuffer[1920 * 1080];
 
 volatile void CmdSetPixel(uint32_t x, uint32_t y, uint32_t color)
 {
