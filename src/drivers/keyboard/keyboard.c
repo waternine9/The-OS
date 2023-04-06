@@ -44,7 +44,6 @@ static uint8_t ReadKey() {
     
     if (IsFull()) {
         Ret = IO_In8(0x60);
-        if (Ret & 0b10000000) Ret = 0;
     }
     
     return Ret;
@@ -60,9 +59,13 @@ void Keyboard_CollectEvents(keyboard *Kbd, keyboard_key *Keys, uint32_t KeysMax,
             Alternative = 1;
             continue;
         }
+        if (K == 0xAA) {
+            Kbd->LShift = 0;
+            continue;
+        }
         
         uint8_t released = K >= 128;
-        if (released) K -= 128;
+        if (released) continue;
         if (Alternative) K += 128;
     
         switch (K) {

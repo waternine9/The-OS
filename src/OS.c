@@ -25,13 +25,15 @@ extern uint8_t KeyboardCharPressed;
 extern int32_t MouseX, MouseY;
 extern uint8_t MouseRmbClicked, MouseLmbClicked;
 
+extern uint16_t VESA_RES_X;
+extern uint16_t VESA_RES_Y;
+
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
-const uint32_t OUT_RES_X = 640;
-const uint32_t OUT_RES_Y = 480;
 
-uint32_t BackBuffer[640 * 480];
+
+uint32_t BackBuffer[1920 * 1080];
 
 uint8_t Locked = 1;
 
@@ -41,13 +43,13 @@ volatile void SetPixel(uint32_t x, uint32_t y, uint32_t color)
         return;
     if (y < 0)
         return;
-    if (x >= 640)
+    if (x >= VESA_RES_X)
         return;
-    if (y >= 480)
+    if (y >= VESA_RES_Y)
         return;
     if ((color >> 24) == 0)
         return;
-    BackBuffer[x + y * OUT_RES_X] = color;
+    BackBuffer[x + y * VESA_RES_X] = color;
 }
 void DrawGlyph(int x, int y, char character, int scale, uint32_t color)
 {
@@ -68,7 +70,7 @@ uint32_t DrawString(int x, int y, const char *s, int scale, uint32_t color)
     {
         DrawGlyph(x, y, s[i], scale, color);
         x += 8 * scale;
-        if (x + 8 * scale > OUT_RES_X)
+        if (x + 8 * scale > VESA_RES_X)
         {
             x = InitX;
             y += 8 * scale + 4 * scale;
@@ -93,21 +95,17 @@ void DrawRect(int X, int Y, int W, int H, uint32_t Color)
 }
 void ClearScreen()
 {
-    for (int i = 0; i < OUT_RES_Y; i++)
+    uint32_t *FramebufferStep = BackBuffer;
+    for (int i = 0; i < VESA_RES_Y * VESA_RES_X; i++)
     {
-        uint32_t *FramebufferStep = BackBuffer + i * OUT_RES_X;
-        uint32_t StepValue = 0xFFFFFF - (i / 4 * 0x010102);
-        for (int j = 0; j < OUT_RES_X; j++)
-        {
-            FramebufferStep[j] = StepValue;
-        }
+        *FramebufferStep++ = 0xFFFFFF00;
     }
 }
 void UpdateScreen()
 {
     uint8_t *Framebuffer = ((uint8_t *)VbeModeInfo.framebuffer);
 
-    for (int i = 0; i < OUT_RES_X * OUT_RES_Y; i++)
+    for (int i = 0; i < VESA_RES_X * VESA_RES_Y; i++)
     {
         // NOTE: BackBuffer stores ARGB, with little endian its BGRA byte order.
         *Framebuffer++ = BackBuffer[i];
@@ -221,18 +219,18 @@ void ClickAnimationStep()
                     continue;
                 if (j < 0)
                     continue;
-                if (i >= OUT_RES_X)
+                if (i >= VESA_RES_X)
                     continue;
-                if (j >= OUT_RES_Y)
+                if (j >= VESA_RES_Y)
                     continue;
-                uint32_t Current = BackBuffer[i + j * OUT_RES_X];
+                uint32_t Current = BackBuffer[i + j * VESA_RES_X];
                 uint8_t CurrentR = (Current & 0xFF);
                 uint8_t CurrentG = (Current & 0xFF00) >> 8;
                 uint8_t CurrentB = (Current & 0xFF0000) >> 16;
                 uint32_t NextR = 0xFF + T * (CurrentR - 0xFF);
                 uint32_t NextG = 0xFF + T * (CurrentG - 0xFF);
                 uint32_t NextB = 0xFF + T * (CurrentB - 0xFF);
-                BackBuffer[i + j * OUT_RES_X] = NextR | (NextG << 8) | (NextB << 16);
+                BackBuffer[i + j * VESA_RES_X] = NextR | (NextG << 8) | (NextB << 16);
             }
         }
         ClickAnimation.size++;
@@ -306,15 +304,11 @@ void ClickHandler()
 {
     if (MouseLmbClicked == 1)
     {
-        KPrintf("LMB CLICKED\n");
         MouseLmbClicked = 0;
-        CmdAddChar('D');
         StartClickAnimation();
     }
     if (MouseRmbClicked == 1)
     {
-        KPrintf("RMB CLICKED\n");
-        CmdBackspace();
         MouseRmbClicked = 0;
     }
 }
@@ -322,12 +316,12 @@ void KeepMouseInScreen()
 {
     if (MouseX < 0)
         MouseX = 0;
-    if (MouseX > OUT_RES_X)
-        MouseX = OUT_RES_X;
+    if (MouseX > VESA_RES_X)
+        MouseX = VESA_RES_X;
     if (MouseY < 0)
         MouseY = 0;
-    if (MouseY > OUT_RES_Y)
-        MouseY = OUT_RES_Y;
+    if (MouseY > VESA_RES_Y)
+        MouseY = VESA_RES_Y;
 }
 const char *Numst(int num)
 {
@@ -341,7 +335,7 @@ const char *Numst(int num)
 }
 void DrawToolBar()
 {
-    DrawRect(0, 0, 640, 12, 0xFF000000);
+    DrawRect(0, 0, VESA_RES_X, 12, 0xFF000000);
 
     uint8_t second, minute, hour, day, weekday, month, year;
     GetRTC(&second, &minute, &hour, &day, &weekday, &month, &year);
@@ -350,7 +344,7 @@ void DrawToolBar()
     FormatWriteString(ClockBuffer, sizeof ClockBuffer, "%s, %s %d%s %d %d:%02d:%02d", WeekDayName(weekday), MonthName(month), day, Numst(day), 2000 + year, hour, minute, second);
 
     int RightOffset = FormatCStringLength(ClockBuffer) * 8;
-    DrawString(640 - RightOffset - 2, 2, ClockBuffer, 1, 0xFFFFFFFF);
+    DrawString(VESA_RES_X - RightOffset - 2, 2, ClockBuffer, 1, 0xFFFFFFFF);
 }
 typedef struct
 {
@@ -389,6 +383,7 @@ int DrawPaintProgram(uint8_t *PixBuf, int PX, int PY, uint32_t W, uint32_t H, ui
     return Dirty;
 }
 
+
 void DrawImage(uint32_t x, uint32_t y, uint32_t resX, uint32_t resY, uint32_t *data)
 {
     for (int32_t Y = resY - 1; Y >= 0; Y--)
@@ -400,11 +395,24 @@ void DrawImage(uint32_t x, uint32_t y, uint32_t resX, uint32_t resY, uint32_t *d
     }
 }
 
+void DrawImageInterp(uint32_t x, uint32_t y, uint32_t resX, uint32_t resY, uint32_t targetresX, uint32_t targetresY, uint32_t *data)
+{
+    for (int32_t Y = targetresY - 1; Y >= 0; Y--)
+    {
+        
+        for (uint32_t X = 0; X < targetresX; X++)
+        {
+            
+            SetPixel(X + x, Y + y, 0xFF000000 | *data++);
+        }
+        
+        data -= resX - targetresX;
+    }
+}
+
 void OS_Start()
 {
-    ClearScreen();
-    DrawString(240, 220, "LOADING :)", 2, 0xFF000000);
-    UpdateScreen();
+
     PIC_Init();
     PIC_SetMask(0xFFFF); // Disable all irqs
 
@@ -423,20 +431,19 @@ void OS_Start()
 
     batch_script Script = {};
 
-
     int ConsoleColor = 0xFF000000;
     int OffsetX = 0;
 
-    uint32_t *Destination = (uint32_t *)0x4000000;
-    uint8_t *Buf = (uint8_t *)0x1000000;
-    for (int I = 0; I < 2400; I++)
+    uint32_t *Destination = (uint32_t *)0x5000000;
+    uint8_t *Buf = (uint8_t *)0x4000000;
+    for (int I = 0; I < 19200; I++)
     {
         ReadATASector(Buf + I * 512, I);
     }
 
     bmp_bitmap_info BMPInfo;
     BMP_Read(Buf, &BMPInfo, Destination);
-    char CmdLine[129] = { 0 };
+    char CmdLine[129] = {0};
     int CmdLineLen = 0;
 
     InitCMD();
@@ -447,32 +454,38 @@ void OS_Start()
 
     while (1)
     {
-        ClearScreen();
-        DrawImage(0, 0, 640, 480, Destination);
-
+        DrawImageInterp(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, Destination);
         DrawToolBar();
 
+        
         CmdClear();
         CmdDraw(0xFFFFFFFF);
         DrawImage(340, 280, CONSOLE_RES_X, CONSOLE_RES_Y, CmdDrawBuffer);
 
         Keyboard_CollectEvents(&Kbd, Keys, 32, &KeysCount);
-        for (int I = 0; I < KeysCount; I++) {
-            if (!Keys[I].Released) {
-                if (Keys[I].Scancode == KEY_BACKSPACE) {
-                    if (CmdLineLen > 0) {
+        for (int I = 0; I < KeysCount; I++)
+        {
+            if (!Keys[I].Released)
+            {
+                if (Keys[I].Scancode == KEY_BACKSPACE)
+                {
+                    if (CmdLineLen > 0)
+                    {
                         CmdBackspace();
                         CmdLineLen--;
                     }
                 }
-                if (Keys[I].ASCII) {
-                    if (CmdLineLen < 128) {
+                if (Keys[I].ASCII)
+                {
+                    if (CmdLineLen < 128)
+                    {
                         KPrintf("%c", Keys[I].ASCII);
                         CmdAddChar(Keys[I].ASCII);
                         CmdLine[CmdLineLen++] = Keys[I].ASCII;
                     }
                 }
-                if (Keys[I].ASCII == '\n') {
+                if (Keys[I].ASCII == '\n')
+                {
                     CmdLine[CmdLineLen] = 0;
                     Script.Source = CmdLine;
                     Bee_ExecuteBatchScript(&Script);
@@ -480,13 +493,11 @@ void OS_Start()
                 }
             }
         }
-
-
-        
-        KeepMouseInScreen();
-        DrawPointerAt(MouseX, MouseY, 1);
         ClickHandler();
         ClickAnimationStep();
+        KeepMouseInScreen();
+        DrawPointerAt(MouseX, MouseY, 1);
+        
 
         UpdateScreen();
         if (OffsetX > 400)

@@ -48,6 +48,7 @@ void CmdAddChar(char thechar)
     *CmdBufferEnd = thechar;
     CmdBufferEnd++;
     *CmdBufferEnd = 0;
+    CmdBlinker = 0;
 }
 void CmdBackspace()
 {
@@ -56,6 +57,7 @@ void CmdBackspace()
 
     *CmdBufferEnd = 0;
     if (CmdBufferEnd < CmdTextBuffer) CmdBufferEnd = CmdTextBuffer;
+    CmdBlinker = 0;
 }
 
 void CmdClear()
