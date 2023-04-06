@@ -51,6 +51,7 @@ void CmdAddChar(char thechar)
 }
 void CmdBackspace()
 {
+    if (*(CmdBufferEnd - 1) == '\n') return;
     CmdBufferEnd--;
 
     *CmdBufferEnd = 0;

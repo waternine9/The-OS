@@ -141,12 +141,12 @@ static void ExecuteCommandC(batch_executive *E, size_t Argc, batch_token *Argv)
 
         batch_token *Var = GetVariable(E, Argv[1]);
         if (Var == NULL) {
-            ConPrintf("Error: variable doesn't exist\n");
+            ConPrintf("Error: variable not found\n");
         } else {
             ConPrintf("%.*s\n", (int)Var->Length, Var->Pointer);
         }
     } else {
-        ConPrintf("Error: Command doesn't exist\n");
+        ConPrintf("Error: Command not found\n");
     }
 }
 static void ExecuteCommand(batch_executive *E)

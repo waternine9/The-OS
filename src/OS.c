@@ -450,7 +450,6 @@ void OS_Start()
         ClearScreen();
         DrawImage(0, 0, 640, 480, Destination);
 
-        DrawConsole(&Console, 12, 20, ConsoleColor);
         DrawToolBar();
 
         CmdClear();
