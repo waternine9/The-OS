@@ -94,10 +94,10 @@ jmp .checkClosest
 .loop_done:
 
 
-; Set video mode IF FOUND
+; Set video mode
 mov bx, [.closestModeNumber]
 cmp bx, -1
-je .done
+je .done_set_dummy
 
 mov ax, 0x4F01
 mov cx, [.closestModeNumber]
@@ -105,6 +105,21 @@ mov di, VbeModeInfo
 int 0x10
 
 mov ax, 0x4F02
+or bx, 0x4000          
+mov di, 0
+int 0x10
+
+jmp .done
+
+.done_set_dummy
+
+mov ax, 0x4F01
+mov cx, 0x112
+mov di, VbeModeInfo
+int 0x10
+
+mov ax, 0x4F02
+mov bx, 0x112
 or bx, 0x4000          
 mov di, 0
 int 0x10

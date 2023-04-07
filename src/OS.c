@@ -22,7 +22,13 @@ typedef struct
     int X, Y, W, H;
 } rect;
 
+typedef struct
+{
+    uint32_t startX, startY;
+    uint8_t selecting;
+} select_state;
 
+select_state SelectState;
 
 extern click_animation ClickAnimation;
 extern uint8_t MousePointerBlack[8];
@@ -44,7 +50,17 @@ rect CombineRect(rect a, rect b)
     out.X = MIN(a.X, b.X);
     out.Y = MIN(a.Y, b.Y);
     out.W = MAX(a.X + a.W, b.X + b.W) - out.X + 1;
-    out.H = MAX(a.Y + a.H, b.Y + b.H) - out.Y + 1; 
+    out.H = MAX(a.Y + a.H, b.Y + b.H) - out.Y + 1;
+    return out;
+}
+
+rect GetBounding(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2)
+{
+    rect out;
+    out.X = (x1 < x2) ? x1 : x2;
+    out.Y = (y1 < y2) ? y1 : y2;
+    out.W = (x1 > x2) ? x1 - x2 : x2 - x1;
+    out.H = (y1 > y2) ? y1 - y2 : y2 - y1;
     return out;
 }
 
@@ -52,6 +68,8 @@ uint32_t BackBuffer[1920 * 1080];
 uint32_t StaticBackBuffer[1920 * 1080];
 
 uint8_t Locked = 1;
+
+uint8_t *Font = 0x4000000;
 
 volatile void SetPixel(uint32_t x, uint32_t y, uint32_t color)
 {
@@ -66,6 +84,31 @@ volatile void SetPixel(uint32_t x, uint32_t y, uint32_t color)
     if ((color >> 24) == 0)
         return;
     BackBuffer[x + y * VESA_RES_X] = color;
+}
+volatile void SetPixelAlpha(uint32_t x, uint32_t y, uint32_t color)
+{
+    if (x < 0)
+        return;
+    if (y < 0)
+        return;
+    if (x >= VESA_RES_X)
+        return;
+    if (y >= VESA_RES_Y)
+        return;
+    if ((color >> 24) == 0)
+        return;
+
+    float alpha = color >> 24;
+    alpha /= 255.0f;
+
+    uint32_t Current = (BackBuffer[x + y * VESA_RES_X] >= 0x01000000) ? BackBuffer[x + y * VESA_RES_X] : StaticBackBuffer[x + y * VESA_RES_X];
+    uint32_t CurrentR = (Current & 0xFF);
+    uint32_t CurrentG = (Current & 0xFF00) >> 8;
+    uint32_t CurrentB = (Current & 0xFF0000) >> 16;
+    uint32_t NextR = CurrentR + alpha * ((color & 0xFF) - CurrentR);
+    uint32_t NextG = CurrentG + alpha * (((color >> 8) & 0xFF) - CurrentG);
+    uint32_t NextB = CurrentB + alpha * (((color >> 16) & 0xFF) - CurrentB);
+    BackBuffer[x + y * VESA_RES_X] = 0xFF000000 | (NextR << 16) | (NextG << 8) | NextB;
 }
 
 volatile void StaticSetPixel(uint32_t x, uint32_t y, uint32_t color)
@@ -84,12 +127,12 @@ volatile void StaticSetPixel(uint32_t x, uint32_t y, uint32_t color)
 }
 void DrawGlyph(int x, int y, char character, int scale, uint32_t color)
 {
-    const uint8_t *glyph = SysFont[character];
-    for (int i = 0; i < 8 * scale; i++)
+    const uint8_t *glyph = Font + (4) * 32 * 32;
+    for (int i = 0; i < 32 * scale; i++)
     {
-        for (int j = 0; j < 8 * scale; j++)
+        for (int j = 0; j < 32 * scale; j++)
         {
-            SetPixel(i + x, j + y, ((uint32_t)((glyph[j / scale] >> (i / scale)) & 0b1) * color));
+            SetPixelAlpha(i + x, j + y, ((uint32_t)*(glyph + i / scale + j / scale * 32) << 24) | color);
         }
     }
 }
@@ -100,14 +143,14 @@ uint32_t DrawString(int x, int y, const char *s, int scale, uint32_t color)
     for (int i = 0; s[i]; i++)
     {
         DrawGlyph(x, y, s[i], scale, color);
-        x += 8 * scale;
-        if (x + 8 * scale > VESA_RES_X)
+        x += 32 * scale;
+        if (x + 32 * scale > VESA_RES_X)
         {
             x = InitX;
-            y += 8 * scale + 4 * scale;
+            y += 32 * scale + 4 * scale;
         }
     }
-    y += 8 * scale + 4 * scale;
+    y += 32 * scale + 4 * scale;
 
     return y - InitY;
 }
@@ -144,7 +187,8 @@ volatile void ClearRect(uint32_t x, uint32_t y, uint32_t w, uint32_t h)
         FramebufferStep += VESA_RES_X - w;
     }
 }
-volatile void UpdateScreen()
+
+volatile void UpdateScreen() // DEPRECATED
 {
     uint8_t *Framebuffer = ((uint8_t *)VbeModeInfo.framebuffer);
 
@@ -162,18 +206,18 @@ volatile void UpdateRect(uint32_t x, uint32_t y, uint32_t w, uint32_t h)
 
     uint32_t *BackBufferStep = BackBuffer + (x + y * VESA_RES_X);
     uint32_t *StaticBackBufferStep = StaticBackBuffer + (x + y * VESA_RES_X);
-    
+
     for (int i = 0; i < h; i++)
     {
         for (int j = 0; j < w; j++)
         {
-        // NOTE: BackBuffer stores ARGB, with little endian its BGRA byte order.
+            // NOTE: BackBuffer stores ARGB, with little endian its BGRA byte order.
 
-        *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep : *StaticBackBufferStep;
-        *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep >> 8 : *StaticBackBufferStep >> 8;
-        *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep >> 16 : *StaticBackBufferStep >> 16;
-        BackBufferStep++;
-        StaticBackBufferStep++;
+            *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep : *StaticBackBufferStep;
+            *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep >> 8 : *StaticBackBufferStep >> 8;
+            *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep >> 16 : *StaticBackBufferStep >> 16;
+            BackBufferStep++;
+            StaticBackBufferStep++;
         }
         Framebuffer += (VbeModeInfo.width - w) * 3;
         BackBufferStep += (VbeModeInfo.width - w);
@@ -242,8 +286,8 @@ uint32_t LastMouseY = 0;
 void DrawPointerAt(uint32_t x, uint32_t y, int scale)
 {
 
-    rect A = { x, y, 8 * scale, 8 * scale };
-    rect B = { LastMouseX, LastMouseY, 8 * scale, 8 * scale};
+    rect A = {x, y, 8 * scale, 8 * scale};
+    rect B = {LastMouseX, LastMouseY, 8 * scale, 8 * scale};
     rect CoverRect;
     CoverRect = CombineRect(A, B);
     ClearRect(CoverRect.X, CoverRect.Y, CoverRect.W, CoverRect.H);
@@ -267,7 +311,6 @@ void DrawPointerAt(uint32_t x, uint32_t y, int scale)
     }
     UpdateRect(CoverRect.X, CoverRect.Y, CoverRect.W, CoverRect.H);
 
-
     LastMouseX = x;
     LastMouseY = y;
 }
@@ -285,37 +328,39 @@ void StartClickAnimation()
     ClickAnimation.y = MouseY;
     ClickAnimation.size = 1;
 }
-void ClickAnimationStep()
+rect SelectionPrev = {0, 0, 1, 1};
+void DrawSelection()
 {
-    if (ClickAnimation.size > 0)
+    if (!SelectState.selecting)
+        return;
+    rect MouseRect, OverlapRect;
+    MouseRect = GetBounding(MouseX, MouseY, SelectState.startX, SelectState.startY);
+    OverlapRect = CombineRect(MouseRect, SelectionPrev);
+    ClearRect(OverlapRect.X, OverlapRect.Y, OverlapRect.W, OverlapRect.H);
+    for (int i = MouseRect.X; i < MouseRect.X + MouseRect.W; i++)
     {
-        float T = (float)ClickAnimation.size / 100.0f;
-        for (int i = ClickAnimation.x - ClickAnimation.size / 4; i < ClickAnimation.x + ClickAnimation.size / 4; i++)
+        for (int j = MouseRect.Y; j < MouseRect.Y + MouseRect.H; j++)
         {
-            for (int j = ClickAnimation.y - ClickAnimation.size / 4; j < ClickAnimation.y + ClickAnimation.size / 4; j++)
-            {
-                if (i < 0)
-                    continue;
-                if (j < 0)
-                    continue;
-                if (i >= VESA_RES_X)
-                    continue;
-                if (j >= VESA_RES_Y)
-                    continue;
-                uint32_t Current = BackBuffer[i + j * VESA_RES_X];
-                uint8_t CurrentR = (Current & 0xFF);
-                uint8_t CurrentG = (Current & 0xFF00) >> 8;
-                uint8_t CurrentB = (Current & 0xFF0000) >> 16;
-                uint32_t NextR = 0xFF + T * (CurrentR - 0xFF);
-                uint32_t NextG = 0xFF + T * (CurrentG - 0xFF);
-                uint32_t NextB = 0xFF + T * (CurrentB - 0xFF);
-                BackBuffer[i + j * VESA_RES_X] = NextR | (NextG << 8) | (NextB << 16);
-            }
+            if (i < 0)
+                continue;
+            if (j < 0)
+                continue;
+            if (i >= VESA_RES_X)
+                continue;
+            if (j >= VESA_RES_Y)
+                continue;
+            uint32_t Current = (BackBuffer[i + j * VESA_RES_X] >= 0x01000000) ? BackBuffer[i + j * VESA_RES_X] : StaticBackBuffer[i + j * VESA_RES_X];
+            uint32_t CurrentR = (Current & 0xFF);
+            uint32_t CurrentG = (Current & 0xFF00) >> 8;
+            uint32_t CurrentB = (Current & 0xFF0000) >> 16;
+            uint32_t NextR = CurrentR;
+            uint32_t NextG = (CurrentG + 0xFF) / 2;
+            uint32_t NextB = (CurrentB + 0xFF) / 2;
+            BackBuffer[i + j * VESA_RES_X] = NextR | (NextG << 8) | (NextB << 16) | 0xFF000000;
         }
-        ClickAnimation.size++;
-        if (ClickAnimation.size == 100)
-            ClickAnimation.size = 0;
     }
+    UpdateRect(OverlapRect.X, OverlapRect.Y, OverlapRect.W, OverlapRect.H);
+    SelectionPrev = MouseRect;
 }
 
 void ProbeAllPCIDevices()
@@ -384,11 +429,17 @@ void ClickHandler()
     if (MouseLmbClicked == 1)
     {
         MouseLmbClicked = 0;
+        SelectState.selecting = 1;
+        SelectState.startX = MouseX;
+        SelectState.startY = MouseY;
         StartClickAnimation();
     }
     if (MouseRmbClicked == 1)
     {
+        ClearRect(SelectionPrev.X, SelectionPrev.Y, SelectionPrev.W, SelectionPrev.H);
+        UpdateRect(SelectionPrev.X, SelectionPrev.Y, SelectionPrev.W, SelectionPrev.H);
         MouseRmbClicked = 0;
+        SelectState.selecting = 0;
     }
 }
 void KeepMouseInScreen()
@@ -414,8 +465,7 @@ const char *Numst(int num)
 }
 void DrawToolBar()
 {
-    DrawRect(0, 0, VESA_RES_X, 12, 0xFF000000);
-    
+    DrawRect(0, 0, VESA_RES_X, 48, 0xFF000000);
 
     uint8_t second, minute, hour, day, weekday, month, year;
     GetRTC(&second, &minute, &hour, &day, &weekday, &month, &year);
@@ -424,8 +474,8 @@ void DrawToolBar()
     FormatWriteString(ClockBuffer, sizeof ClockBuffer, "%s, %s %d%s %d %d:%02d:%02d", WeekDayName(weekday), MonthName(month), day, Numst(day), 2000 + year, hour, minute, second);
 
     int RightOffset = FormatCStringLength(ClockBuffer) * 8;
-    DrawString(VESA_RES_X - RightOffset - 2, 2, ClockBuffer, 1, 0xFFFFFFFF);
-    UpdateRect(0, 0, VESA_RES_X, 12);
+    DrawString(VESA_RES_X / 2 - RightOffset - 2, 2, ClockBuffer, 1, 0x00FFFFFF);
+    UpdateRect(0, 0, VESA_RES_X, 48);
 }
 
 int IsMouseInRect(rect R)
@@ -461,7 +511,6 @@ int DrawPaintProgram(uint8_t *PixBuf, int PX, int PY, uint32_t W, uint32_t H, ui
     return Dirty;
 }
 
-
 void DrawImage(uint32_t x, uint32_t y, uint32_t resX, uint32_t resY, uint32_t *data)
 {
     for (int32_t Y = resY - 1; Y >= 0; Y--)
@@ -477,21 +526,20 @@ void DrawBackground(uint32_t x, uint32_t y, uint32_t resX, uint32_t resY, uint32
 {
     for (int32_t Y = targetresY - 1; Y >= 0; Y--)
     {
-        
+
         for (uint32_t X = 0; X < targetresX; X++)
         {
-            
+
             StaticSetPixel(X + x, Y + y, 0xFF000000 | *data++);
         }
-        
+
         data += resX - targetresX;
     }
 }
 
-
 void OS_Start()
 {
-
+    SelectState.selecting = 0;
     PIC_Init();
     PIC_SetMask(0xFFFF); // Disable all irqs
 
@@ -515,13 +563,15 @@ void OS_Start()
 
     uint32_t *Destination = (uint32_t *)0x5000000;
     uint8_t *Buf = (uint8_t *)0x4000000;
-    for (int I = 0; I < 16200; I++)
+    
+    
+    for (int I = 0; I < 70; I++)
     {
-        ReadATASector(Buf + I * 512, I);
+        ReadATASector(Font + I * 1024, I * 2, 2);
     }
-
     bmp_bitmap_info BMPInfo;
     BMP_Read(Buf, &BMPInfo, Destination);
+    
     char CmdLine[129] = {0};
     int CmdLineLen = 0;
 
@@ -534,10 +584,9 @@ void OS_Start()
 
     while (1)
     {
-        
+
         DrawToolBar();
 
-        
         CmdClear();
         CmdDraw(0xFFFFFFFF);
         DrawImage(VESA_RES_X - CONSOLE_RES_X, VESA_RES_Y - CONSOLE_RES_Y, CONSOLE_RES_X, CONSOLE_RES_Y, CmdDrawBuffer);
@@ -576,10 +625,9 @@ void OS_Start()
             }
         }
         ClickHandler();
-        ClickAnimationStep();
         KeepMouseInScreen();
+        DrawSelection();
         DrawPointerAt(MouseX, MouseY, 2);
-        
 
         if (OffsetX > 400)
             OffsetX = 0;
