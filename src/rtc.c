@@ -1,7 +1,7 @@
 #include "rtc.h"
 #include "io.h"
 
-uint8_t RtcRead(uint8_t reg)
+volatile uint8_t RtcRead(uint8_t reg)
 {
     IO_Out8(0x70, reg);
     return IO_In8(0x71);
@@ -10,7 +10,7 @@ static uint8_t BCDToInt(uint8_t BCD)
 {
     return ((BCD >> 4) & 0xF) * 10 + (BCD & 0xF);
 }  
-void GetRTC(uint8_t *second, uint8_t *minute, uint8_t *hour, uint8_t *day, uint8_t *weekday, uint8_t *month, uint8_t *year)
+volatile void GetRTC(uint8_t *second, uint8_t *minute, uint8_t *hour, uint8_t *day, uint8_t *weekday, uint8_t *month, uint8_t *year)
 {
     *second     = BCDToInt(RtcRead(0x00));
     *minute     = BCDToInt(RtcRead(0x02));

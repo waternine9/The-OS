@@ -19,34 +19,24 @@ mov bx, 0
 
 ; Check diff X
 mov ax, [VbeModeInfo.XResolution]
-sub ax, [.closestResX]
-; Taking absolute value then adding to accumulator
-mov cx, ax
-shr cx, 15
-xor ax, cx
-sub ax, cx
+; Adding to accumulator
 add bx, ax
 
 ; Check diff Y
 mov ax, [VbeModeInfo.YResolution]
-sub ax, [.closestResY]
-; Taking absolute value then adding to accumulator
-mov cx, ax
-shr cx, 15
-xor ax, cx
-sub ax, cx
+; Adding to accumulator
 add bx, ax
 
 cmp bx, [.closestAccum]
-jg .loop
+jl .loop
 
 mov [.closestAccum], bx
 mov ax, [VbeCurrentMode]
 mov [.closestModeNumber], ax
 mov ax, [VbeModeInfo.XResolution]
-mov [.closestResX], ax
+mov [VESA_RES_X], ax
 mov ax, [VbeModeInfo.YResolution]
-mov [.closestResY], ax
+mov [VESA_RES_Y], ax
 
 .loop:
 
@@ -76,37 +66,60 @@ cmp al, 24
 jne .loop
 
 mov ax, [VbeModeInfo.XResolution]
-cmp ax, 640
-jne .checkClosest
+cmp ax, 1920
+jg .loop
 
 mov ax, [VbeModeInfo.YResolution]
-cmp ax, 480
-jne .checkClosest
+cmp ax, 1080
+jg .loop
 
 ; Check if supports linear frame buffer
 mov ax, [VbeModeInfo.ModeAttributes]
 and ax, 0x90
 cmp ax, 0x90
 
-jne .checkClosest
+jne .loop
 
 ; Check if RGB
 mov ax, [VbeModeInfo.MemoryModel]
 cmp ax, 0x06
 
-jne .checkClosest
+jne .loop
 
-mov ax, [VbeCurrentMode]
-mov [.closestModeNumber], ax
+
+jmp .checkClosest
+
+
 
 .loop_done:
 
-; Set video mode IF FOUND
+
+; Set video mode
 mov bx, [.closestModeNumber]
-cmp bx, 0xFFFF
-je .done
+cmp bx, -1
+je .done_set_dummy
+
+mov ax, 0x4F01
+mov cx, [.closestModeNumber]
+mov di, VbeModeInfo
+int 0x10
 
 mov ax, 0x4F02
+or bx, 0x4000          
+mov di, 0
+int 0x10
+
+jmp .done
+
+.done_set_dummy
+
+mov ax, 0x4F01
+mov cx, 0x112
+mov di, VbeModeInfo
+int 0x10
+
+mov ax, 0x4F02
+mov bx, 0x112
 or bx, 0x4000          
 mov di, 0
 int 0x10
@@ -114,7 +127,10 @@ int 0x10
 .done:
 ret
 
-.closestResX: dw 0
-.closestResY: dw 0
-.closestAccum: dw 0xFFFF
+
+.closestAccum: dw 0x0
 .closestModeNumber: dw -1
+global VESA_RES_X
+global VESA_RES_Y
+VESA_RES_X: dw 0
+VESA_RES_Y: dw 0
