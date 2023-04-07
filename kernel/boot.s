@@ -22,19 +22,7 @@ Boot:
     ; NOTE: SETUP VBE
     jmp SetupVbe
     
-    
-
-
-DriveNumber db 0
-
-times 0x1BE-($ - $$) db 0
-PartitionEntry:
-    db 0x80, 0, 0, 0, 0, 0, 0, 1
-
-times 510-($-$$) db 0
-dw 0xAA55
-
-%include "kernel/vesa_vbe_setup.s"
+    %include "kernel/vesa_vbe_setup.s"
 
 SetupVbe:
     call VesaVbeSetup
@@ -82,6 +70,11 @@ GDTEnd:
 GDTDesc:
     .GDTSize dw GDTEnd - GDTStart ; GDT size 
     .GDTAddr dd GDTStart          ; GDT address
+
+DriveNumber db 0
+
+times 510-($-$$) db 0
+dw 0xAA55
 
 extern OS_Start
 
