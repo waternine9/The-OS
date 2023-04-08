@@ -1,9 +1,10 @@
 #include <stdint.h>
 #include "fonts/sysfont.h"
 #include "cmd.h"
-char* CmdTextBuffer = (char*)0x3000000;
+char CmdTextBufferArray[100000];
 
-char* CmdBufferEnd = (char*)0x3000000;
+char* CmdTextBuffer = CmdTextBufferArray;
+char* CmdBufferEnd = CmdTextBufferArray;
 
 int CmdBlinker = 0;
 

@@ -8,7 +8,7 @@ volatile void ATASetPIO()
 }
 volatile void ReadATASector(void* buff, uint32_t lba)
 {
-    IO_Out8(0x1F6, 0b11100000); // Set the drive and head number
+    IO_Out8(0x1F6, 0b11100000 | (lba >> 24)); // Set the drive and head number
     IO_Out8(0x1F2, 1); // Read 1 sector
     IO_Out8(0x1F3, lba & 0xFF); // Send first 8 bits of LBA
     IO_Out8(0x1F4, (lba >> 8) & 0xFF); // Send second 8 bits of LBA

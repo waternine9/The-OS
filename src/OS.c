@@ -51,6 +51,20 @@ rect CombineRect(rect a, rect b)
 uint32_t BackBuffer[1920 * 1080];
 uint32_t StaticBackBuffer[1920 * 1080];
 
+uint32_t Destination[1920 * 1080];
+uint8_t Buf[1920 * 1080 * 4];
+uint8_t Font[32 * 32 * (127 - 32)];
+
+rect RegisterRectArray[256];
+rect* RegisterRectPtr = RegisterRectArray;
+
+void RegisterRect(int x, int y, int w, int h)
+{
+    rect Rect = { x, y, w, h };
+    *RegisterRectPtr = Rect;
+    RegisterRectPtr++;
+}
+
 uint8_t Locked = 1;
 
 volatile void SetPixel(uint32_t x, uint32_t y, uint32_t color)
@@ -66,6 +80,42 @@ volatile void SetPixel(uint32_t x, uint32_t y, uint32_t color)
     if ((color >> 24) == 0)
         return;
     BackBuffer[x + y * VESA_RES_X] = color;
+}
+
+volatile void SetAlphaPixel(uint32_t x, uint32_t y, uint32_t color)
+{
+    if (x < 0)
+        return;
+    if (y < 0)
+        return;
+    if (x >= VESA_RES_X)
+        return;
+    if (y >= VESA_RES_Y)
+        return;
+    if ((color >> 24) == 0)
+        return;
+    uint32_t t = ((color >> 24)) << 8;
+    t /= 255;
+    uint32_t CurColor = (BackBuffer[x + y * VESA_RES_X] >= 0x01000000) ? BackBuffer[x + y * VESA_RES_X] : StaticBackBuffer[x + y * VESA_RES_X];
+    int32_t CurR = ((CurColor & 0xFF) << 8);
+    int32_t CurG = (((CurColor >> 8) & 0xFF) << 8);
+    int32_t CurB = (((CurColor >> 16) & 0xFF) << 8);
+    int32_t R = ((color & 0xFF) << 8);
+    int32_t G = (((color >> 8) & 0xFF) << 8);
+    int32_t B = (((color >> 16) & 0xFF) << 8);
+    int32_t addR = t * (R - CurR);
+    int32_t addG = t * (G - CurG);
+    int32_t addB = t * (B - CurB);
+    addR >>= 8;
+    addG >>= 8;
+    addB >>= 8;
+    int32_t InterpR = CurR + addR;
+    int32_t InterpG = CurG + addG;
+    int32_t InterpB = CurB + addB;
+    InterpR >>= 8;
+    InterpG >>= 8;
+    InterpB >>= 8;
+    BackBuffer[x + y * VESA_RES_X] = 0xFF000000 | (InterpB << 16) | (InterpG << 8) | InterpR;
 }
 
 volatile void StaticSetPixel(uint32_t x, uint32_t y, uint32_t color)
@@ -93,6 +143,18 @@ void DrawGlyph(int x, int y, char character, int scale, uint32_t color)
         }
     }
 }
+void DrawFontGlyph(int x, int y, char character, int scale, uint32_t color)
+{
+    color &= 0x00FFFFFF;
+    const uint8_t *glyph = Font + (character - 32) * 32 * 32;
+    for (int i = 0; i < 8 * scale; i++)
+    {
+        for (int j = 0; j < 8 * scale; j++)
+        {
+            SetAlphaPixel(i + x, j + y, ((uint32_t)glyph[i * 4 / scale + j * 4 / scale * 32] << 24) | color);
+        }
+    }
+}
 /* Returns Y stride */
 uint32_t DrawString(int x, int y, const char *s, int scale, uint32_t color)
 {
@@ -100,6 +162,24 @@ uint32_t DrawString(int x, int y, const char *s, int scale, uint32_t color)
     for (int i = 0; s[i]; i++)
     {
         DrawGlyph(x, y, s[i], scale, color);
+        x += 8 * scale;
+        if (x + 8 * scale > VESA_RES_X)
+        {
+            x = InitX;
+            y += 8 * scale + 4 * scale;
+        }
+    }
+    y += 8 * scale + 4 * scale;
+
+    return y - InitY;
+}
+/* Returns Y stride */
+uint32_t DrawFontString(int x, int y, const char *s, int scale, uint32_t color)
+{
+    int InitX = x, InitY = y;
+    for (int i = 0; s[i]; i++)
+    {
+        DrawFontGlyph(x, y, s[i], scale, color);
         x += 8 * scale;
         if (x + 8 * scale > VESA_RES_X)
         {
@@ -124,24 +204,26 @@ void DrawRect(int X, int Y, int W, int H, uint32_t Color)
         X = InitX;
     }
 }
+
+void DrawAlphaRect(int X, int Y, int W, int H, uint32_t Color)
+{
+    int InitX = X;
+    int X2 = X + W, Y2 = Y + H;
+    for (; Y < Y2; Y++)
+    {
+        for (; X < X2; X++)
+        {
+            SetAlphaPixel(X, Y, Color);
+        }
+        X = InitX;
+    }
+}
 volatile void ClearScreen()
 {
     uint32_t *FramebufferStep = BackBuffer;
     for (int i = 0; i < VESA_RES_Y * VESA_RES_X; i++)
     {
         *FramebufferStep++ = 0;
-    }
-}
-volatile void ClearRect(uint32_t x, uint32_t y, uint32_t w, uint32_t h)
-{
-    uint32_t *FramebufferStep = BackBuffer + x + y * VESA_RES_X;
-    for (int i = 0; i < h; i++)
-    {
-        for (int j = 0; j < w; j++)
-        {
-            *FramebufferStep++ = 0;
-        }
-        FramebufferStep += VESA_RES_X - w;
     }
 }
 volatile void UpdateScreen()
@@ -156,29 +238,40 @@ volatile void UpdateScreen()
         *Framebuffer++ = (BackBuffer[i] >= 0x01000000) ? BackBuffer[i] >> 16 : StaticBackBuffer[i] >> 16;
     }
 }
-volatile void UpdateRect(uint32_t x, uint32_t y, uint32_t w, uint32_t h)
+volatile void UpdateRegistered()
 {
-    uint8_t *Framebuffer = ((uint8_t *)VbeModeInfo.framebuffer) + (x + y * VESA_RES_X) * 3;
-
-    uint32_t *BackBufferStep = BackBuffer + (x + y * VESA_RES_X);
-    uint32_t *StaticBackBufferStep = StaticBackBuffer + (x + y * VESA_RES_X);
-    
-    for (int i = 0; i < h; i++)
+    rect* RegRectPtr = RegisterRectArray;
+    while (RegRectPtr < RegisterRectPtr)
     {
-        for (int j = 0; j < w; j++)
-        {
-        // NOTE: BackBuffer stores ARGB, with little endian its BGRA byte order.
+        rect CurRect = *RegRectPtr;
+        int x = CurRect.X;
+        int y = CurRect.Y;
+        int w = CurRect.W;
+        int h = CurRect.H;
+        uint8_t *Framebuffer = ((uint8_t *)VbeModeInfo.framebuffer) + (x + y * VESA_RES_X) * 3;
 
-        *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep : *StaticBackBufferStep;
-        *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep >> 8 : *StaticBackBufferStep >> 8;
-        *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep >> 16 : *StaticBackBufferStep >> 16;
-        BackBufferStep++;
-        StaticBackBufferStep++;
+        uint32_t *BackBufferStep = BackBuffer + (x + y * VESA_RES_X);
+        uint32_t *StaticBackBufferStep = StaticBackBuffer + (x + y * VESA_RES_X);
+        
+        for (int i = 0; i < h; i++)
+        {
+            for (int j = 0; j < w; j++)
+            {
+            // NOTE: BackBuffer stores ARGB, with little endian its BGRA byte order.
+
+            *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep : *StaticBackBufferStep;
+            *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep >> 8 : *StaticBackBufferStep >> 8;
+            *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep >> 16 : *StaticBackBufferStep >> 16;
+            BackBufferStep++;
+            StaticBackBufferStep++;
+            }
+            Framebuffer += (VbeModeInfo.width - w) * 3;
+            BackBufferStep += (VbeModeInfo.width - w);
+            StaticBackBufferStep += (VbeModeInfo.width - w);
         }
-        Framebuffer += (VbeModeInfo.width - w) * 3;
-        BackBufferStep += (VbeModeInfo.width - w);
-        StaticBackBufferStep += (VbeModeInfo.width - w);
+        RegRectPtr++;
     }
+    RegisterRectPtr = RegisterRectArray;
 }
 void DrawConsole(console *Console, int X, int Y, int Color)
 {
@@ -246,7 +339,6 @@ void DrawPointerAt(uint32_t x, uint32_t y, int scale)
     rect B = { LastMouseX, LastMouseY, 8 * scale, 8 * scale};
     rect CoverRect;
     CoverRect = CombineRect(A, B);
-    ClearRect(CoverRect.X, CoverRect.Y, CoverRect.W, CoverRect.H);
     for (int Y = 0; Y < 8 * scale; Y++)
     {
         uint8_t BlackRow = MousePointerBlack[Y / scale];
@@ -265,7 +357,7 @@ void DrawPointerAt(uint32_t x, uint32_t y, int scale)
             }
         }
     }
-    UpdateRect(CoverRect.X, CoverRect.Y, CoverRect.W, CoverRect.H);
+    RegisterRect(CoverRect.X, CoverRect.Y, CoverRect.W, CoverRect.H);
 
 
     LastMouseX = x;
@@ -412,20 +504,21 @@ const char *Numst(int num)
         return "rd";
     return "th";
 }
-void DrawToolBar()
+const char* Num2Str[100] = { "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99" };
+void DrawToolBar(int scale)
 {
-    DrawRect(0, 0, VESA_RES_X, 12, 0xFF000000);
+    DrawAlphaRect(0, 0, VESA_RES_X, 10 * scale, 0x77000000);
     
 
     uint8_t second, minute, hour, day, weekday, month, year;
     GetRTC(&second, &minute, &hour, &day, &weekday, &month, &year);
 
-    char ClockBuffer[128] = {0};
-    FormatWriteString(ClockBuffer, sizeof ClockBuffer, "%s, %s %d%s %d %d:%02d:%02d", WeekDayName(weekday), MonthName(month), day, Numst(day), 2000 + year, hour, minute, second);
+    char ClockBuffer[128] = { 0 };
+    FormatWriteString(ClockBuffer, sizeof ClockBuffer, "Today is %s", WeekDayName(weekday));// , MonthName(month), Num2Str[day], Numst(day), Num2Str[year], Num2Str[hour], Num2Str[minute], Num2Str[second]);
 
-    int RightOffset = FormatCStringLength(ClockBuffer) * 8;
-    DrawString(VESA_RES_X - RightOffset - 2, 2, ClockBuffer, 1, 0xFFFFFFFF);
-    UpdateRect(0, 0, VESA_RES_X, 12);
+    int RightOffset = FormatCStringLength(ClockBuffer) * 8 * scale;
+    DrawFontString(VESA_RES_X / 2 - RightOffset / 2 + 40, 2, ClockBuffer, scale, 0x00FFFFFF);
+    RegisterRect(0, 0, VESA_RES_X, 10 * scale);
 }
 
 int IsMouseInRect(rect R)
@@ -503,8 +596,6 @@ void OS_Start()
     IDT_Init();
     PIC_SetMask(0x0000); // Enable all irqs
 
-    ATASetPIO();
-
     KPrintf("Welcome to BananaOS\n-------------------\n");
     ProbeAllPCIDevices();
 
@@ -512,12 +603,14 @@ void OS_Start()
 
     int ConsoleColor = 0xFF000000;
     int OffsetX = 0;
-
-    uint32_t *Destination = (uint32_t *)0x5000000;
-    uint8_t *Buf = (uint8_t *)0x4000000;
-    for (int I = 0; I < 16200; I++)
+    int FontSize = 2 * (127 - 32);
+    for (int I = 0; I < FontSize; I++)
     {
-        ReadATASector(Buf + I * 512, I);
+        ReadATASector(Font + I * 512, I);
+    }
+    for (int I = FontSize; I < 16200 + FontSize; I++)
+    {
+        ReadATASector(Buf + (I - FontSize) * 512, I);
     }
 
     bmp_bitmap_info BMPInfo;
@@ -531,18 +624,19 @@ void OS_Start()
     keyboard Kbd = {0};
     keyboard_key Keys[32];
     uint32_t KeysCount = 0;
+    rect LastRect = { 0 };
 
     while (1)
     {
-        
-        DrawToolBar();
+        ClearScreen();
+        DrawToolBar(4);
 
         
         CmdClear();
         CmdDraw(0xFFFFFFFF);
         DrawImage(VESA_RES_X - CONSOLE_RES_X, VESA_RES_Y - CONSOLE_RES_Y, CONSOLE_RES_X, CONSOLE_RES_Y, CmdDrawBuffer);
 
-        UpdateRect(VESA_RES_X - CONSOLE_RES_X, VESA_RES_Y - CONSOLE_RES_Y, CONSOLE_RES_X, CONSOLE_RES_Y);
+        RegisterRect(VESA_RES_X - CONSOLE_RES_X, VESA_RES_Y - CONSOLE_RES_Y, CONSOLE_RES_X, CONSOLE_RES_Y);
 
         Keyboard_CollectEvents(&Kbd, Keys, 32, &KeysCount);
         for (int I = 0; I < KeysCount; I++)
@@ -580,8 +674,15 @@ void OS_Start()
         KeepMouseInScreen();
         DrawPointerAt(MouseX, MouseY, 2);
         
-
+        DrawFontString(MouseX, MouseY, "The quick brown fox jumps over the lazy dog", 2, 0x00FFFFFF);
+        int Len = FormatCStringLength("The quick brown fox jumps over the lazy dog");
+        rect CurrentRect = { MouseX, MouseY, Len * 32, 32 };
+        rect CRect;
+        CRect = CombineRect(CurrentRect, LastRect);
+        RegisterRect(CRect.X, CRect.Y, CRect.W, CRect.H);
+        LastRect = CurrentRect;
         if (OffsetX > 400)
             OffsetX = 0;
+        UpdateRegistered();
     }
 }
