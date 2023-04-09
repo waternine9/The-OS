@@ -5,7 +5,7 @@ import sys
 pygame.init()
 
 # Constants
-FONT_FILE = "src/fonts/Monaco.ttf"  # Replace with the path to your font file
+FONT_FILE = "src/fonts/ApercuMonoProLight.ttf"  # Replace with the path to your font file
 FONT_SIZE = 32
 OUTPUT_FILE = "font.bin"
 CHARACTERS = [chr(i) for i in range(32, 127)]  # ASCII characters from 32 to 126
@@ -13,8 +13,28 @@ CHARACTERS = [chr(i) for i in range(32, 127)]  # ASCII characters from 32 to 126
 # Load the font
 font = pygame.font.Font(FONT_FILE, FONT_SIZE)
 
+# Load sys icons
+cmdicon = pygame.image.load("cmdicon.png")
+
 # Create a surface to render the characters
 surface = pygame.Surface((32, 32), pygame.SRCALPHA)
+
+# Print sys icons
+print("uint32_t CmdIcon[32 * 32] = {")
+
+# Clear the surface
+surface.fill((0, 0, 0, 0))
+
+# Draw the icon on the surface
+surface.blit(cmdicon, (0, 0))
+
+# Write the alpha values to the output file
+for y in range(32):
+    for x in range(32):
+        alpha = surface.get_at((x, y))
+        
+        print(f"{(alpha.a << 24) + (alpha.r << 16) + (alpha.g << 8) + alpha.b}, ", end="")
+    print("\n")
 
 # Open the output file
 with open(OUTPUT_FILE, "wb") as output:

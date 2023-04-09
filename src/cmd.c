@@ -13,6 +13,7 @@ extern uint16_t VESA_RES_Y;
 
 uint32_t CmdDrawBuffer[1920 * 1080];
 
+
 volatile void CmdSetPixel(uint32_t x, uint32_t y, uint32_t color)
 {
     if (x < 0)

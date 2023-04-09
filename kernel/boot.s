@@ -12,7 +12,7 @@ Boot:
     
     ; NOTE: Load the next sector into memory
     mov   ah, 0x02     ; Function 02h of Int 13h is used for reading sectors
-    mov   al, 40       ; Read 40 sectors
+    mov   al, 40       ; Read 255 sectors
     mov   ch, 0x00     ; Cylinder 0
     mov   cl, 0x02     ; Sector 2
     mov   dh, 0x00     ; Head 0
@@ -72,6 +72,11 @@ GDTDesc:
     .GDTAddr dd GDTStart          ; GDT address
 
 DriveNumber db 0
+
+times 0x1BE-($-$$) db 0
+db 0x80, 0, 1, 0, 0x0B, 0xFF, 0xFF, 0xFF
+dd 1
+dd 0xFFFFFFFF
 
 times 510-($-$$) db 0
 dw 0xAA55
