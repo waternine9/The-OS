@@ -15,26 +15,40 @@ font = pygame.font.Font(FONT_FILE, FONT_SIZE)
 
 # Load sys icons
 cmdicon = pygame.image.load("cmdicon.png")
+txticon = pygame.image.load("txticon.png")
 
 # Create a surface to render the characters
 surface = pygame.Surface((32, 32), pygame.SRCALPHA)
 
-# Print sys icons
-print("uint32_t CmdIcon[32 * 32] = {")
+with open("sysicons.bin", "wb") as output:
 
-# Clear the surface
-surface.fill((0, 0, 0, 0))
+    # Clear the surface
+    surface.fill((0, 0, 0, 0))
 
-# Draw the icon on the surface
-surface.blit(cmdicon, (0, 0))
+    # Draw the icon on the surface
+    surface.blit(cmdicon, (0, 0))
 
-# Write the alpha values to the output file
-for y in range(32):
-    for x in range(32):
-        alpha = surface.get_at((x, y))
-        
-        print(f"{(alpha.a << 24) + (alpha.r << 16) + (alpha.g << 8) + alpha.b}, ", end="")
-    print("\n")
+    # Write the color values to the output file
+    for y in range(32):
+        for x in range(32):
+            color = surface.get_at((x, y))
+
+
+            output.write(bytes([color.r, color.g, color.b, color.a]))
+
+        # Clear the surface
+    surface.fill((0, 0, 0, 0))
+
+    # Draw the icon on the surface
+    surface.blit(txticon, (0, 0))
+
+    # Write the color values to the output file
+    for y in range(32):
+        for x in range(32):
+            color = surface.get_at((x, y))
+
+
+            output.write(bytes([color.r, color.g, color.b, color.a]))
 
 # Open the output file
 with open(OUTPUT_FILE, "wb") as output:
@@ -63,8 +77,9 @@ with open(OUTPUT_FILE, "wb") as output:
 with open("background.bmp", "rb") as _bg:
 
     with open("font.bin", "rb") as _font:
-        with open("resources.bin", "wb") as out:
-            out.write(_font.read() + _bg.read())
+        with open("sysicons.bin", "rb") as _icons:
+            with open("resources.bin", "wb") as out:
+                out.write(_icons.read() + _font.read() + _bg.read())
         
 # Quit Pygame
 pygame.quit()

@@ -7,7 +7,7 @@
 extern uint32_t CmdDrawBuffer[1920 * 1080];
 
 void InitCMD();
-void CmdAddChar(char thechar);
+void CmdAddChar(uint8_t thechar);
 void CmdBackspace();
 void CmdClear();
 void CmdDraw(uint32_t color);

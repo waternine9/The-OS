@@ -16,22 +16,7 @@
 #include "drivers/keyboard/keyboard.h"
 #include "drivers/mouse/mouse.h"
 #include "ps2help.h"
-#include "icons.h"
-
-typedef struct
-{
-    int X, Y, W, H;
-} rect;
-
-typedef struct
-{
-    rect* Rect;
-    uint32_t* Framebuffer;
-    uint32_t* Icon32;
-    uint32_t* Events;
-    uint8_t Free;
-    uint8_t Hidden;
-} window;
+#include "OS.h"
 
 extern click_animation ClickAnimation;
 extern uint8_t MousePointerBlack[8];
@@ -55,18 +40,19 @@ rect CombineRect(rect a, rect b)
     out.X = MIN(a.X, b.X);
     out.Y = MIN(a.Y, b.Y);
     out.W = MAX(a.X + a.W, b.X + b.W) - out.X + 1;
-    out.H = MAX(a.Y + a.H, b.Y + b.H) - out.Y + 1; 
+    out.H = MAX(a.Y + a.H, b.Y + b.H) - out.Y + 1;
     return out;
 }
 
 uint8_t IsInRect(rect _rect, int x, int y)
 {
-    if (x > _rect.X && y > _rect.Y && x < _rect.X + _rect.W && y < _rect.Y + _rect.H) return 1;
+    if (x > _rect.X && y > _rect.Y && x < _rect.X + _rect.W && y < _rect.Y + _rect.H)
+        return 1;
     return 0;
 }
 
 keyboard_key Keys[32];
-keyboard Kbd = { 0 };
+keyboard Kbd = {0};
 
 uint32_t BackBuffer[1920 * 1080];
 uint32_t StaticBackBuffer[1920 * 1080];
@@ -74,11 +60,12 @@ uint32_t StaticBackBuffer[1920 * 1080];
 uint32_t Destination[1920 * 1080];
 uint8_t Buf[1920 * 1080 * 4];
 uint8_t Font[32 * 32 * (127 - 32)];
+uint8_t Icons[32 * 32 * 4 * NUM_ICONS];
 
 uint32_t WinBuffer0[100 * 100] = {0xFFFFFFFF};
 
 rect RegisterRectArray[256];
-rect* RegisterRectPtr = RegisterRectArray;
+rect *RegisterRectPtr = RegisterRectArray;
 
 window RegisteredWinsArray[256];
 uint32_t RegisteredWinsNum = 0;
@@ -86,43 +73,66 @@ uint32_t RegisteredWinsNum = 0;
 window CmdWindow;
 rect CmdWindowRect;
 
+extern void CmdProc(int, int, struct _window*);
+
 void RegisterRect(int x, int y, int w, int h)
 {
-    rect Rect = { x, y, w, h };
+    rect Rect = {x, y, w, h};
     *RegisterRectPtr = Rect;
     RegisterRectPtr++;
 }
 
-void RegisterWindow(window _window)
+window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint32_t* Icon32, uint32_t *Events, uint32_t* Framebuffer)
 {
+    window Win;
+    Win.Free = 0;
+    Win.Hidden = 0;
+    Win.Rect = Rectptr;
+    Win.WinProc = WinProc;
+    Win.Icon32 = Icon32;
+    Win.Events = Events;
+    Win.Framebuffer = Framebuffer;
+    return &RegisteredWinsArray[RegisterWindow(Win)];
+}
+
+int RegisterWindow(window _Window)
+{
+    _Window.ChQueueNum = 0;
+    for (int i = 0;i < 256;i++)
+    {
+        _Window.InCharacterQueue[i] = 0;
+    }
+
     uint32_t WinsNum = 0;
     while (WinsNum < RegisteredWinsNum)
     {
         if (RegisteredWinsArray[WinsNum].Free)
         {
-            RegisteredWinsArray[WinsNum] = _window;
-            return;
+            RegisteredWinsArray[WinsNum] = _Window;
+            return WinsNum;
         }
         WinsNum++;
     }
-    
-    RegisteredWinsArray[RegisteredWinsNum] = _window;
+
+    RegisteredWinsArray[RegisteredWinsNum] = _Window;
     RegisteredWinsNum++;
+    return RegisteredWinsNum - 1;
 }
 
-void DeleteWindow(window _window)
+void DestroyWindow(window* _window)
 {
     uint32_t WinsNum = 0;
     while (WinsNum < RegisteredWinsNum)
     {
-        if (RegisteredWinsArray[WinsNum].Framebuffer == _window.Framebuffer)
+        if (&RegisteredWinsArray[WinsNum] == _window)
         {
+            rect WinRect = *_window->Rect;
+            RegisterRect(WinRect.X - 10, WinRect.Y - 40, WinRect.W + 20, WinRect.H + 80);
+            RegisteredWinsArray[WinsNum].Free = 1;
             if (WinsNum == RegisteredWinsNum - 1)
             {
                 RegisteredWinsNum--;
-                return;
             }
-            RegisteredWinsArray[WinsNum].Free = 1;
             return;
         }
         WinsNum++;
@@ -182,6 +192,42 @@ volatile void SetAlphaPixel(uint32_t x, uint32_t y, uint32_t color)
     BackBuffer[x + y * VESA_RES_X] = 0xFF000000 | (InterpB << 16) | (InterpG << 8) | InterpR;
 }
 
+volatile void SetAlphaPixelOnto(uint32_t x, uint32_t y, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY)
+{
+    if (x < 0)
+        return;
+    if (y < 0)
+        return;
+    if (x >= VESA_RES_X)
+        return;
+    if (y >= VESA_RES_Y)
+        return;
+    if ((color >> 24) == 0)
+        return;
+    uint32_t t = ((color >> 24)) << 8;
+    t /= 255;
+    uint32_t CurColor = onto[x + y * resX];
+    int32_t CurR = ((CurColor & 0xFF) << 8);
+    int32_t CurG = (((CurColor >> 8) & 0xFF) << 8);
+    int32_t CurB = (((CurColor >> 16) & 0xFF) << 8);
+    int32_t R = ((color & 0xFF) << 8);
+    int32_t G = (((color >> 8) & 0xFF) << 8);
+    int32_t B = (((color >> 16) & 0xFF) << 8);
+    int32_t addR = t * (R - CurR);
+    int32_t addG = t * (G - CurG);
+    int32_t addB = t * (B - CurB);
+    addR >>= 8;
+    addG >>= 8;
+    addB >>= 8;
+    int32_t InterpR = CurR + addR;
+    int32_t InterpG = CurG + addG;
+    int32_t InterpB = CurB + addB;
+    InterpR >>= 8;
+    InterpG >>= 8;
+    InterpB >>= 8;
+    onto[x + y * resX] = 0xFF000000 | (InterpB << 16) | (InterpG << 8) | InterpR;
+}
+
 volatile void StaticSetPixel(uint32_t x, uint32_t y, uint32_t color)
 {
     if (x < 0)
@@ -216,6 +262,18 @@ void DrawFontGlyph(int x, int y, char character, int scale, uint32_t color)
         for (int j = 0; j < 8 * scale; j++)
         {
             SetAlphaPixel(i + x, j + y, ((uint32_t)glyph[i * 4 / scale + j * 4 / scale * 32] << 24) | color);
+        }
+    }
+}
+void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY)
+{
+    color &= 0x00FFFFFF;
+    const uint8_t *glyph = Font + (character - 32) * 32 * 32;
+    for (int i = 0; i < 8 * scale; i++)
+    {
+        for (int j = 0; j < 8 * scale; j++)
+        {
+            SetAlphaPixelOnto(i + x, 8 * scale - j + y, ((uint32_t)glyph[i * 4 / scale + j * 4 / scale * 32] << 24) | color, onto, resX, resY);
         }
     }
 }
@@ -271,22 +329,22 @@ void DrawRect(int X, int Y, int W, int H, uint32_t Color)
 
 void DrawDragBar(int X, int Y, int W, int H)
 {
-    for (int _Y = Y;_Y < _Y + H;_Y++)
+    for (int _Y = Y; _Y < Y + H; _Y++)
     {
-        uint8_t Counter = (Y % 2) ? 2 : 0;
-        for (int _X = X;_X < W;_X++)
+        uint8_t Counter = (_Y % 2) ? 1 : 0;
+        for (int _X = X; _X < X + W; _X++)
         {
             if (Counter == 2)
             {
                 SetPixel(_X, _Y, 0xFF444444);
-                Counter = 0;   
+                Counter = 0;
             }
             else
             {
                 SetPixel(_X, _Y, 0xFFBBBBBB);
                 Counter++;
             }
-        }   
+        }
     }
     RegisterRect(X, Y, W, H);
 }
@@ -308,18 +366,17 @@ void DrawOutline(int X, int Y, int W, int H, int thickness)
 {
     while (thickness--)
     {
-        for (int _X = X - thickness;_X < X + W + thickness;_X++)
+        for (int _X = X - thickness; _X < X + W + thickness; _X++)
         {
             SetAlphaPixel(_X, Y - thickness, 0xFFAAAAAA);
             SetAlphaPixel(_X, Y + H + thickness, 0xFF444444);
         }
-        for (int _Y = Y - thickness;_Y < Y + H + thickness;_Y++)
+        for (int _Y = Y - thickness; _Y < Y + H + thickness; _Y++)
         {
             SetAlphaPixel(X - thickness, _Y, 0xFFAAAAAA);
             SetAlphaPixel(X + W + thickness, _Y, 0xFF444444);
         }
     }
-    RegisterRect(X - thickness * 2, Y - thickness * 2, W + thickness * 4, H + thickness * 4);
 }
 volatile void ClearScreen()
 {
@@ -348,7 +405,8 @@ uint32_t CountWindows()
     uint32_t WinsNum = 0;
     while (WinsNum < RegisteredWinsNum)
     {
-        if (!RegisteredWinsArray[WinsNum].Free) Num++;
+        if (!RegisteredWinsArray[WinsNum].Free)
+            Num++;
         WinsNum++;
     }
     return Num;
@@ -356,7 +414,7 @@ uint32_t CountWindows()
 
 volatile void RenderDynamic()
 {
-    // First, blit all windows 
+    // First, blit all windows
     uint32_t WinsNum = 0;
     uint32_t TaskbarLen = CountWindows() * 32;
     while (WinsNum < RegisteredWinsNum)
@@ -380,18 +438,18 @@ volatile void RenderDynamic()
             continue;
         }
 
-        DrawOutline(Win.Rect->X, Win.Rect->Y, Win.Rect->W, Win.Rect->H, 4);
+        DrawOutline(Win.Rect->X, Win.Rect->Y - 10, Win.Rect->W, Win.Rect->H + 10, 4);
+        DrawDragBar(Win.Rect->X, Win.Rect->Y - 10, Win.Rect->W, 10);
+        RegisterRect(Win.Rect->X - 4, Win.Rect->Y - 14, Win.Rect->W + 8, Win.Rect->H + 18);
         DrawImage(Win.Rect->X, Win.Rect->Y, Win.Rect->W, Win.Rect->H, Win.Framebuffer);
-        
-        
-        
 
         WinsNum++;
     }
 
+    KeepMouseInScreen();
     DrawPointerAt(MouseX, MouseY, 1);
 
-    rect* RegRectPtr = RegisterRectArray;
+    rect *RegRectPtr = RegisterRectArray;
     while (RegRectPtr < RegisterRectPtr)
     {
         rect CurRect = *RegRectPtr;
@@ -403,18 +461,18 @@ volatile void RenderDynamic()
 
         uint32_t *BackBufferStep = BackBuffer + (x + y * VESA_RES_X);
         uint32_t *StaticBackBufferStep = StaticBackBuffer + (x + y * VESA_RES_X);
-        
+
         for (int i = 0; i < h; i++)
         {
             for (int j = 0; j < w; j++)
             {
-            // NOTE: BackBuffer stores ARGB, with little endian its BGRA byte order.
+                // NOTE: BackBuffer stores ARGB, with little endian its BGRA byte order.
 
-            *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep : *StaticBackBufferStep;
-            *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep >> 8 : *StaticBackBufferStep >> 8;
-            *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep >> 16 : *StaticBackBufferStep >> 16;
-            BackBufferStep++;
-            StaticBackBufferStep++;
+                *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep : *StaticBackBufferStep;
+                *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep >> 8 : *StaticBackBufferStep >> 8;
+                *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep >> 16 : *StaticBackBufferStep >> 16;
+                BackBufferStep++;
+                StaticBackBufferStep++;
             }
             Framebuffer += (VbeModeInfo.width - w) * 3;
             BackBufferStep += (VbeModeInfo.width - w);
@@ -480,13 +538,13 @@ void DrawBackground(uint32_t x, uint32_t y, uint32_t resX, uint32_t resY, uint32
 {
     for (int32_t Y = targetresY - 1; Y >= 0; Y--)
     {
-        
+
         for (uint32_t X = 0; X < targetresX; X++)
         {
-            
+
             StaticSetPixel(X + x, Y + y, 0xFF000000 | *data++);
         }
-        
+
         data += resX - targetresX;
     }
 }
@@ -523,8 +581,8 @@ uint32_t LastMouseY = 0;
 void DrawPointerAt(uint32_t x, uint32_t y, int scale)
 {
 
-    rect A = { x, y, 8 * scale, 8 * scale };
-    rect B = { LastMouseX, LastMouseY, 8 * scale, 8 * scale};
+    rect A = {x, y, 8 * scale, 8 * scale};
+    rect B = {LastMouseX, LastMouseY, 8 * scale, 8 * scale};
     rect CoverRect;
     CoverRect = CombineRect(A, B);
     for (int Y = 0; Y < 8 * scale; Y++)
@@ -546,7 +604,6 @@ void DrawPointerAt(uint32_t x, uint32_t y, int scale)
         }
     }
     RegisterRect(CoverRect.X, CoverRect.Y, CoverRect.W, CoverRect.H);
-
 
     LastMouseX = x;
     LastMouseY = y;
@@ -630,36 +687,58 @@ void BringWindowToFront(uint32_t WinId)
 
 void WinLmbHandler()
 {
+    if (IsMouseMovingWin != -1)
+    {
+        IsMouseMovingWin = -1;
+        return;
+    }
     uint32_t TaskbarLen = CountWindows() * 32;
     int32_t WinsNum = RegisteredWinsNum - 1;
     while (WinsNum >= 0)
     {
         window Win = RegisteredWinsArray[WinsNum];
+        rect WinRect = *Win.Rect;
         if (Win.Free)
-        {   
+        {
             WinsNum--;
             continue;
         }
-        rect WinTaskRect = { VESA_RES_X / 2 - TaskbarLen / 2 + WinsNum * 32 + 32, VESA_RES_Y - 40, 32, 32 };
+        
+        rect WinTaskRect = {VESA_RES_X / 2 - TaskbarLen / 2 + WinsNum * 32 + 32, VESA_RES_Y - 40, 32, 32};
         if (IsInRect(WinTaskRect, MouseX, MouseY))
         {
             BringWindowToFront(WinsNum);
             RegisteredWinsArray[WinsNum].Hidden = 0;
         }
-        if (IsInRect(*Win.Rect, MouseX, MouseY))
+        if (Win.Hidden)
+        {
+            WinsNum--;
+            continue;
+        }
+        if (IsInRect(WinRect, MouseX, MouseY))
         {
 
-            BringWindowToFront(WinsNum);  
+            BringWindowToFront(WinsNum);
             *Win.Events |= 1;
             return;
         }
+        WinRect.Y -= 14;
+        WinRect.H = 14;
+
+
+        if (IsInRect(WinRect, MouseX, MouseY))
+        {
+            IsMouseMovingWin = WinsNum;
+            return;
+        }
+
         WinsNum--;
     }
 }
 int32_t LastMoveMouseX, LastMoveMouseY;
 void MoveWinHandler()
 {
-    if (IsMouseMovingWin > 0)
+    if (IsMouseMovingWin != -1)
     {
 
         rect OldRect = *RegisteredWinsArray[IsMouseMovingWin].Rect;
@@ -669,6 +748,8 @@ void MoveWinHandler()
         RegisteredWinsArray[IsMouseMovingWin].Rect->Y += DiffY;
         rect NewRect = *RegisteredWinsArray[IsMouseMovingWin].Rect;
         rect Combined;
+        OldRect.Y -= 10;
+        OldRect.H += 10;
         Combined = CombineRect(OldRect, NewRect);
         RegisterRect(Combined.X - 5, Combined.Y - 5, Combined.W + 10, Combined.H + 10);
     }
@@ -708,7 +789,7 @@ const char *Numst(int num)
         return "rd";
     return "th";
 }
-const char* Num2Str[100] = { "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99" };
+const char *Num2Str[100] = {"00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99"};
 void DrawToolBar(int scale)
 {
     DrawAlphaRect(0, VESA_RES_Y - 25 * scale, VESA_RES_X, 25 * scale, 0x77000000);
@@ -720,10 +801,13 @@ int IsMouseInRect(rect R)
     return MouseX > R.X && MouseY > R.Y && MouseX <= (R.X + R.W) && MouseY <= (R.Y + R.H);
 }
 
-
-
-
-
+void UpdateWinProcs()
+{
+    for (int i = 0;i < RegisteredWinsNum;i++)
+    {
+        (*RegisteredWinsArray[i].WinProc)(MouseX, MouseY, &RegisteredWinsArray[i]);
+    }
+}
 
 void OS_Start()
 {
@@ -744,15 +828,26 @@ void OS_Start()
     int ConsoleColor = 0xFF000000;
     int OffsetX = 0;
     int FontSize = 2 * (127 - 32);
-    for (int I = 0; I < FontSize; I++)
+    int IconsSize = 2 * 4 * NUM_ICONS;
+    int J = 0;
+    for (int I = 0; I < IconsSize; I++)
     {
-        ReadATASector(Font + I * 512, I);
+        ReadATASector(Icons + J * 512, I);
+        J++;
     }
-    for (int I = FontSize; I < 16200 + FontSize; I++)
+    J = 0;
+    for (int I = IconsSize; I < FontSize + IconsSize; I++)
     {
-        ReadATASector(Buf + (I - FontSize) * 512, I);
+        ReadATASector(Font + J * 512, I);
+        J++;
     }
-    
+    J = 0;
+    for (int I = FontSize + IconsSize; I < 16200 + FontSize + IconsSize; I++)
+    {
+        ReadATASector(Buf + J * 512, I);
+        J++;
+    }
+
     bmp_bitmap_info BMPInfo;
     BMP_Read(Buf, &BMPInfo, Destination);
     char CmdLine[129] = {0};
@@ -762,81 +857,61 @@ void OS_Start()
     DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, Destination);
     UpdateScreen();
     uint32_t KeysCount = 0;
-    rect LastRect = { 0 };
+    rect LastRect = {0};
 
     CmdWindowRect.X = 400;
     CmdWindowRect.Y = 400;
     CmdWindowRect.W = CONSOLE_RES_X;
     CmdWindowRect.H = CONSOLE_RES_Y;
     CmdWindow.Rect = &CmdWindowRect;
-    
+
     CmdWindow.Framebuffer = CmdDrawBuffer;
     CmdWindow.Free = 0;
     CmdWindow.Hidden = 0;
-    CmdWindow.Icon32 = CmdIcon;
-
-    window TestWindow;
-    rect TestRect;
-    TestRect.X = 450;
-    TestRect.Y = 450;
-    TestRect.W = 200;
-    TestRect.H = 200;
-    TestWindow.Free = 0;
-    TestWindow.Hidden = 0;
-
-    TestWindow.Framebuffer = WinBuffer0;
-    TestWindow.Icon32 = 0x4000000;
-    TestWindow.Rect = &TestRect;
+    CmdWindow.Icon32 = Icons;
+    CmdWindow.WinProc = &CmdProc;
 
     RegisterWindow(CmdWindow);
-    RegisterWindow(TestWindow);
-
-    
 
     while (1)
     {
         ClearScreen();
         DrawToolBar(2);
 
-        CmdClear();
-        CmdDraw(0xFFFFFFFF);
-
         Keyboard_CollectEvents(&Kbd, Keys, 32, &KeysCount);
         for (int I = 0; I < KeysCount; I++)
         {
             if (!Keys[I].Released)
             {
-                if (Keys[I].Scancode == KEY_BACKSPACE)
+                if (RegisteredWinsNum != 0)
                 {
-                    if (CmdLineLen > 0)
+                    if (Keys[I].Scancode == KEY_BACKSPACE)
                     {
-                        CmdBackspace();
-                        CmdLineLen--;
+                        window* Win = &RegisteredWinsArray[RegisteredWinsNum - 1];
+                        if (Win->ChQueueNum < 256)
+                        {
+                            Win->InCharacterQueue[Win->ChQueueNum] = 1 << 8;
+                            Win->ChQueueNum++;
+                        }
                     }
-                }
-
-                if (Keys[I].ASCII)
-                {
-                    if (CmdLineLen < 128 && RegisteredWinsArray[RegisteredWinsNum - 1].Framebuffer == CmdDrawBuffer)
+                    if (Keys[I].ASCII)
                     {
-                        KPrintf("%c", Keys[I].ASCII);
-                        CmdAddChar(Keys[I].ASCII);
-                        CmdLine[CmdLineLen++] = Keys[I].ASCII;
+                        
+                        window* Win = &RegisteredWinsArray[RegisteredWinsNum - 1];
+                        if (Win->ChQueueNum < 256)
+                        {
+                            Win->InCharacterQueue[Win->ChQueueNum] = Keys[I].ASCII;
+                            Win->ChQueueNum++;
+                        }
                     }
-                }
-                if (Keys[I].ASCII == '\n')
-                {
-                    CmdLine[CmdLineLen] = 0;
-                    Script.Source = CmdLine;
-                    Bee_ExecuteBatchScript(&Script);
-                    CmdLineLen = 0;
                 }
             }
+            
         }
-        MoveWinHandler();
-        ClickHandler();
         KeepMouseInScreen();
-
+        MoveWinHandler();
+        UpdateWinProcs();
+        ClickHandler();
 
         if (OffsetX > 400)
             OffsetX = 0;
