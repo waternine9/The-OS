@@ -1,1 +1,1 @@
-qemu-system-x86_64 -hda resources.bin -fda bin/boot.img
+qemu-system-x86_64 -hda bin/boot.img -cpu host -enable-kvm

@@ -1,6 +1,8 @@
 [BITS 16]
 section .boot
 
+extern ReadATASector
+
 Boot:
     ; NOTE: At boot the boot drive number is stored in DL,
     ;       Preserve it for later 
@@ -10,15 +12,6 @@ Boot:
     mov   ax, 0x2403
     int   0x15
     
-    ; NOTE: Load the next sector into memory
-    mov   ah, 0x02     ; Function 02h of Int 13h is used for reading sectors
-    mov   al, 40       ; Read 255 sectors
-    mov   ch, 0x00     ; Cylinder 0
-    mov   cl, 0x02     ; Sector 2
-    mov   dh, 0x00     ; Head 0
-    mov   bx, 0x7E00   ; Destination address is 0000:7E00
-    int   0x13         ; Call the disk interrupt to read the sector
-    
     ; NOTE: SETUP VBE
     jmp SetupVbe
     
@@ -26,7 +19,8 @@ Boot:
 
 SetupVbe:
     call VesaVbeSetup
-    
+    mov eax, [VbeModeInfo.PhysBasePtr]
+    mov [PhysBasePtr], eax
     ; NOTE: Load GDT and activate protected mode
     cli
     lgdt  [GDTDesc]
@@ -45,6 +39,26 @@ After:
     mov   fs, ax
     mov   gs, ax
     mov   ss, ax
+    mov edi, 0x7E00
+    mov ecx, 1
+
+    
+
+LoadSectors:
+    push edi
+    push ecx
+    call LoadATASectorASM
+    pop ecx
+    pop edi
+    
+    add edi, 512
+    inc ecx
+    cmp ecx, 16532
+
+    jl LoadSectors
+
+    mov eax, [PhysBasePtr]
+    mov [VbeModeInfo.PhysBasePtr], eax
     
     ; NOTE: `Start` is the actual starting point of the code, starts at 0x7E00
     jmp   Start
@@ -71,12 +85,76 @@ GDTDesc:
     .GDTSize dw GDTEnd - GDTStart ; GDT size 
     .GDTAddr dd GDTStart          ; GDT address
 
+global DriveNumber
 DriveNumber db 0
+
+BsyBit:
+    mov dx, 0x1F7
+    .bruh:
+
+    in al, dx
+
+    test al, 0x80
+    jnz .bruh
+    ret 
+
+SetupPIO:
+    call BsyBit
+    mov dx, 0x1F7
+    mov al, 0xEF
+    out dx, al
+    mov dx, 0x1F2
+    mov al, 0x08
+    out dx, al
+    call BsyBit
+    ret
+
+
+; ecx = LBA
+; edi = Destination
+LoadATASectorASM:
+    and ecx, 0x0FFFFFFF
+    mov eax, ecx
+    shr eax, 24
+    or al, 0b11100000
+    mov dl, [DriveNumber]
+    shl dl, 4
+    or al, dl
+    mov edx, 0x1F6
+    out dx, al
+    mov edx, 0x1F2
+    
+    mov al, 1
+    out dx, al
+    mov eax, ecx
+    mov edx, 0x1F3
+    out dx, al
+    mov eax, ecx
+    shr eax, 8
+    mov edx, 0x1F4
+    out dx, al
+    mov eax, ecx
+    shr eax, 16
+    mov edx, 0x1F5
+    out dx, al
+    mov edx, 0x1F7
+    mov al, 0x20 ; Read with retry
+    out dx, al
+.wait_drq_set:
+    in al, dx
+    test al, 8
+    jz .wait_drq_set
+    mov ecx, 256
+    mov edx, 0x1F0
+    rep insw
+    ret
+PhysBasePtr: dd 0
 
 times 0x1BE-($-$$) db 0
 db 0x80, 0, 1, 0, 0x0B, 0xFF, 0xFF, 0xFF
 dd 1
 dd 0xFFFFFFFF
+
 
 times 510-($-$$) db 0
 dw 0xAA55
@@ -84,7 +162,6 @@ dw 0xAA55
 extern OS_Start
 
 Start:
-    sti
     call OS_Start
     cli
     hlt
@@ -93,6 +170,14 @@ align 16
 %include "kernel/vesa_vbe_setup_vars.s"
 %include "kernel/irq_handlers.s"
 
+global ResourcesAt
+ResourcesAt:
+incbin "resources.bin"
+
+global IsFirstTime
+IsFirstTime
+db 1
+times 511 db 0
 
 section .text
 

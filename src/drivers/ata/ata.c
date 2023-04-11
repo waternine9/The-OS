@@ -1,4 +1,7 @@
 #include "../../io.h"
+
+extern uint8_t DriveNumber;
+
 volatile void ATASetPIO()
 {
     while (IO_In8(0x1F7) & 0x80); // Wait for the BSY bit to be cleared   
@@ -8,7 +11,7 @@ volatile void ATASetPIO()
 }
 volatile void ReadATASector(void* buff, uint32_t lba)
 {
-    IO_Out8(0x1F6, 0b11100000 | (lba >> 24)); // Set the drive and head number
+    IO_Out8(0x1F6, 0b11100000 | (lba >> 24) | (DriveNumber << 4)); // Set the drive and head number
     IO_Out8(0x1F2, 1); // Read 1 sector
     IO_Out8(0x1F3, lba & 0xFF); // Send first 8 bits of LBA
     IO_Out8(0x1F4, (lba >> 8) & 0xFF); // Send second 8 bits of LBA
@@ -23,7 +26,7 @@ volatile void ReadATASector(void* buff, uint32_t lba)
 }
 volatile void WriteATASector(void* buff, uint32_t lba)
 {
-    IO_Out8(0x1F6, 0b11100000); // Set the drive and head number
+    IO_Out8(0x1F6, 0b11100000 | (lba >> 24) | (DriveNumber << 4)); // Set the drive and head number
     IO_Out8(0x1F2, 1); // Read 1 sector
     IO_Out8(0x1F3, lba & 0xFF); // Send first 8 bits of LBA
     IO_Out8(0x1F4, (lba >> 8) & 0xFF); // Send second 8 bits of LBA

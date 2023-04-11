@@ -52,15 +52,14 @@ uint8_t IsInRect(rect _rect, int x, int y)
 }
 
 keyboard_key Keys[32];
-keyboard Kbd = {0};
+keyboard Kbd = { 0 };
 
 uint32_t BackBuffer[1920 * 1080];
 uint32_t StaticBackBuffer[1920 * 1080];
 
 uint32_t Destination[1920 * 1080];
-uint8_t Buf[1920 * 1080 * 4];
-uint8_t Font[32 * 32 * (127 - 32)];
-uint8_t Icons[32 * 32 * 4 * NUM_ICONS];
+
+extern struct _Resources ResourcesAt;
 
 uint32_t WinBuffer0[100 * 100] = {0xFFFFFFFF};
 
@@ -74,6 +73,8 @@ window CmdWindow;
 rect CmdWindowRect;
 
 extern void CmdProc(int, int, struct _window*);
+
+extern uint8_t IsFirstTime;
 
 void RegisterRect(int x, int y, int w, int h)
 {
@@ -256,7 +257,7 @@ void DrawGlyph(int x, int y, char character, int scale, uint32_t color)
 void DrawFontGlyph(int x, int y, char character, int scale, uint32_t color)
 {
     color &= 0x00FFFFFF;
-    const uint8_t *glyph = Font + (character - 32) * 32 * 32;
+    const uint8_t *glyph = ResourcesAt.Font + (character - 32) * 32 * 32;
     for (int i = 0; i < 8 * scale; i++)
     {
         for (int j = 0; j < 8 * scale; j++)
@@ -268,7 +269,7 @@ void DrawFontGlyph(int x, int y, char character, int scale, uint32_t color)
 void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY)
 {
     color &= 0x00FFFFFF;
-    const uint8_t *glyph = Font + (character - 32) * 32 * 32;
+    const uint8_t *glyph = ResourcesAt.Font + (character - 32) * 32 * 32;
     for (int i = 0; i < 8 * scale; i++)
     {
         for (int j = 0; j < 8 * scale; j++)
@@ -336,12 +337,12 @@ void DrawDragBar(int X, int Y, int W, int H)
         {
             if (Counter == 2)
             {
-                SetPixel(_X, _Y, 0xFF444444);
+                SetPixel(_X, _Y, 0xFF222222);
                 Counter = 0;
             }
             else
             {
-                SetPixel(_X, _Y, 0xFFBBBBBB);
+                SetPixel(_X, _Y, 0xFFFFFFFF);
                 Counter++;
             }
         }
@@ -368,13 +369,13 @@ void DrawOutline(int X, int Y, int W, int H, int thickness)
     {
         for (int _X = X - thickness; _X < X + W + thickness; _X++)
         {
-            SetAlphaPixel(_X, Y - thickness, 0xFFAAAAAA);
-            SetAlphaPixel(_X, Y + H + thickness, 0xFF444444);
+            SetAlphaPixel(_X, Y - thickness, 0xFFFFFFFF);
+            SetAlphaPixel(_X, Y + H + thickness, 0xFFFFFFFF);
         }
         for (int _Y = Y - thickness; _Y < Y + H + thickness; _Y++)
         {
-            SetAlphaPixel(X - thickness, _Y, 0xFFAAAAAA);
-            SetAlphaPixel(X + W + thickness, _Y, 0xFF444444);
+            SetAlphaPixel(X - thickness, _Y, 0xFFFFFFFF);
+            SetAlphaPixel(X + W + thickness, _Y, 0xFFFFFFFF);
         }
     }
 }
@@ -438,7 +439,7 @@ volatile void RenderDynamic()
             continue;
         }
 
-        DrawOutline(Win.Rect->X, Win.Rect->Y - 10, Win.Rect->W, Win.Rect->H + 10, 4);
+        DrawOutline(Win.Rect->X - 1, Win.Rect->Y - 10, Win.Rect->W + 2, Win.Rect->H + 10, 1);
         DrawDragBar(Win.Rect->X, Win.Rect->Y - 10, Win.Rect->W, 10);
         RegisterRect(Win.Rect->X - 4, Win.Rect->Y - 14, Win.Rect->W + 8, Win.Rect->H + 18);
         DrawImage(Win.Rect->X, Win.Rect->Y, Win.Rect->W, Win.Rect->H, Win.Framebuffer);
@@ -474,9 +475,9 @@ volatile void RenderDynamic()
                 BackBufferStep++;
                 StaticBackBufferStep++;
             }
-            Framebuffer += (VbeModeInfo.width - w) * 3;
-            BackBufferStep += (VbeModeInfo.width - w);
-            StaticBackBufferStep += (VbeModeInfo.width - w);
+            Framebuffer += (VESA_RES_X - w) * 3;
+            BackBufferStep += (VESA_RES_X - w);
+            StaticBackBufferStep += (VESA_RES_X - w);
         }
         RegRectPtr++;
     }
@@ -809,6 +810,19 @@ void UpdateWinProcs()
     }
 }
 
+void Format()
+{
+    uint8_t EmptyBuff[512];
+    int SectorCount = (8 * 1000000) / 512;
+    while (SectorCount--) WriteATASector(EmptyBuff, 0xAFFFFFFF + SectorCount);
+    WriteATASector(EmptyBuff, (uint32_t)(&IsFirstTime - 0x7C00) / 512);
+}
+
+void FirstTimeSetup()
+{
+    Format();
+}
+
 void OS_Start()
 {
     PIC_Init();
@@ -827,33 +841,16 @@ void OS_Start()
 
     int ConsoleColor = 0xFF000000;
     int OffsetX = 0;
-    int FontSize = 2 * (127 - 32);
-    int IconsSize = 2 * 4 * NUM_ICONS;
-    int J = 0;
-    for (int I = 0; I < IconsSize; I++)
-    {
-        ReadATASector(Icons + J * 512, I);
-        J++;
-    }
-    J = 0;
-    for (int I = IconsSize; I < FontSize + IconsSize; I++)
-    {
-        ReadATASector(Font + J * 512, I);
-        J++;
-    }
-    J = 0;
-    for (int I = FontSize + IconsSize; I < 16200 + FontSize + IconsSize; I++)
-    {
-        ReadATASector(Buf + J * 512, I);
-        J++;
-    }
+
 
     bmp_bitmap_info BMPInfo;
-    BMP_Read(Buf, &BMPInfo, Destination);
+    BMP_Read(ResourcesAt.Buf, &BMPInfo, Destination);
     char CmdLine[129] = {0};
     int CmdLineLen = 0;
 
     InitCMD();
+    
+
     DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, Destination);
     UpdateScreen();
     uint32_t KeysCount = 0;
@@ -868,10 +865,17 @@ void OS_Start()
     CmdWindow.Framebuffer = CmdDrawBuffer;
     CmdWindow.Free = 0;
     CmdWindow.Hidden = 0;
-    CmdWindow.Icon32 = Icons;
+    CmdWindow.Icon32 = ResourcesAt.Icons;
     CmdWindow.WinProc = &CmdProc;
 
     RegisterWindow(CmdWindow);
+
+    if (IsFirstTime)
+    {
+        DrawFontString(1920 / 2 - 200, 1080 / 2 - 8, "Please wait", 4, 0xFFFFFFFF);
+        UpdateScreen();
+        FirstTimeSetup();
+    }
 
     while (1)
     {

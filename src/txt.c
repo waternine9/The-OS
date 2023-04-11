@@ -7,7 +7,6 @@
 extern window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint32_t* Icon32, uint32_t *Events, uint32_t* Framebuffer);
 extern void DestroyWindow(window*);
 extern void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
-extern uint8_t Icons[32 * 32 * 4 * NUM_ICONS];
 
 uint8_t IsOpened = 0;
 
@@ -18,6 +17,7 @@ rect TxtRect;
 
 window* CurrentInstance = 0;
 
+extern struct _Resources ResourcesAt;
 
 void ClearWinFramebuffer(window* Win, uint32_t Color)
 {
@@ -100,6 +100,6 @@ void TxtCreateWindow(int x, int y)
     TxtRect.W = TXT_RES_X;
     TxtRect.H = TXT_RES_Y;
     
-    CurrentInstance = CreateWindow(&TxtRect, TxtProc, Icons + 32 * 32 * 4, &TxtEvents, TxtFramebuff);
+    CurrentInstance = CreateWindow(&TxtRect, TxtProc, ResourcesAt.Icons + 32 * 32 * 4, &TxtEvents, TxtFramebuff);
     ClearWinFramebuffer(CurrentInstance, 0xFFFFFFFF);
 }
