@@ -439,7 +439,7 @@ volatile void RenderDynamic()
             continue;
         }
 
-        DrawOutline(Win.Rect->X - 1, Win.Rect->Y - 10, Win.Rect->W + 2, Win.Rect->H + 10, 1);
+        DrawOutline(Win.Rect->X - 1, Win.Rect->Y - 10, Win.Rect->W + 1, Win.Rect->H + 10, 1);
         DrawDragBar(Win.Rect->X, Win.Rect->Y - 10, Win.Rect->W, 10);
         RegisterRect(Win.Rect->X - 4, Win.Rect->Y - 14, Win.Rect->W + 8, Win.Rect->H + 18);
         DrawImage(Win.Rect->X, Win.Rect->Y, Win.Rect->W, Win.Rect->H, Win.Framebuffer);
