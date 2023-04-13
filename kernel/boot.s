@@ -4,6 +4,8 @@ section .boot
 extern ReadATASector
 
 Boot:
+    
+
     ; NOTE: At boot the boot drive number is stored in DL,
     ;       Preserve it for later 
     mov   [DriveNumber], dl

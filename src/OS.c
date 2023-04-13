@@ -812,15 +812,37 @@ void UpdateWinProcs()
 
 void Format()
 {
-    uint8_t EmptyBuff[512];
-    int SectorCount = (8 * 1000000) / 512;
-    while (SectorCount--) WriteATASector(EmptyBuff, 0xAFFFFFFF + SectorCount);
+    uint8_t EmptyBuff[512] = { 0 };
+    int SectorCount = 256;
+    while (SectorCount--) WriteATASector(EmptyBuff, 17000 + SectorCount);
     WriteATASector(EmptyBuff, (uint32_t)(&IsFirstTime - 0x7C00) / 512);
 }
 
 void FirstTimeSetup()
 {
     Format();
+}
+
+void ReadFile(uint8_t* Dest, uint32_t FileNum)
+{
+    uint32_t LBA = 17000 + (1 * FileNum);
+    int SectorCount = 0;
+    while (SectorCount < 1)
+    {
+        ReadATASector(Dest + SectorCount * 512, LBA + SectorCount);
+        SectorCount++;
+    }
+}
+
+void WriteFile(uint8_t* Source, uint32_t FileNum)
+{
+    uint32_t LBA = 17000 + (1 * FileNum);
+    int SectorCount = 0;
+    while (SectorCount < 1)
+    {
+        WriteATASector(Source + SectorCount * 512, LBA + SectorCount);
+        SectorCount++;
+    }
 }
 
 void OS_Start()
@@ -872,10 +894,13 @@ void OS_Start()
 
     if (IsFirstTime)
     {
-        DrawFontString(1920 / 2 - 200, 1080 / 2 - 8, "Please wait", 4, 0xFFFFFFFF);
+        DrawAlphaRect(0, 0, 1920, 40, 0x77000000);
+        DrawFontString(1920 / 2 - FormatCStringLength("Please wait") * 16 + 32, 0, "Please wait", 4, 0xFFFFFFFF);
         UpdateScreen();
         FirstTimeSetup();
     }
+
+    DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, Destination);
 
     while (1)
     {

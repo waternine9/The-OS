@@ -37,6 +37,7 @@ void CmdProc(int MouseX, int MouseY, window* Win)
             {
                 
                 TxtCreateWindow(100, 100);
+                TxtInit();
             }
         }
         uint16_t IsBackspace = packet & (1 << 8);
