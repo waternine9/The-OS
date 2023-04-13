@@ -22,30 +22,30 @@ volatile void GetRTC(uint8_t *second, uint8_t *minute, uint8_t *hour, uint8_t *d
 }
 const char *WeekDayName(uint8_t weekday) {
     switch (weekday) {
-        case  1: return "SUN";
-        case  2: return "MON";
-        case  3: return "TUE";
-        case  4: return "WED";
-        case  5: return "THU";
-        case  6: return "FRI";
-        case  7: return "SAT";
+        case  1: return "Sunday";
+        case  2: return "Monday";
+        case  3: return "Tuesday";
+        case  4: return "Wednesday";
+        case  5: return "Thursday";
+        case  6: return "Friday";
+        case  7: return "Saturday";
         default: return "???";
     }
 }
 const char *MonthName(uint8_t month) {
     switch (month) {
-        case  1: return "JAN";
-        case  2: return "FEB";
-        case  3: return "MAR";
-        case  4: return "APR";
-        case  5: return "MAY";
-        case  6: return "JUN";
-        case  7: return "JUL";
-        case  8: return "AUG";
-        case  9: return "SEP";
-        case 10: return "OCT";
-        case 11: return "NOV";
-        case 12: return "DEC";
+        case  1: return "Jan";
+        case  2: return "Feb";
+        case  3: return "Mar";
+        case  4: return "Apr";
+        case  5: return "May";
+        case  6: return "Jun";
+        case  7: return "Jul";
+        case  8: return "Aug";
+        case  9: return "Sep";
+        case 10: return "Oct";
+        case 11: return "Nov";
+        case 12: return "Dec";
         default: return "???";
     }
 }

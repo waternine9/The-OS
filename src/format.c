@@ -183,3 +183,13 @@ size_t FormatCStringLength(const char *String)
 
     return L;
 }
+size_t FormatCStringHeight(const char *String)
+{
+    size_t L = 0;
+    while (*String) {
+        if (*String == '\n') L++;
+        String++;
+    }
+
+    return L;
+}
