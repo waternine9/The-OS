@@ -863,7 +863,7 @@ void OS_Start()
 
     batch_script Script = {};
 
-    int ConsoleColor = 0xFF000000;
+    int ConsoleColor = 0xFF000000;  
     int OffsetX = 0;
 
 
@@ -874,11 +874,8 @@ void OS_Start()
 
     InitCMD();
 
-
-    FormatWriteString(Fmt, 256, "test %d", 1);
-    asm volatile ("mov %%eax, %0\ncli\nhlt" :: "Nd" (Fmt));
+    FormatWriteString(Fmt, 256, "test %u %u %u %u %u %u", 100, 200, 300, 400, 500, 600);
     ConPrintf(Fmt);
-    
 
     DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, Destination);
     UpdateScreen();
