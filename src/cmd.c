@@ -7,7 +7,7 @@
 uint8_t CmdTextBufferArray[100000];
 
 uint8_t* CmdTextBuffer = CmdTextBufferArray;
-int32_t CmdBufferSize = 0;
+uint8_t* CmdBufferEnd = CmdTextBufferArray;
 
 int CmdBlinker = 0;
 
@@ -73,18 +73,19 @@ void InitCMD()
 void CmdAddChar(uint8_t thechar)
 {
     if (thechar == 0) return;
-    CmdTextBufferArray[CmdBufferSize] = thechar;
-    CmdBufferSize++;
-    CmdTextBufferArray[CmdBufferSize] = 0;
+    *CmdBufferEnd = thechar;
+    CmdBufferEnd++;
+    *CmdBufferEnd = 0;
     CmdBlinker = 0;
 }
+
 void CmdBackspace()
 {
-    if (CmdTextBufferArray[CmdBufferSize-1] == '\n' || CmdBufferSize == 0) return;
-    CmdBufferSize--;
+    if (*(CmdBufferEnd - 1) == '\n' || CmdBufferEnd == CmdTextBuffer) return;
+    CmdBufferEnd--;
 
-    CmdTextBufferArray[CmdBufferSize] = 0;
-    if (CmdBufferSize < 0) CmdBufferSize = 0;
+    *CmdBufferEnd = 0;
+    if (CmdBufferEnd < CmdTextBuffer) CmdBufferEnd = CmdTextBuffer;
     CmdBlinker = 0;
 }
 
@@ -150,7 +151,7 @@ void CmdDraw(uint32_t color)
                     }
                 }
                 break;
-        }
+        }   
         StepPtr++;
     }
     CmdBlinker++;

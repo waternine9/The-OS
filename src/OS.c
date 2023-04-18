@@ -61,8 +61,6 @@ uint32_t Destination[1920 * 1080];
 
 extern struct _Resources ResourcesAt;
 
-uint32_t WinBuffer0[100 * 100] = {0xFFFFFFFF};
-
 rect RegisterRectArray[256];
 rect *RegisterRectPtr = RegisterRectArray;
 
@@ -509,7 +507,6 @@ int ConPrintf(const char *Fmt, ...)
     FormatWriteStringVa(DestStr, 256, Fmt, Args);
     for (int I = 0; DestStr[I]; I++)
         CmdAddChar(DestStr[I]);
-    ConsoleWrite(&Console, DestStr);
     va_end(Args);
 }
 
@@ -874,7 +871,7 @@ void OS_Start()
 
     InitCMD();
 
-    FormatWriteString(Fmt, 256, "test %u %u %u %u %u %u", 100, 200, 300, 400, 500, 600);
+    FormatWriteString(Fmt, 256, "test %d", 1);
     ConPrintf(Fmt);
 
     DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, Destination);

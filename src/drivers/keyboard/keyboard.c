@@ -106,6 +106,7 @@ static void Keyboard_HandleInterrupt_Internal(keyboard *Kbd, keyboard_key *Keys,
 
 void Keyboard_HandleInterrupt()
 {
+    ConPrintf("a");
     Keyboard_HandleInterrupt_Internal(&GlobalKeyboard, GlobalKeys, 128, &GlobalKeysCount);
 }
 
@@ -116,10 +117,10 @@ void Keyboard_CollectEvents(keyboard *Kbd, keyboard_key *Keys, uint32_t KeysMax,
         KeysToCopy = GlobalKeysCount;
     }
 
-    memcpy(Kbd, &GlobalKeyboard, sizeof GlobalKeyboard);
-    memcpy(Keys, &GlobalKeys, sizeof(keyboard_key) * KeysToCopy);
-
+    memcpy((uint8_t*)Kbd, (uint8_t*)&GlobalKeyboard, sizeof GlobalKeyboard);
+    memcpy((uint8_t*)Keys, (uint8_t*)&GlobalKeys, sizeof(keyboard_key) * KeysToCopy);
+    
     *KeysLen = GlobalKeysCount;
-    //ConPrintf("Keys: %d\n", (int)GlobalKeysCount);
+    
     GlobalKeysCount = 0;
 }

@@ -4,7 +4,7 @@
 #define TXT_RES_X 400
 #define TXT_RES_Y 200
 
-extern window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint32_t* Icon32, uint32_t *Events, uint32_t* Framebuffer);
+extern window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint8_t* Icon32, uint32_t *Events, uint32_t* Framebuffer);
 extern void DestroyWindow(window*);
 extern void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
 extern void ReadFile(uint8_t*, uint32_t);
@@ -120,7 +120,7 @@ void TxtProc(int MouseX, int MouseY, window* Win)
         }
     }
     CurrentInstance = Win;
-    if (IsSelecting)
+    if (!IsSelecting)
     {
         while (Win->ChQueueNum > 0)
         {
@@ -149,12 +149,6 @@ void TxtProc(int MouseX, int MouseY, window* Win)
             }
         }
         TxtDraw(0);
-        SaveCounter++;
-        if (SaveCounter == 0xFF)
-        {
-            WriteFile(TextBuffer, FileSelection);
-            SaveCounter = 0;
-        }
     }
     else
     {
@@ -168,7 +162,7 @@ void TxtProc(int MouseX, int MouseY, window* Win)
 
                 SelectingNum[SelectingNumSize] = C;   
                 SelectingNumSize++;
-                if (SelectingNumSize >= SELECT_NUM)
+                if (SelectingNumSize > SELECT_NUM)
                 {
                     SelectingNumSize--;
                 }
@@ -199,7 +193,7 @@ void SelectDraw(uint32_t color)
         CurX += 20;
     } while (*StartStr++);
     int I = 0;
-    while (I < SelectingNumSize)
+    while (I < SelectingNumSize + 1)
     {
         DrawFontGlyphOnto(CurX, 0, SelectingNum[I], 2, color, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
         CurX += 20;

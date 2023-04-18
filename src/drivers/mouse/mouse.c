@@ -30,7 +30,7 @@ int8_t MouseByte[3];
 
 void MouseWait(uint8_t AType) //unsigned char
 {
-  uint16_t TimeOut=100000; //unsigned int
+  uint32_t TimeOut=10000; //unsigned int
   if(AType==0)
   {
     while(TimeOut--) //Data

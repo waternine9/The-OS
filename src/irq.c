@@ -7,6 +7,8 @@ uint8_t MouseRmbClicked, MouseLmbClicked;
 
 uint8_t KeyboardCharPressed = 0xFF;
 
+extern int ConPrintf(const char *Fmt, ...);
+
 /* PIT Timer */
 void CHandlerIRQ0()
 {

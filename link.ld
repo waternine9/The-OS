@@ -16,7 +16,6 @@ SECTIONS {
     {
         *(.data)
     }
-    . = 0x1000000 + 0x7C00;
     .bss : 
     {
         *(.bss)  
