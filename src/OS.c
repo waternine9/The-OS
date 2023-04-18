@@ -61,8 +61,6 @@ uint32_t Destination[1920 * 1080];
 
 extern struct _Resources ResourcesAt;
 
-uint32_t WinBuffer0[100 * 100] = {0xFFFFFFFF};
-
 rect RegisterRectArray[256];
 rect *RegisterRectPtr = RegisterRectArray;
 
