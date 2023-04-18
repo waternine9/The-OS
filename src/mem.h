@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-static inline memcpy(uint8_t *Destination, uint8_t *Source, size_t N)
+static inline void memcpy(uint8_t *Destination, uint8_t *Source, size_t N)
 {
     while (N--) {
         *Source++ = *Destination++;

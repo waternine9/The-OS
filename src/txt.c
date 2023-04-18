@@ -4,7 +4,7 @@
 #define TXT_RES_X 400
 #define TXT_RES_Y 200
 
-extern window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint32_t* Icon32, uint32_t *Events, uint32_t* Framebuffer);
+extern window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint8_t* Icon32, uint32_t *Events, uint32_t* Framebuffer);
 extern void DestroyWindow(window*);
 extern void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
 extern void ReadFile(uint8_t*, uint32_t);

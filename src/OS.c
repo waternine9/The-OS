@@ -507,7 +507,6 @@ int ConPrintf(const char *Fmt, ...)
     FormatWriteStringVa(DestStr, 256, Fmt, Args);
     for (int I = 0; DestStr[I]; I++)
         CmdAddChar(DestStr[I]);
-    ConsoleWrite(&Console, DestStr);
     va_end(Args);
 }
 
@@ -874,7 +873,6 @@ void OS_Start()
 
 
     FormatWriteString(Fmt, 256, "test %d", 1);
-    asm volatile ("mov %%eax, %0\ncli\nhlt" :: "Nd" (Fmt));
     ConPrintf(Fmt);
     
 

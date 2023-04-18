@@ -116,10 +116,14 @@ void Keyboard_CollectEvents(keyboard *Kbd, keyboard_key *Keys, uint32_t KeysMax,
         KeysToCopy = GlobalKeysCount;
     }
 
-    memcpy(Kbd, &GlobalKeyboard, sizeof GlobalKeyboard);
-    memcpy(Keys, &GlobalKeys, sizeof(keyboard_key) * KeysToCopy);
-
+    memcpy((uint8_t*)Kbd, (uint8_t*)&GlobalKeyboard, sizeof GlobalKeyboard);
+    memcpy((uint8_t*)Keys, (uint8_t*)&GlobalKeys, sizeof(keyboard_key) * KeysToCopy);
+    
     *KeysLen = GlobalKeysCount;
-    //ConPrintf("Keys: %d\n", (int)GlobalKeysCount);
+    
+    char Pair[2];
+    Pair[0] = GlobalKeys[0].ASCII;
+    Pair[1] = 0;
+    if (GlobalKeys[0].ASCII) ConPrintf(Pair);
     GlobalKeysCount = 0;
 }
