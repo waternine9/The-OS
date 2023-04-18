@@ -5,8 +5,8 @@
 
 static inline void memcpy(uint8_t *Destination, uint8_t *Source, size_t N)
 {
-    while (N--) {
-        *Source++ = *Destination++;
+    for (int I = 0; I < N; I++) {
+        Destination[I] = Source[I];
     }
 }
 

@@ -938,6 +938,8 @@ void OS_Start()
             }
             
         }
+
+
         KeepMouseInScreen();
         MoveWinHandler();
         UpdateWinProcs();
