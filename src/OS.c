@@ -843,6 +843,8 @@ void WriteFile(uint8_t* Source, uint32_t FileNum)
     }
 }
 
+char Fmt[256];
+
 void OS_Start()
 {
     PIC_Init();
@@ -869,6 +871,11 @@ void OS_Start()
     int CmdLineLen = 0;
 
     InitCMD();
+
+
+    FormatWriteString(Fmt, 256, "test %d", 1);
+    asm volatile ("mov %%eax, %0\ncli\nhlt" :: "Nd" (Fmt));
+    ConPrintf(Fmt);
     
 
     DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, Destination);

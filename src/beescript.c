@@ -4,6 +4,7 @@
 #include "kernel.h"
 #include "cmd.h"
 
+int ConPrintf(const char *Fmt, ...);
 
 typedef struct {
     const char *Start;

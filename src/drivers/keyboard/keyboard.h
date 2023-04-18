@@ -49,4 +49,6 @@ typedef struct {
 } keyboard_key;
 
 void Keyboard_CollectEvents(keyboard *Kbd, keyboard_key *Keys, uint32_t KeysMax, uint32_t *KeysLen);
+void Keyboard_HandleInterrupt();
+
 #endif // H_BOS_KEYBOARD
