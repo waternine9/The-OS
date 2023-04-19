@@ -64,6 +64,8 @@ pci_device_header PCI_QueryDeviceHeader(pci_device_path Path)
 
     Result.MultiFunction= ((BIST_HeaderType_Word) & 0x80) != 0;
 
+    
+
     return Result;
 }
 pci_device_specialty PCI_QueryDeviceSpecialty(pci_device_header Header)

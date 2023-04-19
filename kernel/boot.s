@@ -55,7 +55,7 @@ LoadSectors:
     
     add edi, 512
     inc ecx
-    cmp ecx, 16532
+    cmp ecx, 16564
 
     jl LoadSectors
 
@@ -160,6 +160,14 @@ dd 0xFFFFFFFF
 
 times 510-($-$$) db 0
 dw 0xAA55
+global IsFirstTime
+IsFirstTime:
+db 1
+times 512 * 3 - 1 db 0
+
+FileAllocTable:
+; File Allocation Table Sector(s) (32 sectors)
+times 512 * 32 db 0
 
 extern OS_Start
 
@@ -176,10 +184,6 @@ global ResourcesAt
 ResourcesAt:
 incbin "resources.bin"
 
-global IsFirstTime
-IsFirstTime
-db 1
-times 511 db 0
 
 section .text
 

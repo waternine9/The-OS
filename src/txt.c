@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stddef.h>
 #include "OS.h"
 
 #define TXT_RES_X 400
@@ -7,8 +8,8 @@
 extern window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint8_t* Icon32, uint32_t *Events, uint32_t* Framebuffer);
 extern void DestroyWindow(window*);
 extern void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
-extern void ReadFile(uint8_t*, uint32_t);
-extern void WriteFile(uint8_t*, uint32_t);
+extern void ReadFile(uint8_t*, size_t*, uint32_t);
+extern void WriteFile(uint8_t*, size_t, uint32_t);
 
 
 uint8_t TextBuffer[512];
@@ -55,7 +56,8 @@ uint8_t SaveCounter = 0;
 void TxtInit()
 {
     IsSelecting = 0;
-    ReadFile(TextBuffer, 0);
+    size_t junk;
+    ReadFile(TextBuffer, &junk, 0);
     int I = 0;
 
     while (TextBuffer[I] > 0)
@@ -76,7 +78,7 @@ uint32_t GetDigit(uint8_t x)
 
 uint32_t GetFileNum()
 {
-    if (!SelectingNumSize) return 0;
+    if (!SelectingNumSize) return 4;
     uint32_t FileNum = 0;
     int Multiplier = 1;
     int I = SelectingNumSize - 1;
@@ -112,9 +114,23 @@ void TxtProc(int MouseX, int MouseY, window* Win)
             }
             else
             {
-                WriteFile(TextBuffer, FileSelection);
+                WriteFile(TextBuffer, 512, FileSelection);
+                
+                
                 uint32_t FileNum = GetFileNum();
-                ReadFile(TextBuffer, FileNum);
+                
+                size_t junk;
+                ReadFile(TextBuffer, &junk, FileNum);
+                int I = 0;
+
+                while (TextBuffer[I] > 0)
+
+                {
+                    I++;
+                }
+
+                TextSize = I;
+                FileSelection = FileNum;
                 IsSelecting = 0;
             }
         }
@@ -193,7 +209,7 @@ void SelectDraw(uint32_t color)
         CurX += 20;
     } while (*StartStr++);
     int I = 0;
-    while (I < SelectingNumSize + 1)
+    while (I < SelectingNumSize)
     {
         DrawFontGlyphOnto(CurX, 0, SelectingNum[I], 2, color, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
         CurX += 20;
@@ -235,7 +251,7 @@ void TxtDraw(uint32_t color)
         }
         I++;
     }
-    DrawFontGlyphOnto(CurX, TXT_RES_Y - CurY - 10, '_', 1, 0, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
+    DrawFontGlyphOnto(CurX, TXT_RES_Y - CurY - 20, '_', 2, 0, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
 }
 
 void TxtCreateWindow(int x, int y)

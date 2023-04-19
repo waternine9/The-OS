@@ -6,7 +6,13 @@
 static inline void memcpy(uint8_t *Destination, uint8_t *Source, size_t N)
 {
     while (N--) {
-        *Source++ = *Destination++;
+        *Destination++ = *Source++;
+    }
+}
+static inline void memset(uint8_t *Destination, uint8_t Val, size_t N)
+{
+    while (N--) {
+        *Destination++ = Val;
     }
 }
 

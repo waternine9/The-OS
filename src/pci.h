@@ -38,6 +38,7 @@ typedef struct {
     uint8_t          LatencyTimer;
     pci_header_type  HeaderType;
     uint8_t          BIST;      
+    uint32_t         BAR0;
     uint8_t          MultiFunction;
 } pci_device_header;
 

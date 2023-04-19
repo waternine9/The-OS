@@ -17,6 +17,7 @@
 #include "drivers/mouse/mouse.h"
 #include "ps2help.h"
 #include "OS.h"
+#include "mem.h"
 
 extern click_animation ClickAnimation;
 extern uint8_t MousePointerBlack[8];
@@ -28,6 +29,8 @@ extern uint8_t MouseRmbClicked, MouseLmbClicked;
 
 extern uint16_t VESA_RES_X;
 extern uint16_t VESA_RES_Y;
+
+uint32_t* FileAllocTable = 0x7c00 + 512 * 4;
 
 int32_t IsMouseMovingWin = -1;
 
@@ -809,9 +812,26 @@ void UpdateWinProcs()
 
 void Format()
 {
+    for (int i = 0;i < 512 * 8;i++)
+    {
+        FileAllocTable[i] = 0;
+    }
     uint8_t EmptyBuff[512] = { 0 };
-    int SectorCount = 256;
-    while (SectorCount--) WriteATASector(EmptyBuff, 17000 + SectorCount);
+    memset(EmptyBuff, 0, 512);
+    for (int i = 4;i < 32 + 4;i++)
+    {
+        WriteATASector(EmptyBuff, i);
+    }
+
+    EmptyBuff[508] = 0xFF;
+    EmptyBuff[509] = 0xFF;
+    EmptyBuff[510] = 0xFF;
+    EmptyBuff[511] = 0xFF;
+    
+    int SectorCount = 256*64;
+    while (SectorCount--) {
+        WriteATASector(EmptyBuff, 40000 + SectorCount);
+    }
     WriteATASector(EmptyBuff, (uint32_t)(&IsFirstTime - 0x7C00) / 512);
 }
 
@@ -820,25 +840,90 @@ void FirstTimeSetup()
     Format();
 }
 
-void ReadFile(uint8_t* Dest, uint32_t FileNum)
+size_t AllocSector() 
 {
-    uint32_t LBA = 17000 + (1 * FileNum);
-    int SectorCount = 0;
-    while (SectorCount < 1)
+    for (size_t I = 40000; I < 200000; I++) {
+        char dat[512];
+        ReadATASector(dat, I);
+        if (*(uint32_t*)(dat+508) == 0xFFFFFFFF) {
+            return I;    
+        }
+    }
+}
+
+uint8_t CreateFile(uint32_t FileNum)
+{
+    if (FileNum > 512 * 8) return 0;
+    uint32_t entry = FileAllocTable[FileNum];
+    if (entry) return 2;
+    size_t Sector = AllocSector();
+    uint8_t file[512];
+    memset(file, 0, 512);
+    WriteATASector(file, Sector);
+    FileAllocTable[FileNum] = Sector;
+
+    uint8_t* FileAllocTableStep = FileAllocTable;
+    for (int i = 4;i < 32 + 4;i++) // Save the FAT
     {
-        ReadATASector(Dest + SectorCount * 512, LBA + SectorCount);
+        WriteATASector(FileAllocTableStep, i);
+        FileAllocTableStep += 512;
+    }
+    return 1;
+}
+void ReadFile(uint8_t* Dest, size_t* Size, uint32_t FileNum)
+{
+    uint32_t entry = FileAllocTable[FileNum];
+    if (!entry) 
+    {
+        CreateFile(FileNum);
+        entry = FileAllocTable[FileNum];
+    }
+    uint32_t SectorCount = 0;
+    while (1)
+    {
+        uint8_t file[512];
+        ReadATASector(file, entry);
+        
+        memcpy(Dest + SectorCount * 508, file, 508);
+        uint32_t NextChunk = *(uint32_t*)(file + 508);
+        if (!NextChunk || NextChunk > 200000) 
+        {
+            *Size = (SectorCount + 1) * 508;
+            return;
+        }
+        entry = NextChunk;
         SectorCount++;
     }
 }
 
-void WriteFile(uint8_t* Source, uint32_t FileNum)
+
+
+void WriteFile(uint8_t* Source, size_t Size, uint32_t FileNum)
 {
-    uint32_t LBA = 17000 + (1 * FileNum);
-    int SectorCount = 0;
-    while (SectorCount < 1)
+    uint32_t entry = FileAllocTable[FileNum];
+    if (!entry) 
     {
-        WriteATASector(Source + SectorCount * 512, LBA + SectorCount);
-        SectorCount++;
+        CreateFile(FileNum);
+        entry = FileAllocTable[FileNum];
+    }
+    uint32_t SectorCount = Size/512;
+    
+    for (int I = 0; I < SectorCount; I++)
+    {
+        
+        uint8_t buf[512];
+        ReadATASector(buf, entry);
+        if (*(uint32_t*)(buf+508) == 0) {
+            uint32_t sector = AllocSector();
+            *(uint32_t*)(buf+508) = sector;
+            memcpy(buf, Source, 508); 
+            WriteATASector(buf, entry);
+        } else {
+            memcpy(buf, Source, 508);
+            WriteATASector(buf, entry);
+        }
+        entry = *(uint32_t*)(buf+508);
+        Source += 508;
     }
 }
 
@@ -900,7 +985,16 @@ void OS_Start()
         UpdateScreen();
         FirstTimeSetup();
     }
-
+    else
+    {
+        uint8_t* FileAllocTableStep = FileAllocTable;
+        for (int i = 4;i < 32 + 4;i++) // Save the FAT
+        {
+            ReadATASector(FileAllocTableStep, i);
+            FileAllocTableStep += 512;
+        }
+    }
+    RegisterRect(0, 0, 1920, 40);
     DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, Destination);
 
     while (1)

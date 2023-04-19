@@ -35,7 +35,6 @@ void CmdProc(int MouseX, int MouseY, window* Win)
             CmdAddChar(C);
             if (C == '\n')
             {
-                
                 TxtCreateWindow(100, 100);
                 TxtInit();
             }
