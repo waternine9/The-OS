@@ -70,16 +70,22 @@ void CHandlerIRQ11()
 {
     PIC_EndOfInterrupt(11);
 }
+static uint8_t IsFull() {
+    return IO_In8(0x64)&1;
+}
 /* PS/2 Mouse */
 void CHandlerIRQ12()
 {
-    uint8_t Byte0 = IO_In8(0x60);
-    int8_t Byte1 = IO_In8(0x60);
-    int8_t Byte2 = IO_In8(0x60);
-    if ((Byte0 & 1) && Byte1 == 0 && Byte2 == 0) MouseLmbClicked = 1;
-    if ((Byte0 & 2) && Byte1 == 0 && Byte2 == 0) MouseRmbClicked = 1;
-    MouseX += Byte1;
-    MouseY -= Byte2;
+    while (IsFull())
+    {
+        uint8_t Byte0 = IO_In8(0x60);
+        int8_t Byte1 = IO_In8(0x60);
+        int8_t Byte2 = IO_In8(0x60);
+        if ((Byte0 & 1) && Byte1 == 0 && Byte2 == 0) MouseLmbClicked = 1;
+        if ((Byte0 & 2) && Byte1 == 0 && Byte2 == 0) MouseRmbClicked = 1;
+        MouseX += Byte1;
+        MouseY -= Byte2;
+    }
     PIC_EndOfInterrupt(12);
 }
 /* FPU */
