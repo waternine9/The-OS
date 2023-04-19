@@ -12,7 +12,7 @@ extern void ReadFile(uint8_t*, size_t*, uint32_t);
 extern void WriteFile(uint8_t*, size_t, uint32_t);
 
 
-uint8_t TextBuffer[512];
+uint8_t TextBuffer[512 * 16];
 
 int32_t TextSize = 0;
 
@@ -55,9 +55,11 @@ void ClearWinFramebuffer(window* Win, uint32_t Color)
 uint8_t SaveCounter = 0;
 void TxtInit()
 {
+    if (FileSelection > 0) WriteFile(TextBuffer, 512, FileSelection);
+    FileSelection = 0;
     IsSelecting = 0;
     size_t junk;
-    ReadFile(TextBuffer, &junk, 0);
+    ReadFile(TextBuffer, &junk, FileSelection);
     int I = 0;
 
     while (TextBuffer[I] > 0)
