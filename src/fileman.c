@@ -3,6 +3,7 @@
 #include "OS.h"
 #include "fileman.h"
 #include "mem.h"
+#include "format.h"
 
 extern window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint8_t* Icon32, uint32_t *Events, uint32_t* Framebuffer);
 extern void DestroyWindow(window*);
@@ -23,30 +24,6 @@ extern struct _Resources ResourcesAt;
 void FileManClearWinFramebuffer(window* Win, uint32_t Color)
 {
     memset(FileManFramebuff, 0, FILEMAN_RES_X * FILEMAN_RES_Y * 4);
-}
-void FileManProc(int MouseX, int MouseY, window* Win)
-{
-
-
-    while (Win->ChQueueNum > 0)
-    {
-        Win->ChQueueNum--;
-        uint16_t packet = Win->InCharacterQueue[Win->ChQueueNum];
-        uint8_t C = packet & 0xFF;
-        if (C)
-        {
-            // character pressed
-        }
-        else
-        {
-            uint16_t IsBackspace = packet & (1 << 8);
-            if (IsBackspace)
-            {
-                // backspace pressed
-            }
-        }
-    }
-    FileManDraw(0xFFFFFFFF);
 }
 
 void FileManDrawString(uint32_t x, uint32_t y, uint8_t* string, uint32_t color)
@@ -88,6 +65,29 @@ void FileManDraw(uint32_t color)
             CurY += 30;
         }
     }
+}
+
+void FileManProc(int MouseX, int MouseY, window* Win)
+{
+    while (Win->ChQueueNum > 0)
+    {
+        Win->ChQueueNum--;
+        uint16_t packet = Win->InCharacterQueue[Win->ChQueueNum];
+        uint8_t C = packet & 0xFF;
+        if (C)
+        {
+            // character pressed
+        }
+        else
+        {
+            uint16_t IsBackspace = packet & (1 << 8);
+            if (IsBackspace)
+            {
+                // backspace pressed
+            }
+        }
+    }
+    FileManDraw(0xFFFFFFFF);
 }
 
 void FileManCreateWindow(int x, int y)
