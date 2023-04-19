@@ -40,7 +40,7 @@ typedef struct {
     uint8_t LCtrl;
     uint8_t RCtrl;
     uint8_t LAlt;
-    uint8_t Ralt;
+    uint8_t RAlt;
     uint8_t Shift, Ctrl, Alt;
     uint8_t Released;
     uint8_t Scancode;

@@ -39,14 +39,19 @@ uint8_t TransformCharcode(keyboard *Kbd, uint8_t Key) {
     }
     return TransLo[Key];
 }
-#if 0
+
 static uint8_t IsFull() {
     return IO_In8(0x64)&1;
 }
-#endif
 
 static uint8_t ReadKey() {
-    return IO_In8(0x60);
+    uint8_t Ret = 0;
+    
+    if (IsFull()) {
+        Ret = IO_In8(0x60);
+    }
+    
+    return Ret;
 }
 
 static void Keyboard_HandleInterrupt_Internal(keyboard *Kbd, keyboard_key *Keys, uint32_t KeysMax, uint32_t *KeysLen)
@@ -61,13 +66,9 @@ static void Keyboard_HandleInterrupt_Internal(keyboard *Kbd, keyboard_key *Keys,
         Alternative = 1;
         K = ReadKey();
     }
-    if (K == 0xAA) {
-        Kbd->LShift = 0;
-        return;
-    }
         
     uint8_t Released = K >= 128;
-    if (Released) return;
+    if (Released) K -= 128;
     if (Alternative) K += 128;
     
     switch (K) {
@@ -86,7 +87,8 @@ static void Keyboard_HandleInterrupt_Internal(keyboard *Kbd, keyboard_key *Keys,
         case 0: return; // ran out of input
     }
     
-    Keys[(*KeysLen)++] = (keyboard_key){
+
+    Keys[*KeysLen] = (keyboard_key){
         Kbd->CapsLock,
         Kbd->LShift,
         Kbd->RShift,
@@ -101,6 +103,7 @@ static void Keyboard_HandleInterrupt_Internal(keyboard *Kbd, keyboard_key *Keys,
         TransformCharcode(Kbd, K),
         K < 128 ? TransLo[K] : 0
     };
+    (*KeysLen)++;
     Alternative = 0;
 }
 
