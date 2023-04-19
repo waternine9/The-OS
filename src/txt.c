@@ -236,7 +236,7 @@ void TxtDraw(uint32_t color)
                 }
                 break;
             default:
-                DrawFontGlyphOnto(CurX, TXT_RES_Y - CurY - 20, C, 2, 0, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
+                DrawFontGlyphOnto(CurX, CurY + 20, C, 2, 0, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
                 CurX += 14;
                 if (CurX > TXT_RES_X - 20)
                 {
@@ -247,7 +247,7 @@ void TxtDraw(uint32_t color)
         }
         I++;
     }
-    DrawFontGlyphOnto(CurX, TXT_RES_Y - CurY - 20, '_', 2, 0, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
+    DrawFontGlyphOnto(CurX, CurY + 20, '_', 2, 0, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
 }
 
 void TxtCreateWindow(int x, int y)

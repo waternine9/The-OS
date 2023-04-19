@@ -98,7 +98,7 @@ void CmdClear()
 
 void CmdDraw(uint32_t color)
 {
-    DrawFontGlyphOnto(0, CONSOLE_RES_Y - 20, '>', 2, color, CmdDrawBuffer, CONSOLE_RES_X, CONSOLE_RES_Y);
+    DrawFontGlyphOnto(0, 20, '>', 2, color, CmdDrawBuffer, CONSOLE_RES_X, CONSOLE_RES_Y);
 
     int CurX = 20;
     int CurY = 20;
@@ -111,7 +111,7 @@ void CmdDraw(uint32_t color)
             case '\n':
                 CurX = 10;
                 CurY += 25;
-                DrawFontGlyphOnto(CurX - 10, CONSOLE_RES_Y - CurY, '>', 2, color, CmdDrawBuffer, CONSOLE_RES_X, CONSOLE_RES_Y);
+                DrawFontGlyphOnto(CurX - 10, CurY, '>', 2, color, CmdDrawBuffer, CONSOLE_RES_X, CONSOLE_RES_Y);
                 CurX += 10;
                 if (CurY > (CONSOLE_RES_Y - 20))
                 {
@@ -132,7 +132,7 @@ void CmdDraw(uint32_t color)
                 }
                 break;
             default:
-                DrawFontGlyphOnto(CurX, CONSOLE_RES_Y - CurY, *StepPtr, 2, color, CmdDrawBuffer, CONSOLE_RES_X, CONSOLE_RES_Y);
+                DrawFontGlyphOnto(CurX, CurY, *StepPtr, 2, color, CmdDrawBuffer, CONSOLE_RES_X, CONSOLE_RES_Y);
                 CurX += 15;
                 if (CurX > (CONSOLE_RES_X - 20))
                 {
@@ -157,6 +157,6 @@ void CmdDraw(uint32_t color)
     if (CmdBlinker > 40) CmdBlinker = 0;
     if (CmdBlinker < 20)
     {
-        DrawFontGlyphOnto(CurX, CONSOLE_RES_Y - CurY, '_', 2, color, CmdDrawBuffer, CONSOLE_RES_X, CONSOLE_RES_Y);
+        DrawFontGlyphOnto(CurX, CurY, '_', 2, color, CmdDrawBuffer, CONSOLE_RES_X, CONSOLE_RES_Y);
     }
 }

@@ -54,7 +54,7 @@ void FileManDrawString(uint32_t x, uint32_t y, uint8_t* string, uint32_t color)
     while (*string)
     {
         if (x > FILEMAN_RES_X - 20) return;
-        DrawFontGlyphOnto(x, FILEMAN_RES_Y - y, *string, 2, color, FileManFramebuff, FILEMAN_RES_X, FILEMAN_RES_Y);
+        DrawFontGlyphOnto(x, y, *string, 2, color, FileManFramebuff, FILEMAN_RES_X, FILEMAN_RES_Y);
         x += 14;
         string++;
     }

@@ -276,7 +276,7 @@ void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, 
     {
         for (int j = 0; j < 8 * scale; j++)
         {
-            SetAlphaPixelOnto(i + x, 8 * scale - j + y, ((uint32_t)glyph[i * 4 / scale + j * 4 / scale * 32] << 24) | color, onto, resX, resY);
+            SetAlphaPixelOnto(i + x, j + y, ((uint32_t)glyph[i * 4 / scale + j * 4 / scale * 32] << 24) | color, onto, resX, resY);
         }
     }
 }
@@ -516,7 +516,7 @@ int ConPrintf(const char *Fmt, ...)
 
 void DrawImage(uint32_t x, uint32_t y, uint32_t resX, uint32_t resY, uint32_t *data)
 {
-    for (int32_t Y = resY - 1; Y >= 0; Y--)
+    for (int32_t Y = 0; Y <= resY; Y++)
     {
         for (uint32_t X = 0; X < resX; X++)
         {
@@ -527,7 +527,7 @@ void DrawImage(uint32_t x, uint32_t y, uint32_t resX, uint32_t resY, uint32_t *d
 }
 void DrawAlphaImage(uint32_t x, uint32_t y, uint32_t resX, uint32_t resY, uint32_t *data)
 {
-    for (int32_t Y = resY - 1; Y >= 0; Y--)
+    for (int32_t Y = 0; Y <= resY; Y++)
     {
         for (uint32_t X = 0; X < resX; X++)
         {
