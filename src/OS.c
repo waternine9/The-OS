@@ -935,7 +935,7 @@ void WriteFile(uint8_t* Source, size_t Size, uint32_t FileNum)
         
         uint8_t buf[512];
         ReadATASector(buf, entry);
-        if (*(uint32_t*)(buf+508) == 0) {
+        if (*(uint32_t*)(buf+508) == 0 && I < SectorCount - 1) {
             uint32_t sector = AllocSector();
             *(uint32_t*)(buf+508) = sector;
             memcpy(buf, Source, 508); 
