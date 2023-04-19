@@ -55,7 +55,7 @@ LoadSectors:
     
     add edi, 512
     inc ecx
-    cmp ecx, 16564
+    cmp ecx, 40000
 
     jl LoadSectors
 

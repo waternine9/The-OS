@@ -2,7 +2,7 @@
 #define H_BOS_OS
 #include <stdint.h>
 
-#define NUM_ICONS 2
+#define NUM_ICONS 3
 
 typedef struct
 {

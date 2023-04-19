@@ -106,17 +106,11 @@ void TxtProc(int MouseX, int MouseY, window* Win)
             TxtEvents &= ~1;
             if (!IsSelecting)
             {
-                int I = 0;
-                while (I < 3)
-                {
-                    SelectingNum[SELECT_NUM] = 0;
-                    I++;
-                }
                 IsSelecting = 1;
             }
             else
             {
-                WriteFile(TextBuffer, 512, FileSelection);
+                WriteFile(TextBuffer, TextSize + 512, FileSelection);
                 
                 
                 uint32_t FileNum = GetFileNum();

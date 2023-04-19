@@ -18,6 +18,7 @@
 #include "ps2help.h"
 #include "OS.h"
 #include "mem.h"
+#include "fileman.h"
 
 extern click_animation ClickAnimation;
 extern uint8_t MousePointerBlack[8];
@@ -843,7 +844,7 @@ void FirstTimeSetup()
 size_t AllocSector() 
 {
     for (size_t I = 40000; I < 200000; I++) {
-        char dat[512];
+        uint8_t dat[512];
         ReadATASector(dat, I);
         if (*(uint32_t*)(dat+508) == 0xFFFFFFFF) {
             return I;    
@@ -896,7 +897,28 @@ void ReadFile(uint8_t* Dest, size_t* Size, uint32_t FileNum)
     }
 }
 
-
+uint8_t ReadFileSize(size_t* Size, uint32_t FileNum)
+{
+    uint32_t entry = FileAllocTable[FileNum];
+    if (!entry) 
+    {
+        return 0;
+    }
+    uint32_t SectorCount = 0;
+    while (1)
+    {
+        uint8_t file[512];
+        ReadATASector(file, entry);
+        uint32_t NextChunk = *(uint32_t*)(file + 508);
+        if (!NextChunk || NextChunk > 200000) 
+        {
+            *Size = (SectorCount + 1) * 508;
+            return 1;
+        }
+        entry = NextChunk;
+        SectorCount++;
+    }
+}
 
 void WriteFile(uint8_t* Source, size_t Size, uint32_t FileNum)
 {
@@ -956,9 +978,6 @@ void OS_Start()
 
     InitCMD();
 
-    FormatWriteString(Fmt, 256, "test %d", 1);
-    ConPrintf(Fmt);
-
     DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, Destination);
     UpdateScreen();
     uint32_t KeysCount = 0;
@@ -977,6 +996,8 @@ void OS_Start()
     CmdWindow.WinProc = &CmdProc;
 
     RegisterWindow(CmdWindow);
+
+    FileManCreateWindow(100, 100);
 
     if (IsFirstTime)
     {

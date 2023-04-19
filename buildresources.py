@@ -16,6 +16,7 @@ font = pygame.font.Font(FONT_FILE, FONT_SIZE)
 # Load sys icons
 cmdicon = pygame.image.load("cmdicon.png")
 txticon = pygame.image.load("txticon.png")
+filemanicon = pygame.image.load("filemanicon.png")
 
 # Create a surface to render the characters
 surface = pygame.Surface((32, 32), pygame.SRCALPHA)
@@ -41,6 +42,20 @@ with open("sysicons.bin", "wb") as output:
 
     # Draw the icon on the surface
     surface.blit(txticon, (0, 0))
+
+    # Write the color values to the output file
+    for y in range(32):
+        for x in range(32):
+            color = surface.get_at((x, y))
+
+
+            output.write(bytes([color.r, color.g, color.b, color.a]))
+
+        # Clear the surface
+    surface.fill((0, 0, 0, 0))
+
+    # Draw the icon on the surface
+    surface.blit(filemanicon, (0, 0))
 
     # Write the color values to the output file
     for y in range(32):
