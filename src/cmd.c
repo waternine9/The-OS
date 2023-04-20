@@ -22,10 +22,10 @@ void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, 
 
 void CmdProc(int MouseX, int MouseY, window* Win)
 {
-    while (Win->ChQueueNum > 0)
+    int I = 0;
+    while (I < Win->ChQueueNum)
     {
-        Win->ChQueueNum--;
-        uint16_t packet = Win->InCharacterQueue[Win->ChQueueNum];
+        uint16_t packet = Win->InCharacterQueue[I];
         uint8_t C = packet & 0xFF;
         if (C) 
         {
@@ -38,7 +38,9 @@ void CmdProc(int MouseX, int MouseY, window* Win)
         }
         uint16_t IsBackspace = packet & (1 << 8);
         if (IsBackspace) CmdBackspace();
+        I++;
     }
+    Win->ChQueueNum = 0;
 
     CmdClear();
     CmdDraw(0xFFFFFFFF);

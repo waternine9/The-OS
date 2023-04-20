@@ -192,10 +192,10 @@ void TxtProc(int MouseX, int MouseY, window* Win)
     CurrentInstance = Win;
     if (!IsSelecting)
     {
-        while (Win->ChQueueNum > 0)
+        int I = 0;
+        while (I < Win->ChQueueNum)
         {
-            Win->ChQueueNum--;
-            uint16_t packet = Win->InCharacterQueue[Win->ChQueueNum];
+            uint16_t packet = Win->InCharacterQueue[I];
             uint8_t C = packet & 0xFF;
             if (C)
             {
@@ -223,15 +223,17 @@ void TxtProc(int MouseX, int MouseY, window* Win)
                     TextSize = 0;
                 }
             }
+            I++;
         }
+        Win->ChQueueNum = 0;
         TxtDraw(0);
     }
     else
     {
-        while (Win->ChQueueNum > 0)
+        int I = 0;
+        while (I < Win->ChQueueNum)
         {
-            Win->ChQueueNum--;
-            uint16_t packet = Win->InCharacterQueue[Win->ChQueueNum];
+            uint16_t packet = Win->InCharacterQueue[I];
             uint8_t C = packet & 0xFF;
             if (C)
             {
@@ -260,7 +262,11 @@ void TxtProc(int MouseX, int MouseY, window* Win)
                     SelectingNumSize = 0;
                 }
             }
+        
+            
+            I++;
         }
+        Win->ChQueueNum = 0;
         SelectDraw(0);
     }
 }
