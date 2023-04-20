@@ -14,60 +14,11 @@ CHARACTERS = [chr(i) for i in range(32, 127)]  # ASCII characters from 32 to 126
 # Load the font
 font = pygame.font.Font(FONT_FILE, FONT_SIZE)
 
-# Load sys icons
-cmdicon = pygame.image.load("resources/icons/cmdicon.png")
-txticon = pygame.image.load("resources/icons/txticon.png")
-filemanicon = pygame.image.load("resources/icons/filemanicon.png")
-
 # Load the background
 backgroundsurf = pygame.image.load("resources/backgrounds/background.bmp")
 
 # Create a surface to render the characters
 surface = pygame.Surface((1920, 1080), pygame.SRCALPHA)
-
-with open("sysicons.bin", "wb") as output:
-
-    # Clear the surface
-    surface.fill((0, 0, 0, 0))
-
-    # Draw the icon on the surface
-    surface.blit(cmdicon, (0, 0))
-
-    # Write the color values to the output file
-    for y in range(32):
-        for x in range(32):
-            color = surface.get_at((x, y))
-
-
-            output.write(bytes([color.r, color.g, color.b, color.a]))
-
-        # Clear the surface
-    surface.fill((0, 0, 0, 0))
-
-    # Draw the icon on the surface
-    surface.blit(txticon, (0, 0))
-
-    # Write the color values to the output file
-    for y in range(32):
-        for x in range(32):
-            color = surface.get_at((x, y))
-
-
-            output.write(bytes([color.r, color.g, color.b, color.a]))
-
-        # Clear the surface
-    surface.fill((0, 0, 0, 0))
-
-    # Draw the icon on the surface
-    surface.blit(filemanicon, (0, 0))
-
-    # Write the color values to the output file
-    for y in range(32):
-        for x in range(32):
-            color = surface.get_at((x, y))
-
-
-            output.write(bytes([color.r, color.g, color.b, color.a]))
 
 with open("font.bin", "wb") as output:
 
@@ -108,15 +59,12 @@ with open("background.bin", "wb") as output:
                 output.write(bytes([color.b, color.g, color.r, color.a]))
 
 with open("background.bin", "rb") as _bg:
-    
     with open("font.bin", "rb") as _font:
-        with open("sysicons.bin", "rb") as _icons:
             with open("resources.bin", "wb") as out:
-                out.write(_icons.read() + _font.read() + _bg.read())
+                out.write(_font.read() + _bg.read())
         
 # Quit Pygame
 pygame.quit()
 
 os.remove("background.bin")
-os.remove("sysicons.bin")
 os.remove("font.bin")

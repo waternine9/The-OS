@@ -5,12 +5,12 @@
 #include "mem.h"
 #include "format.h"
 
-extern window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint8_t* Icon32, uint32_t *Events, uint32_t* Framebuffer);
-extern void DestroyWindow(window*);
-extern void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
-extern void ReadFile(uint8_t*, size_t*, uint32_t);
-extern uint8_t ReadFileSize(size_t*, uint32_t);
-extern void WriteFile(uint8_t*, size_t, uint32_t);
+window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint8_t* Name, uint32_t *Events, uint32_t* Framebuffer);
+void DestroyWindow(window*);
+void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
+void ReadFile(uint8_t*, size_t*, uint32_t);
+uint8_t ReadFileSize(size_t*, uint32_t);
+void WriteFile(uint8_t*, size_t, uint32_t);
 
 uint32_t FileManFramebuff[FILEMAN_RES_X * FILEMAN_RES_Y];
 uint32_t FileManEvents = 0;
@@ -108,6 +108,6 @@ void FileManCreateWindow(int x, int y)
     FileManRect.W = FILEMAN_RES_X;
     FileManRect.H = FILEMAN_RES_Y;
     
-    FileManCurrentInstance = CreateWindow(&FileManRect, FileManProc, ResourcesAt.Icons + 32 * 32 * 4 * 2, &FileManEvents, FileManFramebuff);
+    FileManCurrentInstance = CreateWindow(&FileManRect, FileManProc, "fileman", &FileManEvents, FileManFramebuff);
     
 }

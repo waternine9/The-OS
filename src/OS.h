@@ -13,7 +13,7 @@ typedef struct _window
 {
     rect *Rect;
     uint32_t *Framebuffer;
-    uint32_t *Icon32;
+    uint8_t *Name;
     uint32_t *Events;
     uint8_t Free;
     uint8_t Hidden;
@@ -25,7 +25,6 @@ typedef struct _window
 
 struct _Resources
 {
-    uint8_t Icons[32 * 32 * 4 * NUM_ICONS];
     uint8_t Font[32 * 32 * (127 - 32)];
     uint32_t Background[1920 * 1080];  
 };

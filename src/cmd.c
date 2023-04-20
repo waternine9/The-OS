@@ -18,10 +18,7 @@ uint32_t CmdDrawBuffer[1920 * 1080];
 
 extern uint8_t Font[32 * 32 * (127 - 32)];
 
-extern uint8_t Icons[32 * 32 * 4 * NUM_ICONS];
-
-extern window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint32_t* Icon32, uint32_t *Events, uint32_t* Framebuffer);
-extern void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
+void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
 
 void CmdProc(int MouseX, int MouseY, window* Win)
 {

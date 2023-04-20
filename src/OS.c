@@ -108,14 +108,14 @@ int RegisterWindow(window _Window)
     return RegisteredWinsNum - 1;
 }
 
-window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint32_t* Icon32, uint32_t *Events, uint32_t* Framebuffer)
+window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint8_t *Name, uint32_t *Events, uint32_t* Framebuffer)
 {
     window Win;
     Win.Free = 0;
     Win.Hidden = 0;
     Win.Rect = Rectptr;
     Win.WinProc = WinProc;
-    Win.Icon32 = Icon32;
+    Win.Name = Name;
     Win.Events = Events;
     Win.Framebuffer = Framebuffer;
     return &RegisteredWinsArray[RegisterWindow(Win)];
@@ -315,6 +315,22 @@ uint32_t DrawFontString(int x, int y, const char *s, int scale, uint32_t color)
 
     return y - InitY;
 }
+uint32_t DrawFontStringTerminated(int x, int y, int after, const char *s, int scale, uint32_t color)
+{
+    int InitX = x, InitY = y;
+    for (int i = 0; s[i] && i < after; i++)
+    {
+        DrawFontGlyph(x, y, s[i], scale, color);
+        x += 7 * scale;
+        if (x + 7 * scale > VESA_RES_X)
+        {
+            x = InitX;
+            y += 8 * scale + 4 * scale;
+        }
+    }
+    y += 8 * scale + 4 * scale;
+
+}
 void DrawRect(int X, int Y, int W, int H, uint32_t Color)
 {
     int InitX = X;
@@ -333,18 +349,21 @@ void DrawDragBar(int X, int Y, int W, int H)
 {
     for (int _Y = Y; _Y < Y + H; _Y++)
     {
-        uint8_t Counter = (_Y % 2) ? 1 : 0;
+        uint8_t Counter = 0;
         for (int _X = X; _X < X + W; _X++)
         {
-            if (Counter == 2)
+            if (Counter > 20)
             {
-                SetPixel(_X, _Y, 0xFF222222);
-                Counter = 0;
+                SetAlphaPixel(_X, _Y, 0x44FFFFFF);
             }
             else
             {
                 SetPixel(_X, _Y, 0xFFFFFFFF);
-                Counter++;
+            }
+            Counter++;
+            if (Counter > 40)
+            {
+                Counter = 0;
             }
         }
     }
@@ -370,13 +389,13 @@ void DrawOutline(int X, int Y, int W, int H, int thickness)
     {
         for (int _X = X - thickness; _X < X + W + thickness; _X++)
         {
-            SetAlphaPixel(_X, Y - thickness, 0xFFFFFFFF);
-            SetAlphaPixel(_X, Y + H + thickness, 0xFFFFFFFF);
+            SetAlphaPixel(_X, Y - thickness, 0x44FFFFFF);
+            SetAlphaPixel(_X, Y + H + thickness, 0x44FFFFFF);
         }
         for (int _Y = Y - thickness; _Y < Y + H + thickness; _Y++)
         {
-            SetAlphaPixel(X - thickness, _Y, 0xFFFFFFFF);
-            SetAlphaPixel(X + W + thickness, _Y, 0xFFFFFFFF);
+            SetAlphaPixel(X - thickness, _Y, 0x44FFFFFF);
+            SetAlphaPixel(X + W + thickness, _Y, 0x44FFFFFF);
         }
     }
 }
@@ -635,7 +654,7 @@ void WinLmbHandler()
             continue;
         }
         
-        rect WinTaskRect = {VESA_RES_X / 2 - TaskbarLen / 2 + WinsNum * 32 + 32, VESA_RES_Y - 40, 32, 32};
+        rect WinTaskRect = { WinsNum * 200, VESA_RES_Y - 50, 200, 50 };
         if (IsInRect(WinTaskRect, MouseX, MouseY))
         {
             BringWindowToFront(WinsNum);
@@ -724,6 +743,7 @@ const char *Num2Str[100] = {"00", "01", "02", "03", "04", "05", "06", "07", "08"
 void DrawToolBar(int scale)
 {
     DrawAlphaRect(0, VESA_RES_Y - 25 * scale, VESA_RES_X, 25 * scale, 0x77000000);
+    DrawOutline(0, VESA_RES_Y - 25 * scale, VESA_RES_X, 25 * scale, 2);
     RegisterRect(0, VESA_RES_Y - 25 * scale, VESA_RES_X, 25 * scale);
 }
 
@@ -891,12 +911,13 @@ volatile void RenderDynamic()
             WinsNum++;
             continue;
         }
-        DrawImage(VESA_RES_X / 2 - TaskbarLen / 2 + WinsNum * 32 + 32, VESA_RES_Y - 40, 32, 32, Win.Icon32);
-        DrawOutline(VESA_RES_X / 2 - TaskbarLen / 2 + WinsNum * 32 + 32 - 1, VESA_RES_Y - 40 - 1, 34, 34, 1);
         if (WinsNum == RegisteredWinsNum - 1)
         {
-            DrawRect(VESA_RES_X / 2 - TaskbarLen / 2 + WinsNum * 32 + 32, VESA_RES_Y - 3, 32, 2, 0xFFFFFFFF);
+            DrawAlphaRect(WinsNum * 200, VESA_RES_Y - 50, 200, 50, 0x44FFFFFF);
         }
+        DrawFontStringTerminated(WinsNum * 200 + 20, VESA_RES_Y - 32, 10, Win.Name, 2, 0xFFFFFFFF);
+        
+        
 
         if (Win.Hidden)
         {
@@ -904,7 +925,7 @@ volatile void RenderDynamic()
             continue;
         }
 
-        DrawOutline(Win.Rect->X - 1, Win.Rect->Y - 10, Win.Rect->W + 1, Win.Rect->H + 11, 1);
+        DrawOutline(Win.Rect->X - 1, Win.Rect->Y - 10, Win.Rect->W + 1, Win.Rect->H + 11, 2);
         DrawDragBar(Win.Rect->X, Win.Rect->Y - 10, Win.Rect->W, 10);
         RegisterRect(Win.Rect->X - 4, Win.Rect->Y - 24, Win.Rect->W + 8, Win.Rect->H + 28);
         DrawImage(Win.Rect->X, Win.Rect->Y, Win.Rect->W, Win.Rect->H, Win.Framebuffer);
@@ -989,7 +1010,7 @@ void OS_Start()
     CmdWindow.Framebuffer = CmdDrawBuffer;
     CmdWindow.Free = 0;
     CmdWindow.Hidden = 0;
-    CmdWindow.Icon32 = (uint32_t*)ResourcesAt.Icons;
+    CmdWindow.Name = "cmd";
     CmdWindow.WinProc = &CmdProc;
 
     RegisterWindow(CmdWindow);

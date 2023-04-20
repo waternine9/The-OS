@@ -6,7 +6,7 @@
 #define TXT_RES_X 400
 #define TXT_RES_Y 200
 
-window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint32_t* Icon32, uint32_t *Events, uint32_t* Framebuffer);
+window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint8_t* Name, uint32_t *Events, uint32_t* Framebuffer);
 void DestroyWindow(window*);
 void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
 void ReadFile(uint8_t*, size_t*, uint32_t);
@@ -277,6 +277,6 @@ void TxtCreateWindow(int x, int y)
     TxtRect.W = TXT_RES_X;
     TxtRect.H = TXT_RES_Y;
     
-    CurrentInstance = CreateWindow(&TxtRect, TxtProc, (uint32_t*)(ResourcesAt.Icons) + (32 * 32), &TxtEvents, TxtFramebuff);
+    CurrentInstance = CreateWindow(&TxtRect, TxtProc, "txt", &TxtEvents, TxtFramebuff);
     
 }
