@@ -967,6 +967,10 @@ void OS_Start()
     PIC_Init();
     PIC_SetMask(0xFFFF); // Disable all irqs
     MouseInstall();
+
+    MouseX = VESA_RES_X / 2;
+    MouseY = VESA_RES_Y / 2;
+
     IDT_Init();
     PIC_SetMask(0x0000); // Enable all irqs
 
@@ -1022,10 +1026,6 @@ void OS_Start()
     RegisterRect(0, VESA_RES_Y / 2 - 16, VESA_RES_X, 40);
     DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, ResourcesAt.Background);
 
-    
-
-    MouseX = 320;
-    MouseY = 240;
 
     while (1)
     {

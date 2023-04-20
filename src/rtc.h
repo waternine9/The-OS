@@ -1,5 +1,5 @@
-#ifndef H_BOS_RTC
-#define H_BOS_RTC
+#ifndef H_TOS_RTC
+#define H_TOS_RTC
 #include <stdint.h>
 
 

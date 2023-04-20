@@ -2,11 +2,13 @@
 #include "kernel.h"
 #include "drivers/mouse/mouse.h"
 #include "drivers/keyboard/keyboard.h"
+#include "mutex.h"
 
 int32_t MouseX, MouseY;
 uint8_t MouseRmbClicked, MouseLmbClicked;
 
 uint8_t KeyboardCharPressed = 0xFF;
+mutex PS2Mutex;
 
 extern int ConPrintf(const char *Fmt, ...);
 
@@ -18,7 +20,9 @@ void CHandlerIRQ0()
 /* Keyboard Interrupt */
 void CHandlerIRQ1()
 {
+    MutexLock(&PS2Mutex);
     Keyboard_HandleInterrupt();
+    MutexRelease(&PS2Mutex);
     PIC_EndOfInterrupt(1);
 }
 /* Channel for Secondary PIC, don't use. */
@@ -77,6 +81,7 @@ static uint8_t IsFull() {
 /* PS/2 Mouse */
 void CHandlerIRQ12()
 {
+    MutexLock(&PS2Mutex);
     while (IsFull())
     {
         uint8_t Byte0 = IO_In8(0x60);
@@ -87,6 +92,8 @@ void CHandlerIRQ12()
         MouseX += Byte1;
         MouseY -= Byte2;
     }
+    MutexRelease(&PS2Mutex);
+
     PIC_EndOfInterrupt(12);
 }
 /* FPU */

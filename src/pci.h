@@ -1,5 +1,5 @@
-#ifndef H_BOS_PCI
-#define H_BOS_PCI
+#ifndef H_TOS_PCI
+#define H_TOS_PCI
 
 #include <stdint.h>
 
@@ -49,4 +49,4 @@ pci_device_header PCI_QueryDeviceHeader(pci_device_path Path);
 pci_device_specialty PCI_QueryDeviceSpecialty(pci_device_header Header);
 
 
-#endif // H_BOS_PCI
+#endif // H_TOS_PCI

@@ -45,7 +45,16 @@ After:
     mov edi, 0x7E00
     mov ecx, 1
 
-    
+    .keyboard_check:
+    xor ax,ax
+    in al,0x64
+    bt ax, 1 ; Test if buffer is still full
+    jc .keyboard_check
+
+    ; Disable keyboard because of a weird bug
+    mov dx, 0x60
+    mov al, 0xF5
+    out dx, al
 
 LoadSectors:
     push edi
@@ -63,6 +72,26 @@ LoadSectors:
     mov eax, [PhysBasePtr]
     mov [VbeModeInfo.PhysBasePtr], eax
     
+    .keyboard_check:
+    xor ax,ax
+    in al,0x64
+    bt ax, 1 ;test if buffer is still full
+    jc .keyboard_check
+
+    ; Enable keyboard because of a weird bug
+    mov dx, 0x60
+    mov al, 0xF4
+    out dx, al
+
+    ; Use scancode set 1
+    mov dx, 0x60
+    mov al, 0xF0
+    out dx, al
+    
+    mov al, 1
+    out dx, al
+    
+
     ; NOTE: `Start` is the actual starting point of the code, starts at 0x7E00
     jmp   Start
 
@@ -160,11 +189,6 @@ LoadATASectorASM:
     rep insw
     ret
 PhysBasePtr: dd 0
-
-times 0x1BE-($-$$) db 0
-db 0x80, 0, 1, 0, 0x0B, 0xFF, 0xFF, 0xFF
-dd 1
-dd 0xFFFFFFFF
 
 
 times 510-($-$$) db 0

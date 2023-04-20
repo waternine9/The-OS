@@ -1,5 +1,5 @@
-#ifndef H_BOS_MUTEX
-#define H_BOS_MUTEX
+#ifndef H_TOS_MUTEX
+#define H_TOS_MUTEX
 
 #include <stdbool.h>
 

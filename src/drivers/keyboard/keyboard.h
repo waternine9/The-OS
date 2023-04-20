@@ -2,8 +2,8 @@
 /// BRIEF: PS/2 Keyboard handler.
 ///
 
-#ifndef H_BOS_KEYBOARD
-#define H_BOS_KEYBOARD
+#ifndef H_TOS_KEYBOARD
+#define H_TOS_KEYBOARD
 
 #include <stdint.h>
 
@@ -51,4 +51,4 @@ typedef struct {
 void Keyboard_CollectEvents(keyboard *Kbd, keyboard_key *Keys, uint32_t KeysMax, uint32_t *KeysLen);
 void Keyboard_HandleInterrupt();
 
-#endif // H_BOS_KEYBOARD
+#endif // H_TOS_KEYBOARD

@@ -1,5 +1,5 @@
-#ifndef H_BOS_MOUSE
-#define H_BOS_MOUSE
+#ifndef H_TOS_MOUSE
+#define H_TOS_MOUSE
 #include "../../io.h"
 #include "../../format.h"
 
@@ -14,4 +14,4 @@ typedef struct
     int x, y;
 } click_animation;
 
-#endif // H_BOS_MOUSE
+#endif // H_TOS_MOUSE

@@ -119,9 +119,6 @@ void MouseInstall()
 
   IO_Out8(0x64, 0xAE); // Enable first PS/2 port (keyboard)
   IO_Out8(0x64, 0xA8); // Enable second PS/2 port (mouse)
-  
-  IO_Out8(0x60, 0xF4); // Enable keyboard data reporting (scanning)
-  // Wait for the keyboard's ACK (0xFA)
 
   IO_Out8(0x64, 0xD4); // Prepare to send command to the mouse
   IO_Out8(0x60, 0xF4); // Enable mouse data reporting (movement and button events)

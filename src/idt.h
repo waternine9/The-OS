@@ -1,5 +1,5 @@
-#ifndef H_BOS_IDT
-#define H_BOS_IDT
+#ifndef H_TOS_IDT
+#define H_TOS_IDT
 
 typedef struct {
     unsigned short int OffsetLow;
@@ -13,4 +13,4 @@ extern idt_entry IDT[256];
 
 void IDT_Init();
 
-#endif // H_BOS_IDT
+#endif // H_TOS_IDT

@@ -1,5 +1,5 @@
-#ifndef H_BOS_CMD
-#define H_BOS_CMD
+#ifndef H_TOS_CMD
+#define H_TOS_CMD
 #include <stdint.h>
 #define CONSOLE_RES_X VESA_RES_X / 4
 #define CONSOLE_RES_Y VESA_RES_Y / 2

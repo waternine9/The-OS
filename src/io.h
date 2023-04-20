@@ -1,5 +1,5 @@
-#ifndef H_BOS_IO
-#define H_BOS_IO
+#ifndef H_TOS_IO
+#define H_TOS_IO
 
 #include <stdint.h>
 
@@ -13,4 +13,4 @@ void IO_Out32(uint16_t Port, uint32_t Value);
 
 void IO_Wait();
 
-#endif // H_BOS_IO
+#endif // H_TOS_IO

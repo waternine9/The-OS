@@ -1,5 +1,5 @@
-#ifndef H_BOS_BMP
-#define H_BOS_BMP
+#ifndef H_TOS_BMP
+#define H_TOS_BMP
 
 #include <stdint.h>
 
@@ -13,4 +13,4 @@ typedef struct {
  */
 void BMP_Read(uint8_t *DataPtr, bmp_bitmap_info *OutInfo, uint32_t *Destination);
 
-#endif // H_BOS_BMP
+#endif // H_TOS_BMP
