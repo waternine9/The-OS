@@ -2,8 +2,8 @@
 /// BRIEF: A shell interpreter
 ///
 
-#ifndef H_BOS_BEESCRIPT
-#define H_BOS_BEESCRIPT
+#ifndef H_TOS_BEESCRIPT
+#define H_TOS_BEESCRIPT
 
 #include <stddef.h>
 
@@ -29,4 +29,4 @@ typedef struct {
 void Bee_ExecuteBatchScript(batch_script *Script);
 
 
-#endif // H_BOS_BEESCRIPT
+#endif // H_TOS_BEESCRIPT

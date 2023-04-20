@@ -1,5 +1,5 @@
-#ifndef H_BOS_MEM
-#define H_BOS_MEM
+#ifndef H_TOS_MEM
+#define H_TOS_MEM
 
 #include <stddef.h>
 
@@ -19,4 +19,4 @@ static inline void memset(void *Destination_, uint8_t Val, size_t N)
     }
 }
 
-#endif // H_BOS_MEM
+#endif // H_TOS_MEM

@@ -1,5 +1,5 @@
-#ifndef H_BOS_CONSOLE
-#define H_BOS_CONSOLE
+#ifndef H_TOS_CONSOLE
+#define H_TOS_CONSOLE
 #define CONSOLE_MAX_LINE_LENGTH 77
 #define CONSOLE_MAX_LINES 37
 
@@ -11,4 +11,4 @@ typedef struct {
 void ConsoleWrite(console *Console, const char *Text);
 void ConsoleClear(console *Console);
 
-#endif // H_BOS_CONSOLE
+#endif // H_TOS_CONSOLE

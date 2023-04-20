@@ -1,5 +1,5 @@
-#ifndef H_BOS_OS
-#define H_BOS_OS
+#ifndef H_TOS_OS
+#define H_TOS_OS
 #include <stdint.h>
 
 #define NUM_ICONS 3
@@ -29,4 +29,4 @@ struct _Resources
     uint32_t Background[1920 * 1080];  
 };
 
-#endif // H_BOS_OS
+#endif // H_TOS_OS
