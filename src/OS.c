@@ -15,7 +15,6 @@
 #include "cmd.h"
 #include "drivers/keyboard/keyboard.h"
 #include "drivers/mouse/mouse.h"
-#include "ps2help.h"
 #include "OS.h"
 #include "mem.h"
 #include "fileman.h"
@@ -879,8 +878,6 @@ void WriteFile(uint8_t* Source, size_t Size, uint32_t FileNum)
     }
 }
 
-char Fmt[256];
-
 volatile void RenderDynamic()
 {
     // First, blit all windows
@@ -907,8 +904,8 @@ volatile void RenderDynamic()
             continue;
         }
 
-        DrawOutline(Win.Rect->X - 1, Win.Rect->Y - 21, Win.Rect->W + 1, Win.Rect->H + 22, 1);
-        DrawDragBar(Win.Rect->X, Win.Rect->Y - 20, Win.Rect->W, 20);
+        DrawOutline(Win.Rect->X - 1, Win.Rect->Y - 10, Win.Rect->W + 1, Win.Rect->H + 11, 1);
+        DrawDragBar(Win.Rect->X, Win.Rect->Y - 10, Win.Rect->W, 10);
         RegisterRect(Win.Rect->X - 4, Win.Rect->Y - 24, Win.Rect->W + 8, Win.Rect->H + 28);
         DrawImage(Win.Rect->X, Win.Rect->Y, Win.Rect->W, Win.Rect->H, Win.Framebuffer);
 
@@ -973,13 +970,12 @@ void OS_Start()
 
 
     bmp_bitmap_info BMPInfo;
-    BMP_Read(ResourcesAt.Buf, &BMPInfo, Destination);
     char CmdLine[129] = {0};
     int CmdLineLen = 0;
 
     InitCMD();
 
-    DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, Destination);
+    DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, ResourcesAt.Background);
     UpdateScreen();
     uint32_t KeysCount = 0;
     rect LastRect = {0};
@@ -1002,8 +998,8 @@ void OS_Start()
 
     if (IsFirstTime)
     {
-        DrawAlphaRect(0, 0, 1920, 40, 0x77000000);
-        DrawFontString(1920 / 2 - FormatCStringLength("Please wait") * 16 + 32, 0, "Please wait", 4, 0xFFFFFFFF);
+        DrawAlphaRect(0, VESA_RES_Y / 2 - 16, 1920, 32, 0x77000000);
+        DrawFontString(1920 / 2 - FormatCStringLength("Formatting...") * 16 + 32, VESA_RES_Y / 2 - 16, "Formatting...", 4, 0xFFFFFFFF);
         UpdateScreen();
         FirstTimeSetup();
     }
@@ -1016,8 +1012,8 @@ void OS_Start()
             FileAllocTableStep += 512;
         }
     }
-    RegisterRect(0, 0, 1920, 40);
-    DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, Destination);
+    RegisterRect(0, VESA_RES_Y / 2 - 16, VESA_RES_X, 40);
+    DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, ResourcesAt.Background);
 
     while (1)
     {
@@ -1046,7 +1042,7 @@ void OS_Start()
                         window* Win = &RegisteredWinsArray[RegisteredWinsNum - 1];
                         if (Win->ChQueueNum < 256)
                         {
-                            Win->InCharacterQueue[Win->ChQueueNum] = Keys[I].ASCII;
+                            Win->InCharacterQueue[Win->ChQueueNum] = Keys[I].ASCII | ((uint16_t)Keys[I].LCtrl << 8);
                             Win->ChQueueNum++;
                         }
                     }

@@ -27,7 +27,7 @@ struct _Resources
 {
     uint8_t Icons[32 * 32 * 4 * NUM_ICONS];
     uint8_t Font[32 * 32 * (127 - 32)];
-    uint8_t Buf[1920 * 1080 * 4];  
+    uint32_t Background[1920 * 1080];  
 };
 
 #endif // H_BOS_OS

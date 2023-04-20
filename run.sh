@@ -1,1 +1,1 @@
-qemu-system-x86_64 -hda bin/boot.img -cpu host -enable-kvm
+qemu-system-x86_64 -drive format=raw,file=bin/boot.img

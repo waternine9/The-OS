@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include "mem.h"
 #include "OS.h"
 
 #define TXT_RES_X 400
@@ -80,7 +81,7 @@ uint32_t GetDigit(uint8_t x)
 
 uint32_t GetFileNum()
 {
-    if (!SelectingNumSize) return 4;
+    if (!SelectingNumSize) return 0;
     uint32_t FileNum = 0;
     int Multiplier = 1;
     int I = SelectingNumSize - 1;
@@ -118,7 +119,7 @@ void TxtDraw(uint32_t color)
                 }
                 break;
             default:
-                DrawFontGlyphOnto(CurX, TXT_RES_Y - CurY - 20, C, 2, 0, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
+                DrawFontGlyphOnto(CurX, CurY, C, 2, 0, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
                 CurX += 14;
                 if (CurX > TXT_RES_X - 20)
                 {
@@ -129,7 +130,7 @@ void TxtDraw(uint32_t color)
         }
         I++;
     }
-    DrawFontGlyphOnto(CurX, TXT_RES_Y - CurY - 20, '_', 2, 0, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
+    DrawFontGlyphOnto(CurX, CurY, '_', 2, 0, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
 }
 
 void SelectDraw(uint32_t color)
@@ -151,42 +152,43 @@ void SelectDraw(uint32_t color)
     }
 }
 
+void SwitchSelection()
+{
+    if (!IsSelecting)
+    {
+        memset(SelectingNum, 0, SELECT_NUM);
+        SelectingNumSize = 0;
+        IsSelecting = 1;
+    }
+    else
+    {
+        WriteFile(TextBuffer, TextSize + 512, FileSelection);
+        
+        
+        uint32_t FileNum = GetFileNum();
+        
+        size_t junk;
+        ReadFile(TextBuffer, &junk, FileNum);
+        int I = 0;
+
+        while (TextBuffer[I] > 0)
+
+        {
+            I++;
+        }
+
+        TextSize = I;
+        FileSelection = FileNum;
+        IsSelecting = 0;
+    }
+        
+}
+
 void TxtProc(int MouseX, int MouseY, window* Win)
 {
 
     
-    if (TxtEvents)
-    {
-        if (TxtEvents & 1) // LMB clicked
-        {
-            TxtEvents &= ~1;
-            if (!IsSelecting)
-            {
-                IsSelecting = 1;
-            }
-            else
-            {
-                WriteFile(TextBuffer, TextSize + 512, FileSelection);
-                
-                
-                uint32_t FileNum = GetFileNum();
-                
-                size_t junk;
-                ReadFile(TextBuffer, &junk, FileNum);
-                int I = 0;
-
-                while (TextBuffer[I] > 0)
-
-                {
-                    I++;
-                }
-
-                TextSize = I;
-                FileSelection = FileNum;
-                IsSelecting = 0;
-            }
-        }
-    }
+    
     CurrentInstance = Win;
     if (!IsSelecting)
     {
@@ -197,12 +199,18 @@ void TxtProc(int MouseX, int MouseY, window* Win)
             uint8_t C = packet & 0xFF;
             if (C)
             {
-
-                TextBuffer[TextSize] = C;   
-                TextSize++;
-                if (C == '\n')
+                if (C == 'g' && packet & (1 << 8))
                 {
-                    TextViewOffset++;
+                    SwitchSelection();
+                }
+                else
+                {
+                    TextBuffer[TextSize] = C;   
+                    TextSize++;
+                    if (C == '\n')
+                    {
+                        TextViewOffset++;
+                    }
                 }
                 
             }
@@ -227,12 +235,19 @@ void TxtProc(int MouseX, int MouseY, window* Win)
             uint8_t C = packet & 0xFF;
             if (C)
             {
-
-                SelectingNum[SelectingNumSize] = C;   
-                SelectingNumSize++;
-                if (SelectingNumSize > SELECT_NUM)
+                
+                if (C == 'g' && packet & (1 << 8))
                 {
-                    SelectingNumSize--;
+                    SwitchSelection();
+                }
+                else
+                {
+                    SelectingNum[SelectingNumSize] = C;   
+                    SelectingNumSize++;
+                    if (SelectingNumSize > SELECT_NUM)
+                    {
+                        SelectingNumSize--;
+                    }
                 }
                 
             }
