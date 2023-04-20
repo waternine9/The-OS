@@ -760,7 +760,7 @@ void Format()
     
     int SectorCount = 256*64;
     while (SectorCount--) {
-        WriteATASector(EmptyBuff, 40000 + SectorCount);
+        WriteATASector(EmptyBuff, 100000 + SectorCount);
     }
     WriteATASector(EmptyBuff, (uint32_t)(&IsFirstTime - 0x7C00) / 512);
 }
@@ -772,7 +772,7 @@ void FirstTimeSetup()
 
 size_t AllocSector() 
 {
-    for (size_t I = 40000; I < 200000; I++) {
+    for (size_t I = 100000; I < 200000; I++) {
         uint8_t dat[512];
         ReadATASector(dat, I);
         if (*(uint32_t*)(dat+508) == 0xFFFFFFFF) {
