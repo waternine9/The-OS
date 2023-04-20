@@ -347,21 +347,12 @@ void DrawDragBar(int X, int Y, int W, int H)
 {
     for (int _Y = Y; _Y < Y + H; _Y++)
     {
-        uint8_t Counter = 0;
         for (int _X = X; _X < X + W; _X++)
         {
-            if (Counter > 20)
-            {
+            if (((_X-X)/20) % 2) {
                 SetAlphaPixel(_X, _Y, 0x44FFFFFF);
-            }
-            else
-            {
-                SetPixel(_X, _Y, 0xFFFFFFFF);
-            }
-            Counter++;
-            if (Counter > 40)
-            {
-                Counter = 0;
+            } else {
+                SetAlphaPixel(_X, _Y, 0xAAFFFFFF);
             }
         }
     }
