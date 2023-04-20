@@ -55,7 +55,7 @@ LoadSectors:
     
     add edi, 512
     inc ecx
-    cmp ecx, 40000
+    cmp ecx, 100000
 
     jl LoadSectors
 
@@ -180,9 +180,6 @@ align 16
 %include "kernel/vesa_vbe_setup_vars.s"
 %include "kernel/irq_handlers.s"
 
-global ResourcesAt
-ResourcesAt:
-incbin "resources.bin"
 
 
 section .text
@@ -195,4 +192,9 @@ section .text
 ; Includes here
 ;
 ;
+
+section .resources
+global ResourcesAt
+ResourcesAt:
+incbin "resources.bin"
 

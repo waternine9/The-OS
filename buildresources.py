@@ -1,11 +1,12 @@
 import pygame
 import sys
+import os
 
 # Initialize Pygame
 pygame.init()
 
 # Constants
-FONT_FILE = "src/fonts/ApercuMonoProLight.ttf"  # Replace with the path to your font file
+FONT_FILE = "resources/fonts/ApercuMonoProLight.ttf"  # Replace with the path to your font file
 FONT_SIZE = 32
 OUTPUT_FILE = "font.bin"
 CHARACTERS = [chr(i) for i in range(32, 127)]  # ASCII characters from 32 to 126
@@ -14,12 +15,12 @@ CHARACTERS = [chr(i) for i in range(32, 127)]  # ASCII characters from 32 to 126
 font = pygame.font.Font(FONT_FILE, FONT_SIZE)
 
 # Load sys icons
-cmdicon = pygame.image.load("cmdicon.png")
-txticon = pygame.image.load("txticon.png")
-filemanicon = pygame.image.load("filemanicon.png")
+cmdicon = pygame.image.load("resources/icons/cmdicon.png")
+txticon = pygame.image.load("resources/icons/txticon.png")
+filemanicon = pygame.image.load("resources/icons/filemanicon.png")
 
 # Load the background
-backgroundsurf = pygame.image.load("background.bmp")
+backgroundsurf = pygame.image.load("resources/backgrounds/background.bmp")
 
 # Create a surface to render the characters
 surface = pygame.Surface((1920, 1080), pygame.SRCALPHA)
@@ -98,7 +99,7 @@ with open("background.bin", "wb") as output:
         scaled_bg = pygame.transform.smoothscale(backgroundsurf, (1920, 1080))
         scaled_bg = pygame.transform.flip(scaled_bg, False, True)
         # Draw the scaled character on the surface
-        surface.blit(backgroundsurf, (0, 0))
+        surface.blit(scaled_bg, (0, 0))
 
         # Write the alpha values to the output file
         for y in range(1080):
@@ -115,3 +116,7 @@ with open("background.bin", "rb") as _bg:
         
 # Quit Pygame
 pygame.quit()
+
+os.remove("background.bin")
+os.remove("sysicons.bin")
+os.remove("font.bin")

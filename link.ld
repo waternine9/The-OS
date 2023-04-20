@@ -7,6 +7,7 @@ SECTIONS {
     {
         *(.boot)
         *(.text)
+        
     }
     .rodata : 
     {
@@ -19,6 +20,11 @@ SECTIONS {
     .bss : 
     {
         *(.bss)  
+        
+    }
+    .resources :
+    {
+        *(.resources)
     }
 }
 
