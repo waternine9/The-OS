@@ -961,17 +961,14 @@ volatile void RenderDynamic()
 
 void OS_Start()
 {
+    // Initialize BSS
+    memset((uint8_t*)0x100000, 0, 100000);
+ 
     PIC_Init();
     PIC_SetMask(0xFFFF); // Disable all irqs
-
     MouseInstall();
-
-    MouseX = 320;
-    MouseY = 240;
-
     IDT_Init();
     PIC_SetMask(0x0000); // Enable all irqs
-    ProbeAllPCIDevices();
 
     batch_script Script = {};
 
@@ -1002,9 +999,9 @@ void OS_Start()
     CmdWindow.Name = "cmd";
     CmdWindow.WinProc = &CmdProc;
 
-    RegisterWindow(CmdWindow);
 
     FileManCreateWindow(100, 100);
+    RegisterWindow(CmdWindow);
 
     if (IsFirstTime)
     {
@@ -1024,6 +1021,11 @@ void OS_Start()
     }
     RegisterRect(0, VESA_RES_Y / 2 - 16, VESA_RES_X, 40);
     DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, ResourcesAt.Background);
+
+    
+
+    MouseX = 320;
+    MouseY = 240;
 
     while (1)
     {

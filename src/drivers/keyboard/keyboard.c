@@ -47,66 +47,62 @@ static uint8_t IsFull() {
 }
 
 static uint8_t ReadKey() {
-    uint8_t Ret = 0;
-    
-    if (IsFull()) {
-        Ret = IO_In8(0x60);
-    }
-    
-    return Ret;
+    return IO_In8(0x60);
 }
 
 static void Keyboard_HandleInterrupt_Internal(keyboard *Kbd, keyboard_key *Keys, uint32_t KeysMax, uint32_t *KeysLen)
 {
-    uint8_t Alternative = 0;
-    if (*KeysLen >= KeysMax) {
-        return;
-    }
+    while (IsFull()) {
+        uint8_t Alternative = 0;
+        if (*KeysLen >= KeysMax) {
+            return;
+        }
      
-    uint8_t K = ReadKey();
-    if (K == 0xE0) {
-        Alternative = 1;
-        K = ReadKey();
-    }
+        uint8_t K = ReadKey();
+        if (K == 0xE0) {
+            Alternative = 1;
+            K = ReadKey();
+        }
         
-    uint8_t Released = K >= 128;
-    if (Released) K -= 128;
-    if (Alternative) K += 128;
+        uint8_t Released = K >= 128;
+        if (Released) K -= 128;
+        if (Alternative) K += 128;
     
-    switch (K) {
-        case KEY_LSHIFT: case KEY_FKLSHIFT: 
-            Kbd->LShift = !Released; 
-            break;
-        case KEY_RSHIFT: case KEY_FKRSHIFT:
-            Kbd->RShift = !Released; 
-            break;
-        case KEY_LCTRL:       Kbd->LCtrl = !Released; break;
-        case KEY_RCTRL:       Kbd->RCtrl = !Released; break;
-        case KEY_LALT:        Kbd->LAlt = !Released; break;
-        case KEY_RALT:        Kbd->RAlt = !Released; break;
-        case KEY_CAPS_LOCK:   if (!Released) Kbd->CapsLock = !Kbd->CapsLock; break;
+        switch (K) {
+            case KEY_LSHIFT: case KEY_FKLSHIFT:
+                Kbd->LShift = !Released;
+                break;
+            case KEY_RSHIFT: case KEY_FKRSHIFT:
+                Kbd->RShift = !Released;
+                break;
+            case KEY_LCTRL:       Kbd->LCtrl = !Released; break;
+            case KEY_RCTRL:       Kbd->RCtrl = !Released; break;
+            case KEY_LALT:        Kbd->LAlt = !Released; break;
+            case KEY_RALT:        Kbd->RAlt = !Released; break;
+            case KEY_CAPS_LOCK:   if (!Released) Kbd->CapsLock = !Kbd->CapsLock; break;
         
-        case 0: return; // ran out of input
-    }
+            case 0: return; // ran out of input
+        }
     
 
-    Keys[*KeysLen] = (keyboard_key){
-        Kbd->CapsLock,
-        Kbd->LShift,
-        Kbd->RShift,
-        Kbd->LCtrl,
-        Kbd->RCtrl,
-        Kbd->LAlt,
-        Kbd->RAlt,
-        Kbd->LShift||Kbd->RShift,
-        Kbd->LCtrl||Kbd->RCtrl,
-        Kbd->LAlt||Kbd->RAlt,
-        Released, K,
-        TransformCharcode(Kbd, K),
-        K < 128 ? TransLo[K] : 0
-    };
-    (*KeysLen)++;
-    Alternative = 0;
+        Keys[*KeysLen] = (keyboard_key) {
+            Kbd->CapsLock,
+            Kbd->LShift,
+            Kbd->RShift,
+            Kbd->LCtrl,
+            Kbd->RCtrl,
+            Kbd->LAlt,
+            Kbd->RAlt,
+            Kbd->LShift || Kbd->RShift,
+            Kbd->LCtrl || Kbd->RCtrl,
+            Kbd->LAlt || Kbd->RAlt,
+            Released, K,
+            TransformCharcode(Kbd, K),
+            K < 128 ? TransLo[K] : 0
+        };
+        (*KeysLen)++;
+        Alternative = 0;
+    }
 }
 
 void Keyboard_HandleInterrupt()
@@ -127,7 +123,7 @@ void Keyboard_CollectEvents(keyboard *Kbd, keyboard_key *Keys, uint32_t KeysMax,
     *Kbd = GlobalKeyboard;
     memcpy((uint8_t*)Keys, (uint8_t*)GlobalKeys, sizeof(keyboard_key) * KeysToCopy);
 
-    *KeysLen = GlobalKeysCount;
-    GlobalKeysCount = 0;    
+    *KeysLen = KeysToCopy;
+    GlobalKeysCount = 0;  
     MutexRelease(&GlobalKeyboardMutex);
 }
