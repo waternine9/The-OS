@@ -3,14 +3,17 @@
 
 #include <stddef.h>
 
-static inline void memcpy(uint8_t *Destination, uint8_t *Source, size_t N)
+static inline void memcpy(void *Destination_, void *Source_, size_t N)
 {
+    uint8_t *Destination = Destination_;
+    uint8_t *Source = Source_;
     while (N--) {
         *Destination++ = *Source++;
     }
 }
-static inline void memset(uint8_t *Destination, uint8_t Val, size_t N)
+static inline void memset(void *Destination_, uint8_t Val, size_t N)
 {
+    uint8_t *Destination = Destination_;
     while (N--) {
         *Destination++ = Val;
     }

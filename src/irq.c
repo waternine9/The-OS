@@ -1,6 +1,7 @@
 #include "pic.h"
 #include "kernel.h"
 #include "drivers/mouse/mouse.h"
+#include "drivers/keyboard/keyboard.h"
 
 int32_t MouseX, MouseY;
 uint8_t MouseRmbClicked, MouseLmbClicked;

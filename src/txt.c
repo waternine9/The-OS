@@ -5,11 +5,11 @@
 #define TXT_RES_X 400
 #define TXT_RES_Y 200
 
-extern window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint8_t* Icon32, uint32_t *Events, uint32_t* Framebuffer);
-extern void DestroyWindow(window*);
-extern void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
-extern void ReadFile(uint8_t*, size_t*, uint32_t);
-extern void WriteFile(uint8_t*, size_t, uint32_t);
+window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint32_t* Icon32, uint32_t *Events, uint32_t* Framebuffer);
+void DestroyWindow(window*);
+void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
+void ReadFile(uint8_t*, size_t*, uint32_t);
+void WriteFile(uint8_t*, size_t, uint32_t);
 
 
 uint8_t TextBuffer[512 * 16];
@@ -93,6 +93,62 @@ uint32_t GetFileNum()
         I--;
     }
     return FileNum;
+}
+void TxtDraw(uint32_t color)
+{
+    ClearWinFramebuffer(CurrentInstance, 0xFFFFFFFF);
+    int I = 0;
+    int CurX = 0;
+    int CurY = 0;
+    while (I < TextSize)
+    {
+        char C = TextBuffer[I]; 
+        switch (C)
+        {
+            case '\n':
+                CurX = 0;
+                CurY += 20;
+                break;
+            case '\t':
+                CurX += 30;
+                if (CurX > TXT_RES_X - 20)
+                {
+                    CurX = 0;
+                    CurY += 30;
+                }
+                break;
+            default:
+                DrawFontGlyphOnto(CurX, TXT_RES_Y - CurY - 20, C, 2, 0, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
+                CurX += 14;
+                if (CurX > TXT_RES_X - 20)
+                {
+                    CurX = 0;
+                    CurY += 30;
+                }
+                break;
+        }
+        I++;
+    }
+    DrawFontGlyphOnto(CurX, TXT_RES_Y - CurY - 20, '_', 2, 0, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
+}
+
+void SelectDraw(uint32_t color)
+{
+    ClearWinFramebuffer(CurrentInstance, 0xFFFFFFFF);
+    int CurX = 0;
+    char* StartStr = "GOTO: ";
+    do
+    {
+        DrawFontGlyphOnto(CurX, 0, *StartStr, 2, color, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
+        CurX += 20;
+    } while (*StartStr++);
+    int I = 0;
+    while (I < SelectingNumSize)
+    {
+        DrawFontGlyphOnto(CurX, 0, SelectingNum[I], 2, color, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
+        CurX += 20;
+        I++;
+    }
 }
 
 void TxtProc(int MouseX, int MouseY, window* Win)
@@ -194,61 +250,6 @@ void TxtProc(int MouseX, int MouseY, window* Win)
     }
 }
 
-void SelectDraw(uint32_t color)
-{
-    ClearWinFramebuffer(CurrentInstance, 0xFFFFFFFF);
-    int CurX = 0;
-    char* StartStr = "GOTO: ";
-    do
-    {
-        DrawFontGlyphOnto(CurX, 0, *StartStr, 2, color, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
-        CurX += 20;
-    } while (*StartStr++);
-    int I = 0;
-    while (I < SelectingNumSize)
-    {
-        DrawFontGlyphOnto(CurX, 0, SelectingNum[I], 2, color, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
-        CurX += 20;
-        I++;
-    }
-}
-void TxtDraw(uint32_t color)
-{
-    ClearWinFramebuffer(CurrentInstance, 0xFFFFFFFF);
-    int I = 0;
-    int CurX = 0;
-    int CurY = 0;
-    while (I < TextSize)
-    {
-        char C = TextBuffer[I]; 
-        switch (C)
-        {
-            case '\n':
-                CurX = 0;
-                CurY += 20;
-                break;
-            case '\t':
-                CurX += 30;
-                if (CurX > TXT_RES_X - 20)
-                {
-                    CurX = 0;
-                    CurY += 30;
-                }
-                break;
-            default:
-                DrawFontGlyphOnto(CurX, CurY + 20, C, 2, 0, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
-                CurX += 14;
-                if (CurX > TXT_RES_X - 20)
-                {
-                    CurX = 0;
-                    CurY += 30;
-                }
-                break;
-        }
-        I++;
-    }
-    DrawFontGlyphOnto(CurX, CurY + 20, '_', 2, 0, TxtFramebuff, TXT_RES_X, TXT_RES_Y);
-}
 
 void TxtCreateWindow(int x, int y)
 {
@@ -261,6 +262,6 @@ void TxtCreateWindow(int x, int y)
     TxtRect.W = TXT_RES_X;
     TxtRect.H = TXT_RES_Y;
     
-    CurrentInstance = CreateWindow(&TxtRect, TxtProc, ResourcesAt.Icons + 32 * 32 * 4, &TxtEvents, TxtFramebuff);
+    CurrentInstance = CreateWindow(&TxtRect, TxtProc, (uint32_t*)(ResourcesAt.Icons) + (32 * 32), &TxtEvents, TxtFramebuff);
     
 }

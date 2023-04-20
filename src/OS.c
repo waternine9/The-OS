@@ -31,7 +31,7 @@ extern uint8_t MouseRmbClicked, MouseLmbClicked;
 extern uint16_t VESA_RES_X;
 extern uint16_t VESA_RES_Y;
 
-uint32_t* FileAllocTable = 0x7c00 + 512 * 4;
+uint32_t* FileAllocTable = (uint32_t*)(0x7C00 + 512 * 4);
 
 int32_t IsMouseMovingWin = -1;
 
@@ -85,19 +85,6 @@ void RegisterRect(int x, int y, int w, int h)
     RegisterRectPtr++;
 }
 
-window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint32_t* Icon32, uint32_t *Events, uint32_t* Framebuffer)
-{
-    window Win;
-    Win.Free = 0;
-    Win.Hidden = 0;
-    Win.Rect = Rectptr;
-    Win.WinProc = WinProc;
-    Win.Icon32 = Icon32;
-    Win.Events = Events;
-    Win.Framebuffer = Framebuffer;
-    return &RegisteredWinsArray[RegisterWindow(Win)];
-}
-
 int RegisterWindow(window _Window)
 {
     _Window.ChQueueNum = 0;
@@ -120,6 +107,19 @@ int RegisterWindow(window _Window)
     RegisteredWinsArray[RegisteredWinsNum] = _Window;
     RegisteredWinsNum++;
     return RegisteredWinsNum - 1;
+}
+
+window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint32_t* Icon32, uint32_t *Events, uint32_t* Framebuffer)
+{
+    window Win;
+    Win.Free = 0;
+    Win.Hidden = 0;
+    Win.Rect = Rectptr;
+    Win.WinProc = WinProc;
+    Win.Icon32 = Icon32;
+    Win.Events = Events;
+    Win.Framebuffer = Framebuffer;
+    return &RegisteredWinsArray[RegisterWindow(Win)];
 }
 
 void DestroyWindow(window* _window)
@@ -415,76 +415,6 @@ uint32_t CountWindows()
     return Num;
 }
 
-volatile void RenderDynamic()
-{
-    // First, blit all windows
-    uint32_t WinsNum = 0;
-    uint32_t TaskbarLen = CountWindows() * 32;
-    while (WinsNum < RegisteredWinsNum)
-    {
-        window Win = RegisteredWinsArray[WinsNum];
-        if (Win.Free)
-        {
-            WinsNum++;
-            continue;
-        }
-        DrawImage(VESA_RES_X / 2 - TaskbarLen / 2 + WinsNum * 32 + 32, VESA_RES_Y - 40, 32, 32, Win.Icon32);
-        DrawOutline(VESA_RES_X / 2 - TaskbarLen / 2 + WinsNum * 32 + 32 - 1, VESA_RES_Y - 40 - 1, 34, 34, 1);
-        if (WinsNum == RegisteredWinsNum - 1)
-        {
-            DrawRect(VESA_RES_X / 2 - TaskbarLen / 2 + WinsNum * 32 + 32, VESA_RES_Y - 3, 32, 2, 0xFFFFFFFF);
-        }
-
-        if (Win.Hidden)
-        {
-            WinsNum++;
-            continue;
-        }
-
-        DrawOutline(Win.Rect->X - 1, Win.Rect->Y - 21, Win.Rect->W + 1, Win.Rect->H + 22, 1);
-        DrawDragBar(Win.Rect->X, Win.Rect->Y - 20, Win.Rect->W, 20);
-        RegisterRect(Win.Rect->X - 4, Win.Rect->Y - 24, Win.Rect->W + 8, Win.Rect->H + 28);
-        DrawImage(Win.Rect->X, Win.Rect->Y, Win.Rect->W, Win.Rect->H, Win.Framebuffer);
-
-        WinsNum++;
-    }
-
-    KeepMouseInScreen();
-    DrawPointerAt(MouseX, MouseY, 1);
-
-    rect *RegRectPtr = RegisterRectArray;
-    while (RegRectPtr < RegisterRectPtr)
-    {
-        rect CurRect = *RegRectPtr;
-        int x = CurRect.X;
-        int y = CurRect.Y;
-        int w = CurRect.W;
-        int h = CurRect.H;
-        uint8_t *Framebuffer = ((uint8_t *)VbeModeInfo.framebuffer) + (x + y * VESA_RES_X) * 3;
-
-        uint32_t *BackBufferStep = BackBuffer + (x + y * VESA_RES_X);
-        uint32_t *StaticBackBufferStep = StaticBackBuffer + (x + y * VESA_RES_X);
-
-        for (int i = 0; i < h; i++)
-        {
-            for (int j = 0; j < w; j++)
-            {
-                // NOTE: BackBuffer stores ARGB, with little endian its BGRA byte order.
-
-                *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep : *StaticBackBufferStep;
-                *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep >> 8 : *StaticBackBufferStep >> 8;
-                *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep >> 16 : *StaticBackBufferStep >> 16;
-                BackBufferStep++;
-                StaticBackBufferStep++;
-            }
-            Framebuffer += (VESA_RES_X - w) * 3;
-            BackBufferStep += (VESA_RES_X - w);
-            StaticBackBufferStep += (VESA_RES_X - w);
-        }
-        RegRectPtr++;
-    }
-    RegisterRectPtr = RegisterRectArray;
-}
 void DrawConsole(console *Console, int X, int Y, int Color)
 {
     for (uint32_t i = 0; i < CONSOLE_MAX_LINES; i++)
@@ -863,7 +793,7 @@ uint8_t CreateFile(uint32_t FileNum)
     WriteATASector(file, Sector);
     FileAllocTable[FileNum] = Sector;
 
-    uint8_t* FileAllocTableStep = FileAllocTable;
+    uint8_t* FileAllocTableStep = (uint8_t*)FileAllocTable;
     for (int i = 4;i < 32 + 4;i++) // Save the FAT
     {
         WriteATASector(FileAllocTableStep, i);
@@ -951,6 +881,77 @@ void WriteFile(uint8_t* Source, size_t Size, uint32_t FileNum)
 
 char Fmt[256];
 
+volatile void RenderDynamic()
+{
+    // First, blit all windows
+    uint32_t WinsNum = 0;
+    uint32_t TaskbarLen = CountWindows() * 32;
+    while (WinsNum < RegisteredWinsNum)
+    {
+        window Win = RegisteredWinsArray[WinsNum];
+        if (Win.Free)
+        {
+            WinsNum++;
+            continue;
+        }
+        DrawImage(VESA_RES_X / 2 - TaskbarLen / 2 + WinsNum * 32 + 32, VESA_RES_Y - 40, 32, 32, Win.Icon32);
+        DrawOutline(VESA_RES_X / 2 - TaskbarLen / 2 + WinsNum * 32 + 32 - 1, VESA_RES_Y - 40 - 1, 34, 34, 1);
+        if (WinsNum == RegisteredWinsNum - 1)
+        {
+            DrawRect(VESA_RES_X / 2 - TaskbarLen / 2 + WinsNum * 32 + 32, VESA_RES_Y - 3, 32, 2, 0xFFFFFFFF);
+        }
+
+        if (Win.Hidden)
+        {
+            WinsNum++;
+            continue;
+        }
+
+        DrawOutline(Win.Rect->X - 1, Win.Rect->Y - 21, Win.Rect->W + 1, Win.Rect->H + 22, 1);
+        DrawDragBar(Win.Rect->X, Win.Rect->Y - 20, Win.Rect->W, 20);
+        RegisterRect(Win.Rect->X - 4, Win.Rect->Y - 24, Win.Rect->W + 8, Win.Rect->H + 28);
+        DrawImage(Win.Rect->X, Win.Rect->Y, Win.Rect->W, Win.Rect->H, Win.Framebuffer);
+
+        WinsNum++;
+    }
+
+    KeepMouseInScreen();
+    DrawPointerAt(MouseX, MouseY, 1);
+
+    rect *RegRectPtr = RegisterRectArray;
+    while (RegRectPtr < RegisterRectPtr)
+    {
+        rect CurRect = *RegRectPtr;
+        int x = CurRect.X;
+        int y = CurRect.Y;
+        int w = CurRect.W;
+        int h = CurRect.H;
+        uint8_t *Framebuffer = ((uint8_t *)VbeModeInfo.framebuffer) + (x + y * VESA_RES_X) * 3;
+
+        uint32_t *BackBufferStep = BackBuffer + (x + y * VESA_RES_X);
+        uint32_t *StaticBackBufferStep = StaticBackBuffer + (x + y * VESA_RES_X);
+
+        for (int i = 0; i < h; i++)
+        {
+            for (int j = 0; j < w; j++)
+            {
+                // NOTE: BackBuffer stores ARGB, with little endian its BGRA byte order.
+
+                *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep : *StaticBackBufferStep;
+                *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep >> 8 : *StaticBackBufferStep >> 8;
+                *Framebuffer++ = (*BackBufferStep >= 0x01000000) ? *BackBufferStep >> 16 : *StaticBackBufferStep >> 16;
+                BackBufferStep++;
+                StaticBackBufferStep++;
+            }
+            Framebuffer += (VESA_RES_X - w) * 3;
+            BackBufferStep += (VESA_RES_X - w);
+            StaticBackBufferStep += (VESA_RES_X - w);
+        }
+        RegRectPtr++;
+    }
+    RegisterRectPtr = RegisterRectArray;
+}
+
 void OS_Start()
 {
     PIC_Init();
@@ -992,7 +993,7 @@ void OS_Start()
     CmdWindow.Framebuffer = CmdDrawBuffer;
     CmdWindow.Free = 0;
     CmdWindow.Hidden = 0;
-    CmdWindow.Icon32 = ResourcesAt.Icons;
+    CmdWindow.Icon32 = (uint32_t*)ResourcesAt.Icons;
     CmdWindow.WinProc = &CmdProc;
 
     RegisterWindow(CmdWindow);
@@ -1008,7 +1009,7 @@ void OS_Start()
     }
     else
     {
-        uint8_t* FileAllocTableStep = FileAllocTable;
+        uint8_t* FileAllocTableStep = (uint8_t*)FileAllocTable;
         for (int i = 4;i < 32 + 4;i++) // Save the FAT
         {
             ReadATASector(FileAllocTableStep, i);
