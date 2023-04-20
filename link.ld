@@ -17,10 +17,10 @@ SECTIONS {
     {
         *(.data)
     }
+    . = 0x7C00 + 0x100000;
     .bss : 
     {
-        *(.bss)  
-        
+        *(.bss)
     }
     .resources :
     {

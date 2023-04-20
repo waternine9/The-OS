@@ -60,8 +60,6 @@ keyboard Kbd = { 0 };
 uint32_t BackBuffer[1920 * 1080];
 uint32_t StaticBackBuffer[1920 * 1080];
 
-uint32_t Destination[1920 * 1080];
-
 extern struct _Resources ResourcesAt;
 
 rect RegisterRectArray[256];
