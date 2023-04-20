@@ -1,11 +1,13 @@
 #include "keyboard.h"
 #include "../../io.h"
 #include "../../mem.h"
+#include "../../mutex.h"
 
 // KEYBOARD DRIVER
 // TODO: Handle fake shifts properly
 // TODO: Handle keypad
 
+static mutex GlobalKeyboardMutex;
 static keyboard GlobalKeyboard;
 static keyboard_key GlobalKeys[128];
 static size_t GlobalKeysCount;
@@ -109,11 +111,14 @@ static void Keyboard_HandleInterrupt_Internal(keyboard *Kbd, keyboard_key *Keys,
 
 void Keyboard_HandleInterrupt()
 {
+    MutexLock(&GlobalKeyboardMutex);
     Keyboard_HandleInterrupt_Internal(&GlobalKeyboard, GlobalKeys, 128, &GlobalKeysCount);
+    MutexRelease(&GlobalKeyboardMutex);
 }
 
 void Keyboard_CollectEvents(keyboard *Kbd, keyboard_key *Keys, uint32_t KeysMax, uint32_t *KeysLen)
 { 
+    MutexLock(&GlobalKeyboardMutex);
     size_t KeysToCopy = KeysMax;
     if (GlobalKeysCount < KeysToCopy) {
         KeysToCopy = GlobalKeysCount;
@@ -123,5 +128,6 @@ void Keyboard_CollectEvents(keyboard *Kbd, keyboard_key *Keys, uint32_t KeysMax,
     memcpy((uint8_t*)Keys, (uint8_t*)GlobalKeys, sizeof(keyboard_key) * KeysToCopy);
 
     *KeysLen = GlobalKeysCount;
-    GlobalKeysCount = 0;
+    GlobalKeysCount = 0;    
+    MutexRelease(&GlobalKeyboardMutex);
 }
