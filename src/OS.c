@@ -966,12 +966,11 @@ void OS_Start()
 
     MouseInstall();
 
-    MouseX = 320;
-    MouseY = 240;
+    MouseX = VESA_RES_X / 2;
+    MouseY = VESA_RES_Y / 2;
 
     IDT_Init();
     PIC_SetMask(0x0000); // Enable all irqs
-    ProbeAllPCIDevices();
 
     batch_script Script = {};
 
