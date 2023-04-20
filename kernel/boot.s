@@ -55,7 +55,7 @@ LoadSectors:
     
     add edi, 512
     inc ecx
-    cmp ecx, 100000
+    cmp edi, Os_End
 
     jl LoadSectors
 
@@ -197,4 +197,4 @@ section .resources
 global ResourcesAt
 ResourcesAt:
 incbin "resources.bin"
-
+Os_End:

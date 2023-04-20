@@ -15,6 +15,9 @@ extern void WriteFile(uint8_t*, size_t, uint32_t);
 uint32_t FileManFramebuff[FILEMAN_RES_X * FILEMAN_RES_Y];
 uint32_t FileManEvents = 0;
 
+uint32_t FileSizes[256] = { 0 };
+int ReadStep = 0;
+
 rect FileManRect;
 
 window* FileManCurrentInstance = 0;
@@ -40,14 +43,18 @@ void FileManDrawString(uint32_t x, uint32_t y, uint8_t* string, uint32_t color)
 void FileManDraw(uint32_t color)
 {
     FileManClearWinFramebuffer(FileManCurrentInstance, 0xFF000000);
-    uint32_t FileSizes[256] = { 0 };
-    for (int i = 0;i < 256;i++)
+    ReadStep++;
+    if (ReadStep > 60)
     {
-        size_t FileSize;
-        if (ReadFileSize(&FileSize, i))
+        for (int i = 0;i < 256;i++)
         {
-            FileSizes[i] = FileSize; 
+            size_t FileSize;
+            if (ReadFileSize(&FileSize, i))
+            {
+                FileSizes[i] = FileSize; 
+            }
         }
+        ReadStep = 0;
     }
     uint32_t CurY = 40;
     for (int i = 0;i < 256;i++)
