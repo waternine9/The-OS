@@ -15,7 +15,7 @@ jmp .loop
 .checkClosest:
 
 ; Accumulator
-mov bx, 0
+xor bx, bx
 
 ; Check diff X
 mov ax, [VbeModeInfo.XResolution]
@@ -106,7 +106,7 @@ int 0x10
 
 mov ax, 0x4F02
 or bx, 0x4000          
-mov di, 0
+xor di, di
 int 0x10
 
 .done:

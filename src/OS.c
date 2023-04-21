@@ -1031,9 +1031,11 @@ volatile void RenderDynamic()
 
 void OS_Start()
 {
+    // Initialize BSS
+    memset((uint8_t*)0x100000, 0, 100000);
+ 
     PIC_Init();
     PIC_SetMask(0xFFFF); // Disable all irqs
-
     MouseInstall();
 
     MouseX = VESA_RES_X / 2;
@@ -1067,9 +1069,9 @@ void OS_Start()
     CmdWindow.Name = "cmd";
     CmdWindow.WinProc = &CmdProc;
 
-    RegisterWindow(CmdWindow);
 
     FileManCreateWindow(100, 100);
+    RegisterWindow(CmdWindow);
 
     if (IsFirstTime)
     {

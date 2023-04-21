@@ -45,7 +45,6 @@ volatile void WriteATASector(void* buff, uint32_t lba)
         IO_Out8(0x1F7, 0x30); // Write with retry command, 0x30 = write with retry
         for (int i = 0;i < 256;i++) // Write from buffer into disk
         {
-            
             IO_Out16(0x1F0, *((uint16_t*)buff + i));
         }
         while (IO_In8(0x1F7) & 0x80); // Wait for the BSY bit to be cleared
@@ -60,7 +59,6 @@ volatile void WriteATASector(void* buff, uint32_t lba)
         IO_Out8(0x177, 0x30); // Write with retry command, 0x30 = write with retry
         for (int i = 0;i < 256;i++) // Write from buffer into disk
         {
-            
             IO_Out16(0x170, *((uint16_t*)buff + i));
         }
         while (IO_In8(0x177) & 0x80); // Wait for the BSY bit to be cleared

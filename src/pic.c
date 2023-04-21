@@ -58,6 +58,14 @@ volatile void PIC_SetMask(uint16_t Mask)
     IO_Out8(SECN_DATA, (Mask >> 8) & 0xFF);
     IO_Wait();
 }
+volatile uint16_t PIC_GetMask()
+{
+    uint16_t Lo = IO_In8(PRIM_DATA);
+    IO_Wait();
+    uint16_t Hi = IO_In8(SECN_DATA);
+    IO_Wait();
+    return Lo | (Hi << 8);
+}
 volatile void PIC_EndOfInterrupt(uint8_t Interrupt)
 {
     if (Interrupt >= 8) {

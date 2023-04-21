@@ -7,7 +7,7 @@ Boot:
     ; NOTE: At boot the boot drive number is stored in DL,
     ;       Preserve it for later 
     mov   [DriveNumber], dl
-    
+
     ; NOTE: Activate A20
     mov   ax, 0x2403
     int   0x15
