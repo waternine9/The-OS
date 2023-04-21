@@ -20,6 +20,7 @@ typedef enum {
     PCI_DEVICE_VGA,
     PCI_DEVICE_ETHERNET,
     PCI_DEVICE_IDE,
+    PCI_DEVICE_EHCI,
     PCI_DEVICE_HOST_BRIDGE,
     PCI_DEVICE_ISA_BRIDGE,
 } pci_device_specialty;

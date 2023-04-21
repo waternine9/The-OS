@@ -64,7 +64,9 @@ pci_device_header PCI_QueryDeviceHeader(pci_device_path Path)
 
     Result.MultiFunction= ((BIST_HeaderType_Word) & 0x80) != 0;
 
-    
+    uint32_t BAR0_0 = PCI_Read16(Path, 0x10);
+    uint32_t BAR0_1 = PCI_Read16(Path, 0x12);
+    Result.BAR0 = (BAR0_1 << 16) | BAR0_0;
 
     return Result;
 }
