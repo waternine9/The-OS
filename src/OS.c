@@ -30,6 +30,8 @@ extern uint8_t MouseRmbClicked, MouseLmbClicked;
 extern uint16_t VESA_RES_X;
 extern uint16_t VESA_RES_Y;
 
+mouse_hovering_anim MouseHoveringAnim;
+
 uint32_t* FileAllocTable = (uint32_t*)(0x7C00 + 512 * 4);
 
 int32_t IsMouseMovingWin = -1;
@@ -388,6 +390,22 @@ void DrawOutline(int X, int Y, int W, int H, int thickness)
         }
     }
 }
+void DrawOutlineColor(int X, int Y, int W, int H, int thickness, uint32_t color)
+{
+    while (thickness--)
+    {
+        for (int _X = X - thickness; _X < X + W + thickness; _X++)
+        {
+            SetAlphaPixel(_X, Y - thickness, color);
+            SetAlphaPixel(_X, Y + H + thickness, color);
+        }
+        for (int _Y = Y - thickness; _Y < Y + H + thickness; _Y++)
+        {
+            SetAlphaPixel(X - thickness, _Y, color);
+            SetAlphaPixel(X + W + thickness, _Y, color);
+        }
+    }
+}
 volatile void ClearScreen()
 {
     uint32_t *FramebufferStep = BackBuffer;
@@ -733,7 +751,7 @@ void DrawToolBar(int scale)
 {
     DrawAlphaRect(0, VESA_RES_Y - 25 * scale, VESA_RES_X, 25 * scale, 0x77000000);
     DrawOutline(0, VESA_RES_Y - 25 * scale, VESA_RES_X, 25 * scale, 2);
-    RegisterRect(0, VESA_RES_Y - 25 * scale - 2, VESA_RES_X, 25 * scale + 2);
+    RegisterRect(0, VESA_RES_Y - 25 * scale - 2 - 20, VESA_RES_X, 25 * scale + 2 + 20);
 }
 
 int IsMouseInRect(rect R)
@@ -779,14 +797,38 @@ void FirstTimeSetup()
     Format();
 }
 
+uint8_t IsAllocSectors[100000];
+
 size_t AllocSector() 
 {
-    for (size_t I = 100000; I < 200000; I++) {
-        uint8_t dat[512];
-        ReadATASector(dat, I);
-        if (*(uint32_t*)(dat+508) == 0xFFFFFFFF) {
-            return I;    
+    for (size_t I = 0; I < 100000; I++) 
+    {
+        if (!IsAllocSectors[I]) 
+        {
+            uint8_t dat[512];
+            ReadATASector(dat, 100000 + I);
+            *(uint32_t*)(dat+508) = 0;
+            WriteATASector(dat, 100000 + I);
+            IsAllocSectors[I] = 1;
+            return 100000 + I;    
         }
+    }
+}
+
+void BakeAllocSectors()
+{
+    for (size_t I = 0; I < 100000; I++) 
+    {
+        uint8_t dat[512];
+        ReadATASector(dat, 100000 + I);
+        if (*(uint32_t*)(dat + 508) == 0xFFFFFFFF)
+        {
+            IsAllocSectors[I] = 0;
+        }
+        else
+        {
+            IsAllocSectors[I] = 1;
+        }    
     }
 }
 
@@ -866,24 +908,30 @@ void WriteFile(uint8_t* Source, size_t Size, uint32_t FileNum)
         CreateFile(FileNum);
         entry = FileAllocTable[FileNum];
     }
+    
     uint32_t SectorCount = Size/512;
     
     for (int I = 0; I < SectorCount; I++)
     {
-        
         uint8_t buf[512];
         ReadATASector(buf, entry);
-        if (*(uint32_t*)(buf+508) == 0 && I < SectorCount - 1) {
+        
+        if ((*(uint32_t*)(buf+508) == 0) && I < SectorCount - 1) {
             uint32_t sector = AllocSector();
+            
             *(uint32_t*)(buf+508) = sector;
             memcpy(buf, Source, 508); 
             WriteATASector(buf, entry);
-        } else {
+        }
+        else
+        {
             memcpy(buf, Source, 508);
             WriteATASector(buf, entry);
         }
         entry = *(uint32_t*)(buf+508);
         Source += 508;
+
+        
     }
 }
 
@@ -891,7 +939,26 @@ volatile void RenderDynamic()
 {
     // First, blit all windows
     uint32_t WinsNum = 0;
-    uint32_t TaskbarLen = CountWindows() * 32;
+    uint32_t TaskbarLen = CountWindows();
+    if (MouseX < TaskbarLen * 200 && MouseY > VESA_RES_Y - 50)
+    {
+        MouseHoveringAnim.ticks += 2;
+        if (MouseHoveringAnim.ticks > 5) MouseHoveringAnim.ticks = 5;
+        if (MouseHoveringAnim.win == -1 || MouseX / 200 != MouseHoveringAnim.win) MouseHoveringAnim.ticks = 0;
+        MouseHoveringAnim.win = MouseX / 200;
+    }
+    else
+    {
+        if (MouseHoveringAnim.win != -1)
+        {
+            MouseHoveringAnim.ticks -= 2;
+            if (MouseHoveringAnim.ticks < 0)
+            {
+                MouseHoveringAnim.ticks = 0;
+                MouseHoveringAnim.win = -1;
+            }
+        }
+    }
     while (WinsNum < RegisteredWinsNum)
     {
         window Win = RegisteredWinsArray[WinsNum];
@@ -905,8 +972,11 @@ volatile void RenderDynamic()
             DrawAlphaRect(WinsNum * 200, VESA_RES_Y - 50, 200, 50, 0x44FFFFFF);
         }
         DrawFontStringTerminated(WinsNum * 200 + 20, VESA_RES_Y - 32, 10, Win.Name, 2, 0xFFFFFFFF);
-        
-        
+
+        if (WinsNum == MouseHoveringAnim.win)
+        {
+            DrawOutlineColor(WinsNum * 200, VESA_RES_Y - 50, 200, 50, MouseHoveringAnim.ticks, 0xFFFFFFFF);
+        }        
 
         if (Win.Hidden)
         {
@@ -969,21 +1039,17 @@ void OS_Start()
     MouseX = VESA_RES_X / 2;
     MouseY = VESA_RES_Y / 2;
 
+    MouseHoveringAnim.ticks = 0;
+    MouseHoveringAnim.win = -1;
+
     IDT_Init();
     PIC_SetMask(0x0000); // Enable all irqs
 
     batch_script Script = {};
 
-    int ConsoleColor = 0xFF000000;  
-    int OffsetX = 0;
-
-
-    bmp_bitmap_info BMPInfo;
-    char CmdLine[129] = {0};
-    int CmdLineLen = 0;
-
     InitCMD();
 
+    
     DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, ResourcesAt.Background);
     UpdateScreen();
     uint32_t KeysCount = 0;
@@ -1012,17 +1078,22 @@ void OS_Start()
         UpdateScreen();
         FirstTimeSetup();
     }
-    else
+    ClearScreen();
+    DrawAlphaRect(0, VESA_RES_Y / 2 - 16, 1920, 32, 0x77000000);
+    DrawFontString(1920 / 2 - FormatCStringLength("Preparing...") * 16 + 32, VESA_RES_Y / 2 - 16, "Preparing...", 4, 0xFFFFFFFF);
+    UpdateScreen();
+    uint8_t* FileAllocTableStep = (uint8_t*)FileAllocTable;
+    for (int i = 4;i < 32 + 4;i++) // Save the FAT
     {
-        uint8_t* FileAllocTableStep = (uint8_t*)FileAllocTable;
-        for (int i = 4;i < 32 + 4;i++) // Save the FAT
-        {
-            ReadATASector(FileAllocTableStep, i);
-            FileAllocTableStep += 512;
-        }
+        ReadATASector(FileAllocTableStep, i);
+        FileAllocTableStep += 512;
     }
+    
+    BakeAllocSectors();
+
     RegisterRect(0, VESA_RES_Y / 2 - 16, VESA_RES_X, 40);
     DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, ResourcesAt.Background);
+
 
     while (1)
     {
@@ -1066,8 +1137,6 @@ void OS_Start()
         UpdateWinProcs();
         ClickHandler();
 
-        if (OffsetX > 400)
-            OffsetX = 0;
         RenderDynamic();
     }
 }

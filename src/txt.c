@@ -10,6 +10,7 @@ window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint8_t* 
 void DestroyWindow(window*);
 void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
 void ReadFile(uint8_t*, size_t*, uint32_t);
+uint8_t ReadFileSize(size_t*, uint32_t);
 void WriteFile(uint8_t*, size_t, uint32_t);
 
 
@@ -41,7 +42,7 @@ window* CurrentInstance = 0;
 
 extern struct _Resources ResourcesAt;
 
-void ClearWinFramebuffer(window* Win, uint32_t Color)
+void TxtClearWinFramebuffer(window* Win, uint32_t Color)
 {
     uint32_t* Framebuff = Win->Framebuffer;
     
@@ -59,6 +60,16 @@ void TxtInit()
     if (FileSelection > 0) WriteFile(TextBuffer, 512, FileSelection);
     FileSelection = 0;
     IsSelecting = 0;
+
+    size_t size;        
+    if (ReadFileSize(&size, 0))
+    {
+        if (size > 8000)
+        {
+            IsSelecting = 1;
+            return;
+        };
+    }
     size_t junk;
     ReadFile(TextBuffer, &junk, FileSelection);
     int I = 0;
@@ -97,7 +108,7 @@ uint32_t GetFileNum()
 }
 void TxtDraw(uint32_t color)
 {
-    ClearWinFramebuffer(CurrentInstance, 0xFFFFFFFF);
+    TxtClearWinFramebuffer(CurrentInstance, 0xFFFFFFFF);
     int I = 0;
     int CurX = 0;
     int CurY = 0;
@@ -135,7 +146,7 @@ void TxtDraw(uint32_t color)
 
 void SelectDraw(uint32_t color)
 {
-    ClearWinFramebuffer(CurrentInstance, 0xFFFFFFFF);
+    TxtClearWinFramebuffer(CurrentInstance, 0xFFFFFFFF);
     int CurX = 0;
     char* StartStr = "GOTO: ";
     do
@@ -167,8 +178,13 @@ void SwitchSelection()
         
         uint32_t FileNum = GetFileNum();
         
-        size_t junk;
-        ReadFile(TextBuffer, &junk, FileNum);
+        
+        size_t size;        
+        if (ReadFileSize(&size, FileNum))
+        {
+            if (size > 8000) return;
+        }
+        ReadFile(TextBuffer, &size, FileNum);
         int I = 0;
 
         while (TextBuffer[I] > 0)
@@ -274,6 +290,7 @@ void TxtProc(int MouseX, int MouseY, window* Win)
 
 void TxtCreateWindow(int x, int y)
 {
+    TxtInit();
     if (CurrentInstance)
     {
         DestroyWindow(CurrentInstance);

@@ -23,6 +23,14 @@ typedef struct _window
     void(*WinProc)(int, int, struct _window*);
 } window;
 
+typedef struct _mouse_hovering_anim
+{
+    
+    int ticks;
+    int win;
+} mouse_hovering_anim;
+
+
 struct _Resources
 {
     uint8_t Font[32 * 32 * (127 - 32)];

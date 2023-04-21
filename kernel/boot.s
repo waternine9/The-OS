@@ -75,7 +75,7 @@ LoadSectors:
     .keyboard_check:
     xor ax,ax
     in al,0x64
-    bt ax, 1 ;test if buffer is still full
+    bt ax, 1 ; Test if buffer is still full
     jc .keyboard_check
 
     ; Enable keyboard because of a weird bug

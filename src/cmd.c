@@ -3,6 +3,7 @@
 #include "cmd.h"
 #include "OS.h"
 #include "txt.h"
+#include "paint.h"
 
 uint8_t CmdTextBufferArray[100000];
 
@@ -36,11 +37,10 @@ void CmdProc(int MouseX, int MouseY, window* Win)
                 if (*(CmdBufferEnd - 2) == 'c')
                 {
                     TxtCreateWindow(100, 100);
-                    TxtInit();
                 }
                 if (*(CmdBufferEnd - 2) == 'd')
                 {
-                    // Drawing Time, Bitch
+                    PntCreateWindow(100, 100);
                 }
             }
         }
