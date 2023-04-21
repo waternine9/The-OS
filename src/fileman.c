@@ -16,7 +16,6 @@ uint32_t FileManFramebuff[FILEMAN_RES_X * FILEMAN_RES_Y];
 uint32_t FileManEvents = 0;
 
 uint32_t FileSizes[256] = { 0 };
-int ReadStep = 0;
 
 rect FileManRect;
 
@@ -43,19 +42,7 @@ void FileManDrawString(uint32_t x, uint32_t y, uint8_t* string, uint32_t color)
 void FileManDraw(uint32_t color)
 {
     FileManClearWinFramebuffer(FileManCurrentInstance, 0xFF000000);
-    ReadStep++;
-    if (ReadStep > 60)
-    {
-        for (int i = 0;i < 256;i++)
-        {
-            size_t FileSize;
-            if (ReadFileSize(&FileSize, i))
-            {
-                FileSizes[i] = FileSize; 
-            }
-        }
-        ReadStep = 0;
-    }
+    
     uint32_t CurY = 40;
     for (int i = 0;i < 256;i++)
     {
@@ -83,7 +70,17 @@ void FileManProc(int MouseX, int MouseY, window* Win)
         uint8_t C = packet & 0xFF;
         if (C)
         {
-            // character pressed
+            if (C == 'r' && packet & (1 << 8))
+            {
+                for (int i = 0;i < 256;i++)
+                {
+                    size_t FileSize;
+                    if (ReadFileSize(&FileSize, i))
+                    {
+                        FileSizes[i] = FileSize; 
+                    }
+                }
+            }
         }
         else
         {

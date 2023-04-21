@@ -750,7 +750,7 @@ const char *Num2Str[100] = {"00", "01", "02", "03", "04", "05", "06", "07", "08"
 void DrawToolBar(int scale)
 {
     DrawAlphaRect(0, VESA_RES_Y - 25 * scale, VESA_RES_X, 25 * scale, 0x77000000);
-    DrawOutline(0, VESA_RES_Y - 25 * scale, VESA_RES_X, 25 * scale, 2);
+    DrawOutline(-1, VESA_RES_Y - 25 * scale, VESA_RES_X + 1, 25 * scale, 1);
     RegisterRect(0, VESA_RES_Y - 25 * scale - 2 - 20, VESA_RES_X, 25 * scale + 2 + 20);
 }
 
