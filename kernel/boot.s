@@ -201,6 +201,9 @@ times 512 * 3 - 1 db 0
 FileAllocTable:
 ; File Allocation Table Sector(s) (32 sectors)
 times 512 * 32 db 0
+FileSysVars:
+; Reserved for extra variables in file system (1 sector)
+times 512 db 0
 
 extern OS_Start
 

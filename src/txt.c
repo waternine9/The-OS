@@ -215,6 +215,11 @@ void TxtProc(int MouseX, int MouseY, window* Win)
             uint8_t C = packet & 0xFF;
             if (C)
             {
+                if (C == 'd' && packet & (1 << 9))
+                {
+                    DestroyWindow(Win);
+                    return;
+                }
                 if (C == 'g' && packet & (1 << 8))
                 {
                     SwitchSelection();
@@ -254,6 +259,11 @@ void TxtProc(int MouseX, int MouseY, window* Win)
             if (C)
             {
                 
+                if (C == 'd' && packet & (1 << 9))
+                {
+                    DestroyWindow(Win);
+                    return;
+                }
                 if (C == 'g' && packet & (1 << 8))
                 {
                     SwitchSelection();

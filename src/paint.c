@@ -113,9 +113,13 @@ void PntSwitchSelection()
         
         uint32_t FileNum = PntGetFileNum();
         
-        size_t junk;
-        ReadFile((uint8_t*)ImgBuffer, &junk, FileNum);
-        int I = 0;
+        size_t size;
+        ReadFile((uint8_t*)ImgBuffer, &size, FileNum);
+        
+        if (size < 952500)
+        {
+            memset((uint8_t*)ImgBuffer, 0, PNT_RES_X * PNT_RES_Y * 4);
+        }
 
         PntFileSelection = FileNum;
         PntIsSelecting = 0;
@@ -157,6 +161,12 @@ void PntProc(int MouseX, int MouseY, window* Win)
             uint8_t C = packet & 0xFF;
             if (C)
             {
+                if (C == 'd' && packet & (1 << 9))
+                {
+                    WriteFile((uint8_t*)ImgBuffer, PNT_RES_X * PNT_RES_Y * 4, PntFileSelection);
+                    DestroyWindow(Win);
+                    return;
+                }
                 if (C == 'g' && packet & (1 << 8))
                 {
 
@@ -188,7 +198,12 @@ void PntProc(int MouseX, int MouseY, window* Win)
             uint8_t C = packet & 0xFF;
             if (C)
             {
-                
+                if (C == 'd' && packet & (1 << 9))
+                {
+                    WriteFile((uint8_t*)ImgBuffer, PNT_RES_X * PNT_RES_Y * 4, PntFileSelection);
+                    DestroyWindow(Win);
+                    return;
+                }
                 if (C == 'g' && packet & (1 << 8))
                 {
                     PntSwitchSelection();

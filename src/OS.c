@@ -779,6 +779,10 @@ void Format()
     {
         WriteATASector(EmptyBuff, i);
     }
+    
+    WriteATASector(EmptyBuff, 32 + 4); // Specify that filesystem contains 0 data
+
+    
 
     EmptyBuff[508] = 0xFF;
     EmptyBuff[509] = 0xFF;
@@ -789,7 +793,7 @@ void Format()
     while (SectorCount--) {
         WriteATASector(EmptyBuff, 100000 + SectorCount);
     }
-    WriteATASector(EmptyBuff, (uint32_t)(&IsFirstTime - 0x7C00) / 512);
+    WriteATASector(EmptyBuff, 1);
 }
 
 void FirstTimeSetup()
@@ -817,7 +821,9 @@ size_t AllocSector()
 
 void BakeAllocSectors()
 {
-    for (size_t I = 0; I < 100000; I++) 
+    uint8_t SysVars[512];
+    ReadATASector((uint8_t*)SysVars, 32 + 4);
+    for (size_t I = 0; I < *(uint32_t*)SysVars; I++) 
     {
         uint8_t dat[512];
         ReadATASector(dat, 100000 + I);
@@ -834,10 +840,19 @@ void BakeAllocSectors()
 
 uint8_t CreateFile(uint32_t FileNum)
 {
+    uint8_t SysVars[512];
+    ReadATASector(SysVars, 32 + 4);  
+    uint32_t* NumUsedSectors = (uint32_t*)SysVars;
     if (FileNum > 512 * 8) return 0;
     uint32_t entry = FileAllocTable[FileNum];
     if (entry) return 2;
     size_t Sector = AllocSector();
+    if (Sector >= *NumUsedSectors + 100000)
+    {
+        *NumUsedSectors = Sector - 100000;
+        
+        WriteATASector(SysVars, 32 + 4);
+    }
     uint8_t file[512];
     memset(file, 0, 512);
     WriteATASector(file, Sector);
@@ -900,8 +915,23 @@ uint8_t ReadFileSize(size_t* Size, uint32_t FileNum)
     }
 }
 
+void EraseFileAt(uint32_t entry)
+{
+    while (entry)
+    {
+        uint8_t buf[512];
+        ReadATASector(buf, entry);
+        entry = *(uint32_t*)(buf + 508);
+        *(uint32_t*)(buf + 508) = 0;
+    }
+}
+
 void WriteFile(uint8_t* Source, size_t Size, uint32_t FileNum)
 {
+    uint8_t SysVars[512];
+    ReadATASector(SysVars, 32 + 4);  
+    uint32_t* NumUsedSectors = (uint32_t*)SysVars;
+
     uint32_t entry = FileAllocTable[FileNum];
     if (!entry) 
     {
@@ -911,6 +941,8 @@ void WriteFile(uint8_t* Source, size_t Size, uint32_t FileNum)
     
     uint32_t SectorCount = Size/512;
     
+    uint32_t LastEntry = 0;
+
     for (int I = 0; I < SectorCount; I++)
     {
         uint8_t buf[512];
@@ -929,10 +961,20 @@ void WriteFile(uint8_t* Source, size_t Size, uint32_t FileNum)
             WriteATASector(buf, entry);
         }
         entry = *(uint32_t*)(buf+508);
-        Source += 508;
-
-        
+        LastEntry = entry;
+        Source += 508;    
     }
+    if (LastEntry >= *NumUsedSectors + 100000)
+    {
+        *NumUsedSectors = LastEntry - 100000;
+        
+        WriteATASector(SysVars, 32 + 4);
+    }
+    if (LastEntry != 0)
+    {
+        EraseFileAt(LastEntry);
+    }
+
 }
 
 volatile void RenderDynamic()
@@ -1085,7 +1127,7 @@ void OS_Start()
     DrawFontString(1920 / 2 - FormatCStringLength("Preparing...") * 16 + 32, VESA_RES_Y / 2 - 16, "Preparing...", 4, 0xFFFFFFFF);
     UpdateScreen();
     uint8_t* FileAllocTableStep = (uint8_t*)FileAllocTable;
-    for (int i = 4;i < 32 + 4;i++) // Save the FAT
+    for (int i = 4;i < 32 + 4;i++) // Get the FAT
     {
         ReadATASector(FileAllocTableStep, i);
         FileAllocTableStep += 512;
@@ -1124,7 +1166,7 @@ void OS_Start()
                         window* Win = &RegisteredWinsArray[RegisteredWinsNum - 1];
                         if (Win->ChQueueNum < 256)
                         {
-                            Win->InCharacterQueue[Win->ChQueueNum] = Keys[I].ASCII | ((uint16_t)Keys[I].LCtrl << 8);
+                            Win->InCharacterQueue[Win->ChQueueNum] = Keys[I].ASCII | ((uint16_t)Keys[I].LCtrl << 8) | ((uint16_t)Keys[I].LAlt << 9);
                             Win->ChQueueNum++;
                         }
                     }
