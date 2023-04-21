@@ -27,6 +27,11 @@ uint8_t PntIsSelecting = 0;
 uint8_t PntSelectingNum[SELECT_NUM];
 int8_t PntSelectingNumSize = 0;
 
+int PntLastX = -1;
+int PntLastY = -1;
+
+uint32_t PntSelectedColor = 0xFFFFFFFF;
+
 rect PntRect;
 
 window* PntCurrentInstance = 0;
@@ -129,6 +134,25 @@ void PntSwitchSelection()
 
 uint8_t IsDrawing = 0;
 
+
+void DrawLine(int x1, int y1, int x2, int y2)
+{
+    float StepX = x1;
+    float StepY = y1;
+    
+    float dx = x2 - x1;
+    float dy = y2 - y1;
+    dx *= 0.01f;
+    dy *= 0.01f;
+    int CurStep = 100;
+    while (CurStep--)
+    {
+        ImgBuffer[(int)StepX + (int)StepY * PNT_RES_X] = PntSelectedColor;
+        StepX += dx;
+        StepY += dy;
+    }
+}
+
 void PntProc(int MouseX, int MouseY, window* Win)
 {
     if (IsDrawing)
@@ -138,8 +162,19 @@ void PntProc(int MouseX, int MouseY, window* Win)
 
         if (RelX >= 0 && RelY >= 0 && RelX < PNT_RES_X && RelY < PNT_RES_Y)
         {
-            ImgBuffer[RelX + RelY * PNT_RES_X] = 0xFFFFFFFF;
+
+            if (PntLastX != -1)
+            {
+                DrawLine(PntLastX, PntLastY, RelX, RelY);
+            }
+            PntLastX = RelX;
+            PntLastY = RelY;
         }
+    }
+    else
+    {
+        PntLastX = -1;
+        PntLastY = -1;
     }
     if (PntEvents)
     {
