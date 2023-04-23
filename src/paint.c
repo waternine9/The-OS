@@ -6,13 +6,6 @@
 #define PNT_RES_X 400
 #define PNT_RES_Y 600
 
-window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint8_t* Name, uint32_t *Events, uint32_t* Framebuffer);
-void DestroyWindow(window*);
-void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
-void ReadFile(uint8_t*, size_t*, uint32_t);
-void WriteFile(uint8_t*, size_t, uint32_t);
-void HideWindow(window*);
-
 uint32_t ImgBuffer[PNT_RES_X * PNT_RES_Y];
 
 uint8_t PntFileSelection = 0;
@@ -37,6 +30,12 @@ rect PntRect;
 window* PntCurrentInstance = 0;
 
 extern struct _Resources ResourcesAt;
+
+void PntDestructor()
+{
+    
+}
+
 void PntClearWinFramebuffer(window* Win, uint32_t Color)
 {
     uint32_t* Framebuff = Win->Framebuffer;
@@ -295,6 +294,6 @@ void PntCreateWindow(int x, int y)
     PntRect.W = PNT_RES_X;
     PntRect.H = PNT_RES_Y;
     
-    PntCurrentInstance = CreateWindow(&PntRect, PntProc, "paint", &PntEvents, PntFramebuff);
+    PntCurrentInstance = CreateWindow(&PntRect, &PntProc, &PntDestructor, "paint", &PntEvents, PntFramebuff, 0, 0);
     
 }

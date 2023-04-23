@@ -60,8 +60,8 @@ uint8_t IsInRect(rect _rect, int x, int y)
 keyboard_key Keys[32];
 keyboard Kbd = { 0 };
 
-uint32_t BackBuffer[1920 * 1080];
-uint32_t StaticBackBuffer[1920 * 1080];
+uint32_t* BackBuffer;
+uint32_t* StaticBackBuffer;
 
 extern struct _Resources ResourcesAt;
 
@@ -110,7 +110,7 @@ int RegisterWindow(window _Window)
     return RegisteredWinsNum - 1;
 }
 
-window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint8_t *Name, uint32_t *Events, uint32_t* Framebuffer)
+window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), void(*WinDestruc)(window*), uint8_t *Name, uint32_t *Events, uint32_t* Framebuffer, uint8_t* Reserved, size_t ReservedSize)
 {
     window Win;
     Win.Free = 0;
@@ -120,6 +120,9 @@ window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint8_t *
     Win.Name = Name;
     Win.Events = Events;
     Win.Framebuffer = Framebuffer;
+    Win.Reserved = Reserved;
+    Win.ReservedSize = ReservedSize;
+    Win.WinDestruc = WinDestruc;
     return &RegisteredWinsArray[RegisterWindow(Win)];
 }
 
@@ -132,6 +135,9 @@ void HideWindow(window* _window)
 
 void DestroyWindow(window* _window)
 {
+    (*_window->WinDestruc)(_window);
+    free((uint32_t*)_window->Reserved, _window->ReservedSize);
+
     uint32_t WinsNum = 0;
     while (WinsNum < RegisteredWinsNum)
     {
@@ -487,16 +493,6 @@ int KPrintf(const char *Fmt, ...)
     char DestStr[256];
     FormatWriteStringVa(DestStr, 256, Fmt, Args);
     ConsoleWrite(&Console, DestStr);
-    va_end(Args);
-}
-int ConPrintf(const char *Fmt, ...)
-{
-    va_list Args;
-    va_start(Args, Fmt);
-    char DestStr[256];
-    FormatWriteStringVa(DestStr, 256, Fmt, Args);
-    for (int I = 0; DestStr[I]; I++)
-        CmdAddChar(DestStr[I]);
     va_end(Args);
 }
 
@@ -1108,7 +1104,10 @@ void OS_Start()
 {
     // Initialize BSS
     memset((uint8_t*)0x100000, 0, 100000);
- 
+    
+    BackBuffer = malloc(1920 * 1080 * 4);
+    StaticBackBuffer = malloc(1920 * 1080 * 4);
+
     PIC_Init();
     PIC_SetMask(0xFFFF); // Disable all irqs
 
@@ -1125,30 +1124,10 @@ void OS_Start()
 
     batch_script Script = {};
 
-    InitCMD();
-
-    malloc(10000);
     DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, ResourcesAt.Background);
     UpdateScreen();
     uint32_t KeysCount = 0;
-    rect LastRect = {0};
-
-    CmdWindowRect.X = 400;
-    CmdWindowRect.Y = 400;
-    CmdWindowRect.W = CONSOLE_RES_X;
-    CmdWindowRect.H = CONSOLE_RES_Y;
-    CmdWindow.Rect = &CmdWindowRect;
-
-    CmdWindow.Framebuffer = CmdDrawBuffer;
-    CmdWindow.Free = 0;
-    CmdWindow.Hidden = 0;
-    CmdWindow.Name = "cmd";
-    CmdWindow.WinProc = &CmdProc;
-
-    SettingsWindowInit(&SettingsWindowRect);
-
-    FileManCreateWindow(100, 100);
-    RegisterWindow(CmdWindow);
+    
 
     if (IsFirstTime)
     {
@@ -1173,6 +1152,9 @@ void OS_Start()
     RegisterRect(0, VESA_RES_Y / 2 - 16, VESA_RES_X, 40);
     DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, ResourcesAt.Background);
 
+    
+    CmdCreateWindow(0, 0);
+    CmdCreateWindow(100, 100);
 
     while (1)
     {
@@ -1197,7 +1179,6 @@ void OS_Start()
                     }
                     if (Keys[I].ASCII)
                     {
-                        
                         window* Win = &RegisteredWinsArray[RegisteredWinsNum - 1];
                         if (Win->ChQueueNum < 256)
                         {
@@ -1205,6 +1186,10 @@ void OS_Start()
                             Win->ChQueueNum++;
                         }
                     }
+                }
+                if (Keys[I].ASCII)
+                {
+                    if (Keys[I].ASCII == 'q' && Keys[I].LCtrl) CmdCreateWindow(VESA_RES_X / 2 - CONSOLE_RES_X / 2, VESA_RES_Y / 2 - CONSOLE_RES_Y / 2);
                 }
             }
             

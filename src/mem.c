@@ -18,13 +18,19 @@ void memset(void *Destination_, uint8_t Val, size_t N)
 }
 
 // Each page is 4 kb
-uint32_t Pages[1000000] = { 0 };
+uint8_t Pages[100000] = { 0 };
 
+uint8_t IsInit = 0;
 
 uint32_t* malloc(size_t Bytes)
 {
-    size_t PageCount = Bytes / 4096; 
-    for (int i = 0;i < 1000000;i++)
+    if (!IsInit)
+    {
+        memset(Pages, 0, 100000);
+        IsInit = 1;
+    }
+    size_t PageCount = Bytes / 4096 + 1; 
+    for (int i = 0;i < 100000;i++)
     {
         if (!Pages[i])
         {
@@ -35,6 +41,7 @@ uint32_t* malloc(size_t Bytes)
 
                 if (Pages[j])
                 {
+                    i = j;
                     Found = 0;
                     break; 
                 }
@@ -42,7 +49,11 @@ uint32_t* malloc(size_t Bytes)
             if (Found)
             {
 
-                return (uint32_t*)(i * 4096 + 0x1000000);
+                for (int j = i;j < i + PageCount;j++)
+                {
+                    Pages[j] = 1;
+                }   
+                return (uint32_t*)(i * 4096 + 0x2000000);
             }
         }
     }
@@ -50,9 +61,9 @@ uint32_t* malloc(size_t Bytes)
 }
 void free(uint32_t* Buf, size_t Bytes)
 {
-    size_t PageCount = Bytes / 4096;
+    size_t PageCount = Bytes / 4096 + 1;
 
-    uint32_t Page = ((uint32_t)Buf - 0x1000000) / 4096;
+    uint32_t Page = ((uint32_t)Buf - 0x2000000) / 4096;
     
     for (uint32_t i = Page;i < Page + PageCount;i++)
     {

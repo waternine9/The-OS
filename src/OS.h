@@ -1,6 +1,7 @@
 #ifndef H_TOS_OS
 #define H_TOS_OS
 #include <stdint.h>
+#include <stddef.h>
 
 #define NUM_ICONS 3
 
@@ -13,6 +14,8 @@ typedef struct _window
 {
     rect *Rect;
     uint32_t *Framebuffer;
+    uint8_t *Reserved;
+    size_t ReservedSize;
     uint8_t *Name;
     uint32_t *Events;
     uint8_t Free;
@@ -21,6 +24,7 @@ typedef struct _window
     uint16_t InCharacterQueue[256];
     uint16_t ChQueueNum;
     void(*WinProc)(int, int, struct _window*);
+    void(*WinDestruc)(struct _window*);
 } window;
 
 typedef struct _mouse_hovering_anim
@@ -38,10 +42,16 @@ struct _Resources
 };
 
 int RegisterWindow(window _Window);
+window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), void(*WinDestruc)(window*), uint8_t *Name, uint32_t *Events, uint32_t* Framebuffer, uint8_t* Reserved, size_t ReservedSize);
 
 void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
 void DrawRect(int X, int Y, int W, int H, uint32_t Color);
 void DrawRectOnto(int X, int Y, int W, int H, uint32_t Color, uint32_t* onto, uint32_t resX, uint32_t resY);
 void DrawTextOnto(int x, int y, const char *string, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
+void ReadFile(uint8_t*, size_t*, uint32_t);
+void WriteFile(uint8_t*, size_t, uint32_t);
+uint8_t ReadFileSize(size_t*, uint32_t);
+void HideWindow(window*);
+void DestroyWindow(window*);
 
 #endif // H_TOS_OS

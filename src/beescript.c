@@ -4,8 +4,6 @@
 #include "kernel.h"
 #include "cmd.h"
 
-int ConPrintf(const char *Fmt, ...);
-
 typedef struct {
     const char *Start;
 } recorder;
@@ -116,12 +114,9 @@ static void ExecuteCommandC(batch_executive *E, size_t Argc, batch_token *Argv)
 {
     if (TokensEqualString(Argv[0], "echo")) {
         for (size_t I = 1; I < Argc; I++) {
-            ConPrintf("%.*s ", (int)Argv[I].Length, Argv[I].Pointer);
         }
-        ConPrintf("\n");
     } else if (TokensEqualString(Argv[0], "set")) {
         if (Argc != 3) {
-            ConPrintf("Error: Expected 3 arguments\n");
             // TODO: Error
             return;
         }
@@ -135,19 +130,15 @@ static void ExecuteCommandC(batch_executive *E, size_t Argc, batch_token *Argv)
         SetVariable(E, (batch_variable) { Name, Value });
     } else if (TokensEqualString(Argv[0], "val")) {
         if (Argc != 2) {
-            ConPrintf("Error: Expected 2 arguments\n");
             // TODO: Error
             return;
         }
 
         batch_token *Var = GetVariable(E, Argv[1]);
         if (Var == NULL) {
-            ConPrintf("Error: variable not found\n");
         } else {
-            ConPrintf("%.*s\n", (int)Var->Length, Var->Pointer);
         }
     } else {
-        ConPrintf("Error: Command not found\n");
     }
 }
 static void ExecuteCommand(batch_executive *E)

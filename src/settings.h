@@ -12,16 +12,7 @@ typedef struct {
     bool LightTheme;
 } user_settings;
 
-typedef struct {
-    char *DrawBuffer;
-    user_settings Settings;
-    window Window;
-    rect WindowRect;
-    int MouseX, MouseY;
-    bool MousePressed;
-} settings_window;
-
-void SettingsWindowInit(rect *Rect);
+void SettingsCreateWindow();
 void SettingsWindowProc(int MouseX, int MouseY, window* Win);
 
 #endif
