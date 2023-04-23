@@ -1103,7 +1103,7 @@ void OS_Start()
 
     InitCMD();
 
-    
+    malloc(10000);
     DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, ResourcesAt.Background);
     UpdateScreen();
     uint32_t KeysCount = 0;
