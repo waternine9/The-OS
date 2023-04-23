@@ -831,7 +831,7 @@ size_t AllocSector()
 void BakeAllocSectors()
 {
     uint8_t SysVars[512];
-    ReadATASector((uint8_t*)SysVars, 32 + 4);
+    ReadATASector((uint8_t*)SysVars, 32 + 6);
     for (size_t I = 0; I < *(uint32_t*)SysVars; I++) 
     {
         uint8_t dat[512];
@@ -850,7 +850,7 @@ void BakeAllocSectors()
 uint8_t CreateFile(uint32_t FileNum)
 {
     uint8_t SysVars[512];
-    ReadATASector(SysVars, 32 + 4);  
+    ReadATASector(SysVars, 32 + 6);  
     uint32_t* NumUsedSectors = (uint32_t*)SysVars;
     if (FileNum > 512 * 8) return 0;
     uint32_t entry = FileAllocTable[FileNum];
@@ -860,7 +860,7 @@ uint8_t CreateFile(uint32_t FileNum)
     {
         *NumUsedSectors = Sector - 100000;
         
-        WriteATASector(SysVars, 32 + 4);
+        WriteATASector(SysVars, 32 + 6);
     }
     uint8_t file[512];
     memset(file, 0, 512);
@@ -868,7 +868,7 @@ uint8_t CreateFile(uint32_t FileNum)
     FileAllocTable[FileNum] = Sector;
 
     uint8_t* FileAllocTableStep = (uint8_t*)FileAllocTable;
-    for (int i = 4;i < 32 + 4;i++) // Save the FAT
+    for (int i = 6;i < 32 + 6;i++) // Save the FAT
     {
         WriteATASector(FileAllocTableStep, i);
         FileAllocTableStep += 512;
@@ -938,7 +938,7 @@ void EraseFileAt(uint32_t entry)
 void WriteFile(uint8_t* Source, size_t Size, uint32_t FileNum)
 {
     uint8_t SysVars[512];
-    ReadATASector(SysVars, 32 + 4);  
+    ReadATASector(SysVars, 32 + 6);  
     uint32_t* NumUsedSectors = (uint32_t*)SysVars;
 
     uint32_t entry = FileAllocTable[FileNum];
@@ -977,7 +977,7 @@ void WriteFile(uint8_t* Source, size_t Size, uint32_t FileNum)
     {
         *NumUsedSectors = LastEntry - 100000;
         
-        WriteATASector(SysVars, 32 + 4);
+        WriteATASector(SysVars, 32 + 6);
     }
     if (LastEntry != 0)
     {
@@ -1137,7 +1137,7 @@ void OS_Start()
     DrawFontString(1920 / 2 - FormatCStringLength("Preparing...") * 16 + 32, VESA_RES_Y / 2 - 16, "Preparing...", 4, 0xFFFFFFFF);
     UpdateScreen();
     uint8_t* FileAllocTableStep = (uint8_t*)FileAllocTable;
-    for (int i = 4;i < 32 + 4;i++) // Get the FAT
+    for (int i = 6;i < 32 + 6;i++) // Get the FAT
     {
         ReadATASector(FileAllocTableStep, i);
         FileAllocTableStep += 512;

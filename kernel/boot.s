@@ -36,7 +36,7 @@ times (512 * 5) - ($-$$) db 0
 global IsFirstTime
 IsFirstTime:
 db 1
-times 512 * 3 - 1 db 0
+times 511 db 0
 
 FileAllocTable:
 ; File Allocation Table Sector(s) (32 sectors)
