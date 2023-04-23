@@ -12,7 +12,7 @@ void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, 
 void ReadFile(uint8_t*, size_t*, uint32_t);
 uint8_t ReadFileSize(size_t*, uint32_t);
 void WriteFile(uint8_t*, size_t, uint32_t);
-
+void HideWindow(window*);
 
 uint8_t TextBuffer[512 * 16];
 
@@ -220,6 +220,11 @@ void TxtProc(int MouseX, int MouseY, window* Win)
                     DestroyWindow(Win);
                     return;
                 }
+                if (C == 'm' && packet & (1 << 8))
+                {
+                    
+                    HideWindow(Win);
+                }
                 if (C == 'g' && packet & (1 << 8))
                 {
                     SwitchSelection();
@@ -263,6 +268,10 @@ void TxtProc(int MouseX, int MouseY, window* Win)
                 {
                     DestroyWindow(Win);
                     return;
+                }
+                if (C == 'm' && packet & (1 << 8))
+                {
+                    HideWindow(Win);
                 }
                 if (C == 'g' && packet & (1 << 8))
                 {

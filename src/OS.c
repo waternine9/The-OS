@@ -32,7 +32,7 @@ extern uint16_t VESA_RES_Y;
 
 mouse_hovering_anim MouseHoveringAnim;
 
-uint32_t* FileAllocTable = (uint32_t*)(0x7C00 + 512 * 4);
+uint32_t* FileAllocTable = (uint32_t*)(0x7C00 + 512 * 6);
 
 int32_t IsMouseMovingWin = -1;
 
@@ -119,6 +119,13 @@ window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), uint8_t *
     Win.Events = Events;
     Win.Framebuffer = Framebuffer;
     return &RegisteredWinsArray[RegisterWindow(Win)];
+}
+
+void HideWindow(window* _window)
+{
+    
+    _window->Hidden = 1;
+    RegisterRect(_window->Rect->X - 20, _window->Rect->Y - 40, _window->Rect->W + 40, _window->Rect->H + 80);
 }
 
 void DestroyWindow(window* _window)
@@ -639,6 +646,8 @@ void BringWindowToFront(uint32_t WinId)
 {
     window temp = RegisteredWinsArray[RegisteredWinsNum - 1];
     RegisteredWinsArray[RegisteredWinsNum - 1] = RegisteredWinsArray[WinId];
+    
+    RegisteredWinsArray[RegisteredWinsNum - 1].Hidden = 0;
     RegisteredWinsArray[WinId] = temp;
 }
 
@@ -665,7 +674,6 @@ void WinLmbHandler()
         if (IsInRect(WinTaskRect, MouseX, MouseY))
         {
             BringWindowToFront(WinsNum);
-            RegisteredWinsArray[WinsNum].Hidden = 0;
         }
         if (Win.Hidden)
         {
@@ -775,12 +783,12 @@ void Format()
     }
     uint8_t EmptyBuff[512] = { 0 };
     memset(EmptyBuff, 0, 512);
-    for (int i = 4;i < 32 + 4;i++)
+    for (int i = 6;i < 32 + 6;i++)
     {
         WriteATASector(EmptyBuff, i);
     }
     
-    WriteATASector(EmptyBuff, 32 + 4); // Specify that filesystem contains 0 data
+    WriteATASector(EmptyBuff, 32 + 6); // Specify that filesystem contains 0 data
 
     
 
@@ -790,10 +798,11 @@ void Format()
     EmptyBuff[511] = 0xFF;
     
     int SectorCount = 256*64;
-    while (SectorCount--) {
+    while (SectorCount--) 
+    {
         WriteATASector(EmptyBuff, 100000 + SectorCount);
     }
-    WriteATASector(EmptyBuff, 1);
+    WriteATASector(EmptyBuff, 5);
 }
 
 void FirstTimeSetup()
@@ -1078,6 +1087,7 @@ void OS_Start()
  
     PIC_Init();
     PIC_SetMask(0xFFFF); // Disable all irqs
+
     MouseInstall();
 
     MouseX = VESA_RES_X / 2;

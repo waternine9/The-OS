@@ -23,86 +23,23 @@ const uint8_t MousePointerFull[8] = {
     0b10000111
 };
 
-click_animation ClickAnimation; 
-
-
-int8_t MouseByte[3];
-
-void MouseWait(uint8_t AType) //unsigned char
+void MouseWrite(uint8_t AWrite)
 {
-  uint32_t TimeOut=10000; //unsigned int
-  if(AType==0)
-  {
-    while(TimeOut--) //Data
-    {
-      if((IO_In8(0x64) & 1)==1)
-      {
-        return;
-      }
-    }
-    return;
-  }
-  else
-  {
-    while(TimeOut--) //Signal
-    {
-      if((IO_In8(0x64) & 2)==0)
-      {
-        return;
-      }
-    }
-    return;
-  }
-}
-
-void MouseWrite(uint8_t AWrite) //unsigned char
-{
-  //Wait to be able to send a command
-  MouseWait(1);
-  //Tell the mouse we are sending a command
   IO_Out8(0x64, 0xD4);
-  //Wait for the final part
-  MouseWait(1);
-  //Finally write
   IO_Out8(0x60, AWrite);
 }
 uint8_t MouseRead()
 {
-  //Get's response from mouse
-  MouseWait(0);
   return IO_In8(0x60);
 }
 void MouseInstall()
 {
-  uint8_t _status;  //unsigned char
-
-  //Enable the auxiliary mouse device
-  MouseWait(1);
-  IO_Out8(0x64, 0xA8);
- 
-  //Enable the interrupts
-  MouseWait(1);
-  IO_Out8(0x64, 0x20);
-  MouseWait(0);
-  _status=(IO_In8(0x60) | 2);
-  MouseWait(1);
-  IO_Out8(0x64, 0x60);
-  
-  MouseWait(1);
-  IO_Out8(0x60, _status);
-  
   MouseWrite(0xFF);
-  MouseRead();  //Acknowledge
+  MouseRead();
 
-  //Tell the mouse to use default settings
+  // Tell the mouse to use default settings
   MouseWrite(0xF6);
-  MouseRead();  //Acknowledge
- 
-  //Enable the mouse
-  MouseWrite(0xF4);
-  MouseRead();  //Acknowledge
-
-  
+  MouseRead();
 
   // Enable IRQ 12
   IO_Out8(0x64, 0xAD); // Disable first PS/2 port (keyboard)

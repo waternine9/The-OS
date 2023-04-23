@@ -20,6 +20,7 @@ uint32_t CmdDrawBuffer[1920 * 1080];
 extern uint8_t Font[32 * 32 * (127 - 32)];
 
 void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
+void HideWindow(window*);
 
 void CmdProc(int MouseX, int MouseY, window* Win)
 {
@@ -30,17 +31,27 @@ void CmdProc(int MouseX, int MouseY, window* Win)
         uint8_t C = packet & 0xFF;
         if (C) 
         {
-            CmdAddChar(C);
-            if (C == '\n')
+
+            
+
+            if (C == 'm' && packet & (1 << 8))
             {
-                
-                if (*(CmdBufferEnd - 2) == 'c')
+                HideWindow(Win);
+            }
+            else
+            {
+                CmdAddChar(C);
+                if (C == '\n')
                 {
-                    TxtCreateWindow(100, 100);
-                }
-                if (*(CmdBufferEnd - 2) == 'd')
-                {
-                    PntCreateWindow(100, 100);
+                    
+                    if (*(CmdBufferEnd - 2) == 'c')
+                    {
+                        TxtCreateWindow(100, 100);
+                    }
+                    if (*(CmdBufferEnd - 2) == 'd')
+                    {
+                        PntCreateWindow(100, 100);
+                    }
                 }
             }
         }

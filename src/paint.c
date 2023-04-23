@@ -11,7 +11,7 @@ void DestroyWindow(window*);
 void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
 void ReadFile(uint8_t*, size_t*, uint32_t);
 void WriteFile(uint8_t*, size_t, uint32_t);
-
+void HideWindow(window*);
 
 uint32_t ImgBuffer[PNT_RES_X * PNT_RES_Y];
 
@@ -139,7 +139,7 @@ void DrawLine(int x1, int y1, int x2, int y2)
 {
     float StepX = x1;
     float StepY = y1;
-    
+
     float dx = x2 - x1;
     float dy = y2 - y1;
     dx *= 0.01f;
@@ -202,6 +202,11 @@ void PntProc(int MouseX, int MouseY, window* Win)
                     DestroyWindow(Win);
                     return;
                 }
+                if (C == 'm' && packet & (1 << 8))
+                {
+                    
+                    HideWindow(Win);
+                }
                 if (C == 'g' && packet & (1 << 8))
                 {
 
@@ -238,6 +243,11 @@ void PntProc(int MouseX, int MouseY, window* Win)
                     WriteFile((uint8_t*)ImgBuffer, PNT_RES_X * PNT_RES_Y * 4, PntFileSelection);
                     DestroyWindow(Win);
                     return;
+                }
+                if (C == 'm' && packet & (1 << 8))
+                {
+                    
+                    HideWindow(Win);
                 }
                 if (C == 'g' && packet & (1 << 8))
                 {
