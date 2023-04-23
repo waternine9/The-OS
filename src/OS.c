@@ -18,6 +18,7 @@
 #include "OS.h"
 #include "mem.h"
 #include "fileman.h"
+#include "settings.h"
 
 extern click_animation ClickAnimation;
 extern uint8_t MousePointerBlack[8];
@@ -72,6 +73,7 @@ uint32_t RegisteredWinsNum = 0;
 
 window CmdWindow;
 rect CmdWindowRect;
+rect SettingsWindowRect = { 300, 300, 640, 480 };
 
 extern void CmdProc(int, int, struct _window*);
 
@@ -272,6 +274,28 @@ void DrawFontGlyph(int x, int y, char character, int scale, uint32_t color)
         {
             SetAlphaPixel(i + x, j + y, ((uint32_t)glyph[i * 4 / scale + j * 4 / scale * 32] << 24) | color);
         }
+    }
+}
+
+void DrawTextOnto(int x, int y, const char *string, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY)
+{
+    for (int I = 0; string[I]; I++) {
+        DrawFontGlyphOnto(x, y, string[I], 2, color, onto, resX, resY);
+        x += 16;
+    }
+}
+
+void DrawRectOnto(int X, int Y, int W, int H, uint32_t Color, uint32_t* onto, uint32_t resX, uint32_t resY)
+{
+    int InitX = X;
+    int X2 = X + W, Y2 = Y + H;
+    for (; Y < Y2; Y++)
+    {
+        for (; X < X2; X++)
+        {
+            SetAlphaPixelOnto(X, Y, Color, onto, resX, resY);
+        }
+        X = InitX;
     }
 }
 void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY)
@@ -1121,6 +1145,7 @@ void OS_Start()
     CmdWindow.Name = "cmd";
     CmdWindow.WinProc = &CmdProc;
 
+    SettingsWindowInit(&SettingsWindowRect);
 
     FileManCreateWindow(100, 100);
     RegisterWindow(CmdWindow);

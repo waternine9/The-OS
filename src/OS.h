@@ -37,4 +37,11 @@ struct _Resources
     uint32_t Background[1920 * 1080];  
 };
 
+int RegisterWindow(window _Window);
+
+void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
+void DrawRect(int X, int Y, int W, int H, uint32_t Color);
+void DrawRectOnto(int X, int Y, int W, int H, uint32_t Color, uint32_t* onto, uint32_t resX, uint32_t resY);
+void DrawTextOnto(int x, int y, const char *string, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
+
 #endif // H_TOS_OS
