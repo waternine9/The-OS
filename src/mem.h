@@ -3,20 +3,8 @@
 
 #include <stddef.h>
 
-static inline void memcpy(void *Destination_, void *Source_, size_t N)
-{
-    uint8_t *Destination = Destination_;
-    uint8_t *Source = Source_;
-    while (N--) {
-        *Destination++ = *Source++;
-    }
-}
-static inline void memset(void *Destination_, uint8_t Val, size_t N)
-{
-    uint8_t *Destination = Destination_;
-    while (N--) {
-        *Destination++ = Val;
-    }
-}
-
+void memcpy(void *Destination_, void *Source_, size_t N);
+void memset(void *Destination_, uint8_t Val, size_t N);
+uint32_t* malloc(size_t Bytes);
+void free(uint32_t* Buf, size_t Bytes);
 #endif // H_TOS_MEM
