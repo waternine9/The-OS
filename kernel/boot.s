@@ -3,6 +3,7 @@
 
 ; THE BOOTLOADER LOADS THIS CODE AT LBA 4 FOR 1 SECTOR, OUR TASK IS TO LOAD THE OS NOW
 
+
 ; Use scancode set 1
 mov dx, 0x60
 mov al, 0xF0

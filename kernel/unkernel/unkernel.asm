@@ -7,10 +7,49 @@ Boot:
     ; NOTE: At boot the boot drive number is stored in DL,
     ;       Preserve it for later 
     mov   [DriveNumber], dl
-
+    
     ; NOTE: Activate A20
     mov   ax, 0x2403
     int   0x15
+
+    mov cx, 4
+.FindRsdpOuter:    
+    ; Find rsdp
+    mov ax, 0x800
+    mul cx
+    add ax, 0xE000
+    mov es, ax
+    push cx
+    mov cx, 0x7FFF    
+    mov di, 0
+.FindRsdp:
+    mov eax, [es:di]
+    cmp eax, 'RSD '
+    jne .NotFound
+    mov eax, [es:di + 4]
+    cmp eax, 'PTR '
+    je .Found
+.NotFound:
+    inc di
+    pop ax
+    loop .FindRsdp
+    pop cx
+    loop .FindRsdpOuter
+    cli
+    hlt
+.Found:
+    pop cx
+    mov si, rsdp
+    mov cx, 100
+.CopyLoop:
+    mov ax, [di]
+
+    mov [si], al
+    inc di
+
+    inc si
+    loop .CopyLoop
+
     
     ; NOTE: SETUP VBE
     jmp SetupVbe
@@ -25,6 +64,9 @@ SetupVbe:
     or    eax, 1
     mov   cr0, eax
     jmp   8:After
+
+
+RsdpSignature: db "RSD PTR "
 
 global DriveNumber
 DriveNumber: db 0
@@ -76,11 +118,17 @@ GDTDesc:
 
 %include "kernel/unkernel/ata/ata.asm"
 
+
+
 times 510-($-$$) db 0
 dw 0xAA55
   
 align 16
 %include "kernel/unkernel/vesa_vbe_setup_vars.asm"
+
+global rsdp
+rsdp:
+times 100 db 0
 
 times 2048-($-$$) db 0
 

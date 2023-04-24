@@ -5,6 +5,7 @@
 #include "format.h"
 #include "logo.h"
 #include "pic.h"
+#include "apic.h"
 #include "idt.h"
 #include "io.h"
 #include "rtc.h"
