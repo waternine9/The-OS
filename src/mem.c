@@ -1,10 +1,10 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "mem.h"
-void memcpy(void *Destination_, void *Source_, size_t N)
+void memcpy(void *Destination_, const void *Source_, size_t N)
 {
     uint8_t *Destination = Destination_;
-    uint8_t *Source = Source_;
+    const uint8_t *Source = Source_;
     while (N--) {
         *Destination++ = *Source++;
     }
@@ -22,7 +22,7 @@ uint8_t Pages[100000] = { 0 };
 
 uint8_t IsInit = 0;
 
-uint32_t* malloc(size_t Bytes)
+void *malloc(size_t Bytes)
 {
     if (!IsInit)
     {
@@ -59,7 +59,7 @@ uint32_t* malloc(size_t Bytes)
     }
     return (uint32_t*)0;
 }
-void free(uint32_t* Buf, size_t Bytes)
+void free(void *Buf, size_t Bytes)
 {
     size_t PageCount = Bytes / 4096 + 1;
 
@@ -69,4 +69,36 @@ void free(uint32_t* Buf, size_t Bytes)
     {
         Pages[i] = 0;
     }
+}
+
+// thanks steve jobs
+void *memmove(void *dest, const void *src, size_t n)
+{
+    uint8_t* from = (uint8_t*) src;
+    uint8_t* to = (uint8_t*) dest;
+
+    if (from == to || n == 0)
+        return dest;
+    if (to > from && to-from < (int)n) {
+        /* to overlaps with from */
+        /*  <from......>         */
+        /*         <to........>  */
+        /* copy in reverse, to avoid overwriting from */
+        int i;
+        for(i=n-1; i>=0; i--)
+            to[i] = from[i];
+        return dest;
+    }
+    if (from > to && from-to < (int)n) {
+        /* to overlaps with from */
+        /*        <from......>   */
+        /*  <to........>         */
+        /* copy forwards, to avoid overwriting from */
+        size_t i;
+        for(i=0; i<n; i++)
+            to[i] = from[i];
+        return dest;
+    }
+    memcpy(dest, src, n);
+    return dest;
 }
