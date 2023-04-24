@@ -137,6 +137,8 @@ void DestroyWindow(window* _window)
 {
     (*_window->WinDestruc)(_window);
     free((uint32_t*)_window->Reserved, _window->ReservedSize);
+    free(_window->Framebuffer, _window->Rect->W * _window->Rect->H * 4);
+    free(_window->Events, 4);
 
     uint32_t WinsNum = 0;
     while (WinsNum < RegisteredWinsNum)

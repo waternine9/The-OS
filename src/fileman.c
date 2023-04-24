@@ -55,6 +55,7 @@ void FileManDraw(uint32_t color, window* Win)
 
 void FileManProc(int MouseX, int MouseY, window* Win)
 {
+    FileManClearWinFramebuffer(Win, 0);
     while (Win->ChQueueNum > 0)
     {
         Win->ChQueueNum--;
