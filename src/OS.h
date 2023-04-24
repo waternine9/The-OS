@@ -50,6 +50,7 @@ void DrawRectOnto(int X, int Y, int W, int H, uint32_t Color, uint32_t* onto, ui
 void DrawTextOnto(int x, int y, const char *string, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
 void ReadFile(uint8_t*, size_t*, uint32_t);
 void WriteFile(uint8_t*, size_t, uint32_t);
+uint8_t CreateFile(uint32_t FileNum);
 uint8_t ReadFileSize(size_t*, uint32_t);
 void HideWindow(window*);
 void DestroyWindow(window*);

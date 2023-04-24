@@ -139,7 +139,7 @@ void CmdProc(int MouseX, int MouseY, window* Win)
                 {
                     if (rsrv.TxtBuff[rsrv.TxtBuffSize - 1] == 'd')
                     {
-                        // PntCreateWindow(100, 100); 
+                        PntCreateWindow(100, 100); 
                     }
                     if (rsrv.TxtBuff[rsrv.TxtBuffSize - 1] == 'f')
                     {

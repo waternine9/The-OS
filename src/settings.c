@@ -77,5 +77,28 @@ void SettingsWindowProc(int MouseX, int MouseY, window *Win)
     int MousePressed = *(Win->Events) & 1;
     *Win->Events &= ~1;
 
+    int I = 0;
+    while (I < Win->ChQueueNum)
+    {
+        uint16_t packet = Win->InCharacterQueue[I];
+        uint8_t C = packet & 0xFF;
+        if (C)
+        {
+            if (C == 'm' && packet & (1 << 8))
+            {
+                
+                HideWindow(Win);
+            }
+            if (C == 'd' && packet & (1 << 9))
+            {
+
+                DestroyWindow(Win);
+                return;
+            }
+        }
+        I++;
+    }
+    Win->ChQueueNum = 0;
+
     DrawSwitchOption(&Layout, "Light Theme", &Settings.LightTheme, Win, RelMouseX, RelMouseY, MousePressed);
 }
