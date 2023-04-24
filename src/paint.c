@@ -24,6 +24,7 @@ extern struct _Resources ResourcesAt;
 void PntDestructor(window* Win)
 {
     PntReserve* rsrv = (PntReserve*)Win->Reserved;
+    WriteFile((uint8_t*)rsrv->ImgBuffer, PNT_RES_X * PNT_RES_Y * 4, rsrv->PntFileSelection);
     free(rsrv->ImgBuffer, PNT_RES_X * PNT_RES_Y * 4);
 }
 
@@ -224,17 +225,6 @@ void PntProc(int MouseX, int MouseY, window* Win)
             uint8_t C = packet & 0xFF;
             if (C)
             {
-                if (C == 'd' && packet & (1 << 9))
-                {
-                    WriteFile((uint8_t*)rsrv->ImgBuffer, PNT_RES_X * PNT_RES_Y * 4, rsrv->PntFileSelection);
-                    DestroyWindow(Win);
-                    return;
-                }
-                if (C == 'm' && packet & (1 << 8))
-                {
-                    
-                    HideWindow(Win);
-                }
                 if (C == 'g' && packet & (1 << 8))
                 {
                     PntSwitchSelection(Win);

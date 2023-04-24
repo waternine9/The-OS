@@ -84,17 +84,7 @@ void SettingsWindowProc(int MouseX, int MouseY, window *Win)
         uint8_t C = packet & 0xFF;
         if (C)
         {
-            if (C == 'm' && packet & (1 << 8))
-            {
-                
-                HideWindow(Win);
-            }
-            if (C == 'd' && packet & (1 << 9))
-            {
-
-                DestroyWindow(Win);
-                return;
-            }
+            // key pressed...
         }
         I++;
     }

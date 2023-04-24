@@ -63,10 +63,6 @@ void FileManProc(int MouseX, int MouseY, window* Win)
         uint8_t C = packet & 0xFF;
         if (C)
         {
-            if (C == 'm' && packet & (1 << 8))
-            {
-                HideWindow(Win);
-            }
             if (C == 'r' && packet & (1 << 8))
             {
                 for (int i = 0;i < 256;i++)

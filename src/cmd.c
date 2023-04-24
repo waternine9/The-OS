@@ -124,33 +124,23 @@ void CmdProc(int MouseX, int MouseY, window* Win)
         uint8_t C = packet & 0xFF;
         if (C) 
         {
-            if (C == 'm' && packet & (1 << 8))
+            CmdAddChar(C, Win);
+            if (C == '\n')
             {
-                HideWindow(Win);
-            }
-            if (C == 'd' && packet & (1 << 9))
-            {
-                DestroyWindow(Win);
-            }
-            else
-            {
-                CmdAddChar(C, Win);
-                if (C == '\n')
+                if (rsrv.TxtBuff[rsrv.TxtBuffSize - 1] == 'd')
                 {
-                    if (rsrv.TxtBuff[rsrv.TxtBuffSize - 1] == 'd')
-                    {
-                        PntCreateWindow(100, 100); 
-                    }
-                    if (rsrv.TxtBuff[rsrv.TxtBuffSize - 1] == 'f')
-                    {
-                        FileManCreateWindow(100, 100);
-                    }
-                    if (rsrv.TxtBuff[rsrv.TxtBuffSize - 1] == 's')
-                    {
-                        SettingsCreateWindow(100, 100);
-                    }
+                    PntCreateWindow(100, 100); 
+                }
+                if (rsrv.TxtBuff[rsrv.TxtBuffSize - 1] == 'f')
+                {
+                    FileManCreateWindow(100, 100);
+                }
+                if (rsrv.TxtBuff[rsrv.TxtBuffSize - 1] == 's')
+                {
+                    SettingsCreateWindow(100, 100);
                 }
             }
+            
         }
         uint16_t IsBackspace = packet & (1 << 8);
         if (IsBackspace) CmdBackspace(Win);

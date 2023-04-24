@@ -670,7 +670,7 @@ void BringWindowToFront(uint32_t WinId)
     RegisteredWinsArray[RegisteredWinsNum - 1] = RegisteredWinsArray[WinId];
     
     RegisteredWinsArray[RegisteredWinsNum - 1].Hidden = 0;
-    RegisteredWinsArray[WinId] = temp;
+    if (WinId != RegisteredWinsNum - 1) RegisteredWinsArray[WinId] = temp;
 }
 
 void WinLmbHandler()
@@ -696,6 +696,7 @@ void WinLmbHandler()
         if (IsInRect(WinTaskRect, MouseX, MouseY))
         {
             BringWindowToFront(WinsNum);
+            return;
         }
         if (Win.Hidden)
         {
@@ -1164,6 +1165,22 @@ void OS_Start()
         {
             if (!Keys[I].Released)
             {
+                if (Keys[I].Ctrl && RegisteredWinsNum > 0)
+                {
+                    switch (Keys[I].ASCII)
+                    {
+                        case 'd':
+                            window* WinDel = &RegisteredWinsArray[RegisteredWinsNum - 1];
+                            DestroyWindow(WinDel);
+                            break;
+                        case 'm':
+                            window* WinMin = &RegisteredWinsArray[RegisteredWinsNum - 1];
+                            HideWindow(WinMin);
+                            break;
+                        default:
+                            break;
+                    }
+                }
                 if (RegisteredWinsNum != 0)
                 {
                     if (Keys[I].Scancode == KEY_BACKSPACE)
