@@ -20,6 +20,7 @@
 #include "mem.h"
 #include "fileman.h"
 #include "settings.h"
+#include "scheduler.h"
 
 extern click_animation ClickAnimation;
 extern uint8_t MousePointerBlack[8];
@@ -1170,14 +1171,14 @@ void OS_Start()
                 {
                     switch (Keys[I].ASCII)
                     {
-                        case 'd':
+                        case 'd': {
                             window* WinDel = &RegisteredWinsArray[RegisteredWinsNum - 1];
                             DestroyWindow(WinDel);
-                            break;
-                        case 'm':
+                        } break;
+                        case 'm': {
                             window* WinMin = &RegisteredWinsArray[RegisteredWinsNum - 1];
                             HideWindow(WinMin);
-                            break;
+                        } break;
                         default:
                             break;
                     }
