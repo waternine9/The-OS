@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "mem.h"
+#include "scheduler.h"
 
 typedef struct
 {
@@ -107,9 +108,7 @@ uint8_t LocalApicIDs[255] = {0};
 uint8_t ProcessorCount = 0;
 volatile uint8_t bspdone;
 
-uint8_t NumProcessors = 0;
-
-void InitCores()
+volatile void InitCores()
 {
     EnableApic();
     FindMadt();
@@ -130,14 +129,4 @@ void InitCores()
     }
     bspdone = 1;
     
-}
-
-volatile void CoreStart()
-{
-    // THIS IS THE STARTUP CODE FOR ALL PROCESSORS EXCEPT THE BOOT PROCESSOR
-    NumProcessors++;
-    while (1)
-    {
-        // TODO: SKE, ADD SCHEDULER HANDLING HERE.
-    };
 }

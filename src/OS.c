@@ -71,6 +71,7 @@ rect RegisterRectArray[256];
 rect *RegisterRectPtr = RegisterRectArray;
 
 window RegisteredWinsArray[256];
+process_id RegisteredProcIDsArray[256];
 uint32_t RegisteredWinsNum = 0;
 
 window CmdWindow;
@@ -80,6 +81,8 @@ rect SettingsWindowRect = { 300, 300, 640, 480 };
 extern void CmdProc(int, int, struct _window*);
 
 extern uint8_t IsFirstTime;
+
+scheduler *Scheduler;
 
 void RegisterRect(int x, int y, int w, int h)
 {
@@ -112,7 +115,7 @@ int RegisterWindow(window _Window)
     return RegisteredWinsNum - 1;
 }
 
-window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), void(*WinDestruc)(window*), uint8_t *Name, uint32_t *Events, uint32_t* Framebuffer, uint8_t* Reserved, size_t ReservedSize)
+window* CreateWindow(rect* Rectptr, void(*WinProc)(window*), void(*WinDestruc)(window*), uint8_t *Name, uint32_t *Events, uint32_t* Framebuffer, uint8_t* Reserved, size_t ReservedSize)
 {
     window Win;
     Win.Free = 0;
@@ -125,7 +128,12 @@ window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), void(*Win
     Win.Reserved = Reserved;
     Win.ReservedSize = ReservedSize;
     Win.WinDestruc = WinDestruc;
-    return &RegisteredWinsArray[RegisterWindow(Win)];
+    scheduler_process proc = { 0 };
+    proc.ProcessRequest = &WinProc;
+    window* WinPtr = &RegisteredWinsArray[RegisterWindow(Win)]; 
+    proc.Win = WinPtr;
+    RegisteredProcIDsArray[RegisteredWinsNum - 1] = SchedulerPushProcess(Scheduler, proc);
+    return WinPtr;
 }
 
 void HideWindow(window* _window)
@@ -147,6 +155,7 @@ void DestroyWindow(window* _window)
     {
         if (&RegisteredWinsArray[WinsNum] == _window)
         {
+            SchedulerRemoveProcess(Scheduler, RegisteredProcIDsArray[RegisteredWinsNum]);
             rect WinRect = *_window->Rect;
             RegisterRect(WinRect.X - 10, WinRect.Y - 40, WinRect.W + 20, WinRect.H + 80);
             RegisteredWinsArray[WinsNum].Free = 1;
@@ -796,7 +805,7 @@ void UpdateWinProcs()
 {
     for (int i = 0;i < RegisteredWinsNum;i++)
     {
-        (*RegisteredWinsArray[i].WinProc)(MouseX, MouseY, &RegisteredWinsArray[i]);
+        (*RegisteredWinsArray[i].WinProc)(&RegisteredWinsArray[i]);
     }
 }
 
@@ -1105,10 +1114,24 @@ volatile void RenderDynamic()
     RegisterRectPtr = RegisterRectArray;
 }
 
-extern uint8_t NumProcessors;
+_Atomic NumProcessors;
+
+volatile void CoreStart()
+{
+    // THIS IS THE STARTUP CODE FOR ALL PROCESSORS EXCEPT THE BOOT PROCESSOR
+    NumProcessors++;
+    while (1)
+    {
+        
+        SchedulerExecuteNext(Scheduler);
+    };
+}
 
 void OS_Start()
 {
+    Scheduler = malloc(sizeof(scheduler));
+    memset(Scheduler, 0, sizeof(scheduler)); 
+
     // Initialize BSS
     memset((uint8_t*)0x100000, 0, 100000);
     
@@ -1161,10 +1184,12 @@ void OS_Start()
     RegisterRect(0, VESA_RES_Y / 2 - 16, VESA_RES_X, 40);
     DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, ResourcesAt.Background);
 
+    
     while (1)
     {
         ClearScreen();
         DrawToolBar(2);
+        DrawFontGlyph(0, 0, '0' + NumProcessors, 4, 0xFF00FF00);
         Keyboard_CollectEvents(&Kbd, Keys, 32, &KeysCount);
         for (int I = 0; I < KeysCount; I++)
         {
@@ -1215,10 +1240,8 @@ void OS_Start()
             
         }
 
-
         KeepMouseInScreen();
         MoveWinHandler();
-        UpdateWinProcs();
         ClickHandler();
 
         RenderDynamic();

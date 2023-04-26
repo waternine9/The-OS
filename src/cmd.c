@@ -6,6 +6,7 @@
 #include "mem.h"
 #include "fileman.h"
 #include "settings.h"
+#include "mutex.h"
 
 typedef struct 
 {
@@ -113,8 +114,10 @@ void CmdDraw(uint32_t Color, window* Win)
         DrawFontGlyphOnto(CurX, CurY, '_', 2, Color, Win->Framebuffer, CONSOLE_RES_X, CONSOLE_RES_Y);
     }
 }
+extern int MouseX;
+extern int MouseY;
 
-void CmdProc(int MouseX, int MouseY, window* Win)
+void CmdProc(window* Win)
 {
     CmdReserve rsrv = *(CmdReserve*)Win->Reserved;
     int I = 0;

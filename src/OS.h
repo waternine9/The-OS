@@ -23,7 +23,7 @@ typedef struct _window
 
     uint16_t InCharacterQueue[256];
     uint16_t ChQueueNum;
-    void(*WinProc)(int, int, struct _window*);
+    void(*WinProc)(struct _window*);
     void(*WinDestruc)(struct _window*);
 } window;
 
@@ -42,7 +42,7 @@ struct _Resources
 };
 
 int RegisterWindow(window _Window);
-window* CreateWindow(rect* Rectptr, void(*WinProc)(int, int, window*), void(*WinDestruc)(window*), uint8_t *Name, uint32_t *Events, uint32_t* Framebuffer, uint8_t* Reserved, size_t ReservedSize);
+window* CreateWindow(rect* Rectptr, void(*WinProc)(window*), void(*WinDestruc)(window*), uint8_t *Name, uint32_t *Events, uint32_t* Framebuffer, uint8_t* Reserved, size_t ReservedSize);
 
 void DrawFontGlyphOnto(int x, int y, char character, int scale, uint32_t color, uint32_t* onto, uint32_t resX, uint32_t resY);
 void DrawRect(int X, int Y, int W, int H, uint32_t Color);

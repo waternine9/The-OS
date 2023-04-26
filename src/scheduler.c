@@ -107,8 +107,9 @@ process_id SchedulerPushProcess(scheduler *Scheduler, scheduler_process Process)
     process_id ID = AllocProcessId(Scheduler);
     scheduler_process *ProcessPtr = GetProcessByID(Scheduler, ID);
 
-    ProcessPtr->UserData = Process.UserData;
+    ProcessPtr->Win = Process.Win;
     ProcessPtr->ProcessRequest = Process.ProcessRequest;
+    ProcessPtr->Mux.Taken = 0;
 
     PushOntoRing(Scheduler, ID);
 
@@ -138,14 +139,17 @@ void SchedulerExecuteNext(scheduler *Scheduler)
     MutexLock(&Scheduler->Mux);
 
     if (Scheduler->ProcessRingLength != 0) {
+        
         if (Scheduler->CurrentProcess >= Scheduler->ProcessRingLength) {
             Scheduler->CurrentProcess = 0;
         }
     
         scheduler_process *Proc = GetProcessByID(Scheduler, Scheduler->ProcessRing[Scheduler->CurrentProcess]);
-
-        Proc->ProcessRequest(Proc->UserData);
-
+        if (MutexTryLock(&Proc->Mux)) 
+        {
+            Proc->ProcessRequest(Proc->Win);
+            MutexRelease(&Proc->Mux);
+        }
         Scheduler->CurrentProcess++;
         if (Scheduler->CurrentProcess >= Scheduler->ProcessRingLength) {
             Scheduler->CurrentProcess = 0;

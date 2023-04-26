@@ -63,7 +63,11 @@ static void DrawSwitchOption(settings_layout *Layout, const char *Name, bool *Va
     Layout->Y += 16 + Layout->Padding;
 }
 
-void SettingsWindowProc(int MouseX, int MouseY, window *Win)
+
+extern int MouseX;
+extern int MouseY;
+
+void SettingsWindowProc(window *Win)
 {
     SettingsClearFramebuffer(Settings.LightTheme ? 0xFFFFFFFF : 0, Win);
 

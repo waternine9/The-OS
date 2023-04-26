@@ -8,18 +8,20 @@
 #include <stddef.h>
 #include "mutex.h"
 #include "mem.h"
+#include "OS.h"
 
 typedef struct {
     size_t ID;
     size_t Generation;
 } process_id;
-typedef void (*scheduler_process_request)(void *UserData);
+typedef void (*scheduler_process_request)(window* Win);
 
 
 typedef struct {
     process_id ID;
-    void *UserData;
+    window *Win;
     scheduler_process_request ProcessRequest;
+    mutex Mux;
 } scheduler_process;
 
 typedef struct {

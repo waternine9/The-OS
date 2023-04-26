@@ -13,6 +13,6 @@ typedef struct {
 } user_settings;
 
 void SettingsCreateWindow();
-void SettingsWindowProc(int MouseX, int MouseY, window* Win);
+void SettingsWindowProc(window* Win);
 
 #endif

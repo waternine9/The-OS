@@ -139,8 +139,10 @@ void DrawLine(int x1, int y1, int x2, int y2, window *Win)
         StepY += dy;
     }
 }
+extern int MouseX;
+extern int MouseY;
 
-void PntProc(int MouseX, int MouseY, window* Win)
+void PntProc(window* Win)
 {
     PntReserve* rsrv = (PntReserve*)Win->Reserved;
     if (IsDrawing)
