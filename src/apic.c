@@ -1,20 +1,21 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include "io.h"
 #include "mem.h"
 #include "scheduler.h"
 
 typedef struct
 {
-    char signature[4];
-    uint32_t length;
-    uint8_t revision;
-    uint8_t checksum;
-    char oem_id[6];
-    char oem_table_id[8];
-    uint32_t oem_revision;
-    uint32_t creator_id;
-    uint32_t creator_revision;
-} __attribute__((packed)) AcpiSdtHeader;
+    char Signature[4];
+    uint32_t Length;
+    uint8_t Revision;
+    uint8_t Checksum;
+    char OEMID[6];
+    char OEMTableID[8];
+    uint32_t OEMRevision;
+    uint32_t CreatorID;
+    uint32_t CreatorRevision;
+} __attribute__((packed)) acpi_sdt_header;
 
 typedef struct
 {
@@ -22,10 +23,10 @@ typedef struct
     uint8_t Checksum;
     char OEMID[6];
     uint8_t Revision;
-    AcpiSdtHeader *Rsdt;
-} __attribute__((packed)) RSDPDescriptor;
+    acpi_sdt_header *Rsdt;
+} __attribute__((packed)) rsdp_descriptor;
 
-extern RSDPDescriptor *rsdp;
+extern rsdp_descriptor *rsdp;
 
 bool CompareSignature(const char *a, const char *b)
 {
@@ -43,17 +44,16 @@ uint32_t bspid;
 void FindMadt()
 {
 
-    uint32_t NumEntries = (rsdp->Rsdt->length - 36) / 4;
+    uint32_t NumEntries = (rsdp->Rsdt->Length - 36) / 4;
 
     uint32_t *TablePtrs = (uint32_t *)((uintptr_t)rsdp->Rsdt + 36);
     for (uint32_t i = 0; i < NumEntries; i++)
     {
-        AcpiSdtHeader *table_header = (AcpiSdtHeader *)TablePtrs[i];
+        acpi_sdt_header *TableHeader = (acpi_sdt_header *)(size_t)TablePtrs[i];
 
-        if (CompareSignature(table_header->signature, "APIC"))
+        if (CompareSignature(TableHeader->Signature, "APIC"))
         {
-
-            Madt = (uint32_t *)TablePtrs[i];
+            Madt = (uint8_t *)(size_t)TablePtrs[i];
             return;
         }
     }
@@ -62,20 +62,17 @@ void FindMadt()
     return; // MADT not found
 }
 
-volatile void Timeout()
+void Timeout()
 {
-    for (int i = 0;i < 1000;i++)
+    for (int i = 0; i < 40000; i++)
     {
-        for (int j = 0x7C00;i < 0x7E00;j++)
-        {
-            *(volatile uint8_t*)j = i;
-        }
+        IO_Wait();
     }
 }
 
 void InitCore(uint8_t id)
-{                                                                           // clear APIC errors
-	*((volatile uint32_t*)(0xFEE00000 + 0x310)) = (id << 24);         // select AP
+{                                                                  // clear APIC errors
+	*((volatile uint32_t*)(0xFEE00000 + 0x310)) = (id << 24);      // select AP
     *((volatile uint32_t*)(0xFEE00000 + 0x300)) = 0x4500;          // trigger INIT IPI
     while (*((volatile uint32_t*)(0xFEE00000 + 0x300)) & (1 << 12));
     
@@ -87,16 +84,14 @@ void InitCore(uint8_t id)
 	}                                                                                                                 // wait 10 msec
 }
 
-
- 
 void WriteReg(uint32_t Reg, uint32_t Val)
 {
-    *(uint32_t*)(0xFEE00000 + Reg) = Val;
+    *(uint32_t*)(size_t)(0xFEE00000 + Reg) = Val;
 }
 
 uint32_t ReadReg(uint32_t Reg)
 {
-    return *(uint32_t*)(0xFEE00000 + Reg);
+    return *(uint32_t*)(size_t)(0xFEE00000 + Reg);
 }
 
 void EnableApic() 
@@ -108,17 +103,17 @@ uint8_t LocalApicIDs[255] = {0};
 uint8_t ProcessorCount = 0;
 volatile uint8_t bspdone;
 
-volatile void InitCores()
+void InitCores()
 {
     EnableApic();
     FindMadt();
     
-    uint32_t MadtEnd = Madt + 0x2C + *(uint32_t *)(Madt + 4);
-    for (uint8_t *ptr = Madt + 0x2C; ptr < MadtEnd;ptr += ptr[1])
+    uint8_t *MadtEnd = Madt + 0x2C + *(uint32_t *)(Madt + 4);
+    for (uint8_t *Ptr = Madt + 0x2C; Ptr < MadtEnd;Ptr += Ptr[1])
     {
-        switch (*ptr)
+        switch (*Ptr)
         {
-            case 0: if (ptr[4] & 1) LocalApicIDs[ProcessorCount++] = ptr[3]; break;
+            case 0: if (Ptr[4] & 1) LocalApicIDs[ProcessorCount++] = Ptr[3]; break;
         }
     }
     bspdone = 0;

@@ -82,7 +82,7 @@ extern void CmdProc(int, int, struct _window*);
 
 extern uint8_t IsFirstTime;
 
-scheduler *Scheduler;
+scheduler Scheduler;
 
 void RegisterRect(int x, int y, int w, int h)
 {
@@ -129,10 +129,10 @@ window* CreateWindow(rect* Rectptr, void(*WinProc)(window*), void(*WinDestruc)(w
     Win.ReservedSize = ReservedSize;
     Win.WinDestruc = WinDestruc;
     scheduler_process proc = { 0 };
-    proc.ProcessRequest = &WinProc;
+    proc.ProcessRequest = WinProc;
     window* WinPtr = &RegisteredWinsArray[RegisterWindow(Win)]; 
     proc.Win = WinPtr;
-    RegisteredProcIDsArray[RegisteredWinsNum - 1] = SchedulerPushProcess(Scheduler, proc);
+    RegisteredProcIDsArray[RegisteredWinsNum - 1] = SchedulerPushProcess(&Scheduler, proc);
     return WinPtr;
 }
 
@@ -155,7 +155,7 @@ void DestroyWindow(window* _window)
     {
         if (&RegisteredWinsArray[WinsNum] == _window)
         {
-            SchedulerRemoveProcess(Scheduler, RegisteredProcIDsArray[RegisteredWinsNum]);
+            SchedulerRemoveProcess(&Scheduler, RegisteredProcIDsArray[RegisteredWinsNum]);
             rect WinRect = *_window->Rect;
             RegisterRect(WinRect.X - 10, WinRect.Y - 40, WinRect.W + 20, WinRect.H + 80);
             RegisteredWinsArray[WinsNum].Free = 1;
@@ -1114,23 +1114,20 @@ volatile void RenderDynamic()
     RegisterRectPtr = RegisterRectArray;
 }
 
-_Atomic NumProcessors;
+_Atomic int NumProcessors;
 
-volatile void CoreStart()
+void CoreStart()
 {
     // THIS IS THE STARTUP CODE FOR ALL PROCESSORS EXCEPT THE BOOT PROCESSOR
     NumProcessors++;
     while (1)
     {
-        
-        SchedulerExecuteNext(Scheduler);
-    };
+    }
 }
 
 void OS_Start()
 {
-    Scheduler = malloc(sizeof(scheduler));
-    memset(Scheduler, 0, sizeof(scheduler)); 
+    Scheduler = (scheduler){0};
 
     // Initialize BSS
     memset((uint8_t*)0x100000, 0, 100000);

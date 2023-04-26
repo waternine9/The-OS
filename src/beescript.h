@@ -28,5 +28,4 @@ typedef struct {
 
 void Bee_ExecuteBatchScript(batch_script *Script);
 
-
 #endif // H_TOS_BEESCRIPT
