@@ -26,7 +26,7 @@ typedef struct
     acpi_sdt_header *Rsdt;
 } __attribute__((packed)) rsdp_descriptor;
 
-extern rsdp_descriptor *rsdp;
+extern rsdp_descriptor rsdp;
 
 bool CompareSignature(const char *a, const char *b)
 {
@@ -43,20 +43,20 @@ uint32_t bspid;
 
 void FindMadt()
 {
+    asm volatile("cli\nhlt" :: "a"(&rsdp));
+    uint32_t NumEntries = (rsdp.Rsdt->Length - 36) / 4;
 
-    uint32_t NumEntries = (rsdp->Rsdt->Length - 36) / 4;
-
-    uint32_t *TablePtrs = (uint32_t *)((uintptr_t)rsdp->Rsdt + 36);
+    uint32_t *TablePtrs = (uint32_t *)((uintptr_t)rsdp.Rsdt + 36);
     for (uint32_t i = 0; i < NumEntries; i++)
     {
         acpi_sdt_header *TableHeader = (acpi_sdt_header *)(size_t)TablePtrs[i];
-
         if (CompareSignature(TableHeader->Signature, "APIC"))
         {
             Madt = (uint8_t *)(size_t)TablePtrs[i];
             return;
         }
     }
+
     asm volatile ("mov %%eax, 1\ncpuid\n": "=b"(bspid));
     bspid >>= 24;
     return; // MADT not found
@@ -107,7 +107,7 @@ void InitCores()
 {
     EnableApic();
     FindMadt();
-    
+
     uint8_t *MadtEnd = Madt + 0x2C + *(uint32_t *)(Madt + 4);
     for (uint8_t *Ptr = Madt + 0x2C; Ptr < MadtEnd;Ptr += Ptr[1])
     {
@@ -123,5 +123,4 @@ void InitCores()
         InitCore(LocalApicIDs[i]);
     }
     bspdone = 1;
-    
 }
