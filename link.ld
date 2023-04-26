@@ -3,11 +3,10 @@ ENTRY(OS_Start)
 SECTIONS {
     . = 0x7C00;
     
-    .text :
+    .boot :
     {
         *(.boot)
         *(.text)
-        
     }
     .rodata : 
     {

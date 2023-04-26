@@ -1105,6 +1105,8 @@ volatile void RenderDynamic()
     RegisterRectPtr = RegisterRectArray;
 }
 
+extern uint8_t NumProcessors;
+
 void OS_Start()
 {
     // Initialize BSS
@@ -1115,6 +1117,8 @@ void OS_Start()
 
     PIC_Init();
     PIC_SetMask(0xFFFF); // Disable all irqs
+
+    InitCores();
 
     MouseInstall();
 
@@ -1161,7 +1165,6 @@ void OS_Start()
     {
         ClearScreen();
         DrawToolBar(2);
-
         Keyboard_CollectEvents(&Kbd, Keys, 32, &KeysCount);
         for (int I = 0; I < KeysCount; I++)
         {

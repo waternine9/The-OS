@@ -3,7 +3,6 @@
 
 ; THE BOOTLOADER LOADS THIS CODE AT LBA 4 FOR 1 SECTOR, OUR TASK IS TO LOAD THE OS NOW
 
-
 ; Use scancode set 1
 mov dx, 0x60
 mov al, 0xF0
@@ -32,19 +31,20 @@ jl LoadOS
 jmp Start
 
 times (512 * 5) - ($-$$) db 0
-
-; CODE BELOW STARTS AT LBA 5
 global IsFirstTime
 IsFirstTime:
 db 1
 times 511 db 0
 
+; CODE BELOW STARTS AT LBA 5
 FileAllocTable:
 ; File Allocation Table Sector(s) (32 sectors)
 times 512 * 32 db 0
 FileSysVars:
 ; Reserved for extra variables in file system (1 sector)
 times 512 db 0
+section .text
+
 
 extern OS_Start
 
@@ -56,9 +56,8 @@ Start:
 align 16
 %include "kernel/irq_handlers.s"
 
+xapicBase: dd 0
 
-
-section .text
 
 
 
