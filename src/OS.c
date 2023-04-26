@@ -1127,7 +1127,7 @@ void CoreStart()
 
 void OS_Start()
 {
-    Scheduler = (scheduler){0};
+    Scheduler = (scheduler){ 0 };
 
     // Initialize BSS
     memset((uint8_t*)0x100000, 0, 100000);

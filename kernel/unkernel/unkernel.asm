@@ -20,7 +20,7 @@ Boot:
     add ax, 0xE000
     mov es, ax
     push cx
-    mov cx, 0x7FFF    
+    mov cx, 0x7FFF 
     mov di, 0
 .FindRsdp:
     mov eax, [es:di]
@@ -31,7 +31,6 @@ Boot:
     je .Found
 .NotFound:
     inc di
-    pop ax
     loop .FindRsdp
     pop cx
     loop .FindRsdpOuter
@@ -39,7 +38,18 @@ Boot:
     hlt
 .Found:
     pop cx
-    mov [rsdp], di
+    mov si, rsdp
+
+    mov cx, 24
+.CopyLoop:
+    mov al, [es:di]
+    mov [si], al
+    inc si
+    inc di
+    loop .CopyLoop
+
+    mov eax, [rsdp + 16]
+
     ; NOTE: SETUP VBE
     jmp SetupVbe
     %include "kernel/unkernel/vesa_vbe_setup.asm"
@@ -53,7 +63,6 @@ SetupVbe:
     or    eax, 1
     mov   cr0, eax
     jmp   8:After
-
 
 RsdpSignature: db "RSD PTR "
 
@@ -165,8 +174,13 @@ StartupCore: ; Startup code for each core
     jmp CoreStart
 %include "kernel/unkernel/vesa_vbe_setup_vars.asm"
 global rsdp
-align 8
-rsdp: dd 0
+
+rsdp:
+.Signature times 8 db 0
+.Checksum db 0
+.OEMID times 6 db 0
+.Revision db 0
+.Rsdt dd 0
 
 times 2048-($-$$) db 0
 unkernel_end:

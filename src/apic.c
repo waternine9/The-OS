@@ -26,7 +26,7 @@ typedef struct
     acpi_sdt_header *Rsdt;
 } __attribute__((packed)) rsdp_descriptor;
 
-extern rsdp_descriptor *rsdp;
+extern rsdp_descriptor rsdp;
 
 bool CompareSignature(const char *a, const char *b)
 {
@@ -43,9 +43,9 @@ uint32_t bspid;
 
 void FindMadt()
 {
-    uint32_t NumEntries = (rsdp->Rsdt->Length - 36) / 4;
+    uint32_t NumEntries = (rsdp.Rsdt->Length - 36) / 4;
 
-    uint32_t *TablePtrs = (uint32_t *)((uintptr_t)rsdp->Rsdt + 36);
+    uint32_t *TablePtrs = (uint32_t *)((uintptr_t)rsdp.Rsdt + 36);
     for (uint32_t i = 0; i < NumEntries; i++)
     {
         acpi_sdt_header *TableHeader = (acpi_sdt_header *)(size_t)TablePtrs[i];
@@ -104,7 +104,6 @@ volatile uint8_t bspdone;
 
 void InitCores()
 {
-    asm volatile("cli\nhlt" :: "a"(rsdp));
     EnableApic();
     FindMadt();
 
