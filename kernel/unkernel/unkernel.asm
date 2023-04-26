@@ -39,18 +39,7 @@ Boot:
     hlt
 .Found:
     pop cx
-    mov si, rsdp
-    mov cx, 100
-.CopyLoop:
-    mov ax, [di]
-
-    mov [si], al
-    inc di
-
-    inc si
-    loop .CopyLoop
-
-    
+    mov [rsdp], di
     ; NOTE: SETUP VBE
     jmp SetupVbe
     %include "kernel/unkernel/vesa_vbe_setup.asm"
@@ -176,12 +165,8 @@ StartupCore: ; Startup code for each core
     jmp CoreStart
 %include "kernel/unkernel/vesa_vbe_setup_vars.asm"
 global rsdp
-rsdp:
-.Signature: times 8 db 0
-.Checksum: db 0
-.OemID: times 6 db 0
-.Revision: db 0
-.Rsdt: dd 0
+align 8
+rsdp: dd 0
 
 times 2048-($-$$) db 0
 unkernel_end:
