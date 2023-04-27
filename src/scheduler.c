@@ -136,8 +136,6 @@ bool SchedulerRemoveProcess(scheduler *Scheduler, process_id ID)
 
 void SchedulerExecuteNext(scheduler *Scheduler)
 {
-    MutexLock(&Scheduler->Mux);
-
     if (Scheduler->ProcessRingLength != 0) {
         
         if (Scheduler->CurrentProcess >= Scheduler->ProcessRingLength) {
@@ -149,17 +147,21 @@ void SchedulerExecuteNext(scheduler *Scheduler)
         {
             (*Proc->ProcessRequest)(Proc->Win);
         }
+        
+        MutexLock(&Scheduler->Mux);
         Scheduler->CurrentProcess++;
         if (Scheduler->CurrentProcess >= Scheduler->ProcessRingLength) {
             Scheduler->CurrentProcess = 0;
         }
+        MutexRelease(&Scheduler->Mux);
     }
 
-    MutexRelease(&Scheduler->Mux);
+    
 }
 
 scheduler SchedulerInit()
 {
     scheduler Result = { 0 };
+ 
     return Result;
 }

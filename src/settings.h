@@ -12,7 +12,7 @@ typedef struct {
     bool LightTheme;
 } user_settings;
 
-void SettingsCreateWindow();
+void SettingsCreateWindow(int x, int y);
 void SettingsWindowProc(window* Win);
 
 #endif

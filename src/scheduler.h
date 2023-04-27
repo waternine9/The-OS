@@ -32,8 +32,8 @@ typedef struct {
     size_t ProcessesCount;
     
     process_id *ProcessRing;
-    size_t ProcessRingCapacity;
-    size_t ProcessRingLength;
+    _Atomic size_t ProcessRingCapacity;
+    _Atomic size_t ProcessRingLength;
     _Atomic size_t CurrentProcess;
 } scheduler;
 

@@ -28,6 +28,11 @@ void PntDestructor(window* Win)
     free(rsrv->ImgBuffer, PNT_RES_X * PNT_RES_Y * 4);
 }
 
+void PntWinHostProc(window* Win)
+{
+
+}
+
 void PntClearWinFramebuffer(window* Win, uint32_t Color)
 {
     uint32_t* Framebuff = Win->Framebuffer;
@@ -284,6 +289,6 @@ void PntCreateWindow(int x, int y)
     memset(rsrv->PntSelectingNum, 0, 3);
     rsrv->PntSelectingNumSize = 0;
 
-    CreateWindow(Rect, &PntProc, &PntDestructor, "paint", malloc(4), malloc(PNT_RES_X * PNT_RES_Y * 4), (uint8_t*)rsrv, sizeof(rsrv));
+    CreateWindow(Rect, &PntProc, &PntWinHostProc, &PntDestructor, "paint", malloc(4), malloc(PNT_RES_X * PNT_RES_Y * 4), (uint8_t*)rsrv, sizeof(rsrv));
     
 }

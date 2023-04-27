@@ -70,7 +70,7 @@ extern struct _Resources ResourcesAt;
 rect RegisterRectArray[256];
 rect *RegisterRectPtr = RegisterRectArray;
 
-window RegisteredWinsArray[256];
+window* RegisteredWinsArray[256];
 process_id RegisteredProcIDsArray[256];
 uint32_t RegisteredWinsNum = 0;
 
@@ -89,18 +89,18 @@ void RegisterRect(int x, int y, int w, int h)
     RegisterRectPtr++;
 }
 
-int RegisterWindow(window _Window)
+int RegisterWindow(window* _Window)
 {
-    _Window.ChQueueNum = 0;
+    _Window->ChQueueNum = 0;
     for (int i = 0;i < 256;i++)
     {
-        _Window.InCharacterQueue[i] = 0;
+        _Window->InCharacterQueue[i] = 0;
     }
 
     uint32_t WinsNum = 0;
     while (WinsNum < RegisteredWinsNum)
     {
-        if (RegisteredWinsArray[WinsNum].Free)
+        if (RegisteredWinsArray[WinsNum]->Free)
         {
             RegisteredWinsArray[WinsNum] = _Window;
             return WinsNum;
@@ -113,25 +113,25 @@ int RegisterWindow(window _Window)
     return RegisteredWinsNum - 1;
 }
 
-window* CreateWindow(rect* Rectptr, void(*WinProc)(window*), void(*WinDestruc)(window*), uint8_t *Name, uint32_t *Events, uint32_t* Framebuffer, uint8_t* Reserved, size_t ReservedSize)
+window* CreateWindow(rect* Rectptr, void(*WinProc)(window*), void(*WinHostProc)(window*), void(*WinDestruc)(window*), uint8_t *Name, uint32_t *Events, uint32_t* Framebuffer, uint8_t* Reserved, size_t ReservedSize)
 {
-    window Win;
-    Win.Free = 0;
-    Win.Hidden = 0;
-    Win.Rect = Rectptr;
-    Win.WinProc = WinProc;
-    Win.Name = Name;
-    Win.Events = Events;
-    Win.Framebuffer = Framebuffer;
-    Win.Reserved = Reserved;
-    Win.ReservedSize = ReservedSize;
-    Win.WinDestruc = WinDestruc;
+    window* Win = (window*)malloc(sizeof(window));
+    Win->Free = 0;
+    Win->Hidden = 0;
+    Win->Rect = Rectptr;
+    Win->WinProc = WinProc;
+    Win->WinHostProc = WinHostProc;
+    Win->Name = Name;
+    Win->Events = Events;
+    Win->Framebuffer = Framebuffer;
+    Win->Reserved = Reserved;
+    Win->ReservedSize = ReservedSize;
+    Win->WinDestruc = WinDestruc;
     scheduler_process proc = { 0 };
     proc.ProcessRequest = WinProc;
-    window* WinPtr = &RegisteredWinsArray[RegisterWindow(Win)]; 
-    proc.Win = WinPtr;
-    RegisteredProcIDsArray[RegisteredWinsNum - 1] = SchedulerPushProcess(&Scheduler, proc);
-    return WinPtr;
+    proc.Win = Win;
+    RegisteredProcIDsArray[RegisterWindow(Win)] = SchedulerPushProcess(&Scheduler, proc);
+    return Win;
 }
 
 void HideWindow(window* _window)
@@ -151,16 +151,17 @@ void DestroyWindow(window* _window)
     uint32_t WinsNum = 0;
     while (WinsNum < RegisteredWinsNum)
     {
-        if (&RegisteredWinsArray[WinsNum] == _window)
+        if (RegisteredWinsArray[WinsNum] == _window)
         {
-            SchedulerRemoveProcess(&Scheduler, RegisteredProcIDsArray[RegisteredWinsNum]);
+            SchedulerRemoveProcess(&Scheduler, RegisteredProcIDsArray[WinsNum]);
             rect WinRect = *_window->Rect;
             RegisterRect(WinRect.X - 10, WinRect.Y - 40, WinRect.W + 20, WinRect.H + 80);
-            RegisteredWinsArray[WinsNum].Free = 1;
+            RegisteredWinsArray[WinsNum]->Free = 1;
             if (WinsNum == RegisteredWinsNum - 1)
             {
                 RegisteredWinsNum--;
             }
+            free(_window, sizeof(window));
             return;
         }
         WinsNum++;
@@ -481,7 +482,7 @@ uint32_t CountWindows()
     uint32_t WinsNum = 0;
     while (WinsNum < RegisteredWinsNum)
     {
-        if (!RegisteredWinsArray[WinsNum].Free)
+        if (!RegisteredWinsArray[WinsNum]->Free)
             Num++;
         WinsNum++;
     }
@@ -662,6 +663,7 @@ void ProbeAllPCIDevices()
                     break;
                 }
                 KPrintf("\nBUS %d | DEV %d | FUN %d | VEN %d | CLS %d | SUB %d | HED %d | +(",
+                
                         Bus, Device, I, Header.VendorId, Header.Class, Header.Subclass, Header.HeaderType);
                 if (Header.MultiFunction || I != 0)
                 {
@@ -675,11 +677,18 @@ void ProbeAllPCIDevices()
 
 void BringWindowToFront(uint32_t WinId)
 {
-    window temp = RegisteredWinsArray[RegisteredWinsNum - 1];
-    RegisteredWinsArray[RegisteredWinsNum - 1] = RegisteredWinsArray[WinId];
     
-    RegisteredWinsArray[RegisteredWinsNum - 1].Hidden = 0;
-    if (WinId != RegisteredWinsNum - 1) RegisteredWinsArray[WinId] = temp;
+    window* temp = RegisteredWinsArray[RegisteredWinsNum - 1];
+    process_id temp2 = RegisteredProcIDsArray[RegisteredWinsNum - 1];
+    RegisteredWinsArray[RegisteredWinsNum - 1] = RegisteredWinsArray[WinId];
+    RegisteredProcIDsArray[RegisteredWinsNum - 1] = RegisteredProcIDsArray[WinId];
+    
+    RegisteredWinsArray[RegisteredWinsNum - 1]->Hidden = 0;
+    if (WinId != RegisteredWinsNum - 1)
+    {
+        RegisteredWinsArray[WinId] = temp;
+        RegisteredProcIDsArray[WinId] = temp2;
+    }
 }
 
 void WinLmbHandler()
@@ -693,9 +702,9 @@ void WinLmbHandler()
     int32_t WinsNum = RegisteredWinsNum - 1;
     while (WinsNum >= 0)
     {
-        window Win = RegisteredWinsArray[WinsNum];
-        rect WinRect = *Win.Rect;
-        if (Win.Free)
+        window* Win = RegisteredWinsArray[WinsNum];
+        rect WinRect = *Win->Rect;
+        if (Win->Free)
         {
             WinsNum--;
             continue;
@@ -707,7 +716,7 @@ void WinLmbHandler()
             BringWindowToFront(WinsNum);
             return;
         }
-        if (Win.Hidden)
+        if (Win->Hidden)
         {
             WinsNum--;
             continue;
@@ -716,7 +725,7 @@ void WinLmbHandler()
         {
 
             BringWindowToFront(WinsNum);
-            *Win.Events |= 1;
+            *Win->Events |= 1;
             return;
         }
         WinRect.Y -= 14;
@@ -738,12 +747,12 @@ void MoveWinHandler()
     if (IsMouseMovingWin != -1)
     {
 
-        rect OldRect = *RegisteredWinsArray[IsMouseMovingWin].Rect;
+        rect OldRect = *RegisteredWinsArray[IsMouseMovingWin]->Rect;
         int32_t DiffX = MouseX - LastMoveMouseX;
         int32_t DiffY = MouseY - LastMoveMouseY;
-        RegisteredWinsArray[IsMouseMovingWin].Rect->X += DiffX;
-        RegisteredWinsArray[IsMouseMovingWin].Rect->Y += DiffY;
-        rect NewRect = *RegisteredWinsArray[IsMouseMovingWin].Rect;
+        RegisteredWinsArray[IsMouseMovingWin]->Rect->X += DiffX;
+        RegisteredWinsArray[IsMouseMovingWin]->Rect->Y += DiffY;
+        rect NewRect = *RegisteredWinsArray[IsMouseMovingWin]->Rect;
         rect Combined;
         OldRect.Y -= 10;
         OldRect.H += 10;
@@ -803,7 +812,7 @@ void UpdateWinProcs()
 {
     for (int i = 0;i < RegisteredWinsNum;i++)
     {
-        (*RegisteredWinsArray[i].WinProc)(&RegisteredWinsArray[i]);
+        (*RegisteredWinsArray[i]->WinProc)(RegisteredWinsArray[i]);
     }
 }
 
@@ -1044,8 +1053,8 @@ volatile void RenderDynamic()
     }
     while (WinsNum < RegisteredWinsNum)
     {
-        window Win = RegisteredWinsArray[WinsNum];
-        if (Win.Free)
+        window* Win = RegisteredWinsArray[WinsNum];
+        if (Win->Free)
         {
             WinsNum++;
             continue;
@@ -1054,23 +1063,23 @@ volatile void RenderDynamic()
         {
             DrawAlphaRect(WinsNum * 200, VESA_RES_Y - 50, 200, 50, 0x44FFFFFF);
         }
-        DrawFontStringTerminated(WinsNum * 200 + 20, VESA_RES_Y - 32, 10, Win.Name, 2, 0xFFFFFFFF);
+        DrawFontStringTerminated(WinsNum * 200 + 20, VESA_RES_Y - 32, 10, Win->Name, 2, 0xFFFFFFFF);
 
         if (WinsNum == MouseHoveringAnim.win)
         {
             DrawOutlineColor(WinsNum * 200, VESA_RES_Y - 50, 200, 50, MouseHoveringAnim.ticks, 0xFFFFFFFF);
         }        
 
-        if (Win.Hidden)
+        if (Win->Hidden)
         {
             WinsNum++;
             continue;
         }
 
-        DrawOutline(Win.Rect->X - 1, Win.Rect->Y - 10, Win.Rect->W + 1, Win.Rect->H + 11, 2);
-        DrawDragBar(Win.Rect->X, Win.Rect->Y - 10, Win.Rect->W, 10);
-        RegisterRect(Win.Rect->X - 4, Win.Rect->Y - 24, Win.Rect->W + 8, Win.Rect->H + 28);
-        DrawImage(Win.Rect->X, Win.Rect->Y, Win.Rect->W, Win.Rect->H, Win.Framebuffer);
+        DrawOutline(Win->Rect->X - 1, Win->Rect->Y - 10, Win->Rect->W + 1, Win->Rect->H + 11, 2);
+        DrawDragBar(Win->Rect->X, Win->Rect->Y - 10, Win->Rect->W, 10);
+        RegisterRect(Win->Rect->X - 4, Win->Rect->Y - 24, Win->Rect->W + 8, Win->Rect->H + 28);
+        DrawImage(Win->Rect->X, Win->Rect->Y, Win->Rect->W, Win->Rect->H, Win->Framebuffer);
 
         WinsNum++;
     }
@@ -1112,6 +1121,16 @@ volatile void RenderDynamic()
     RegisterRectPtr = RegisterRectArray;
 }
 
+
+void WinHostProcHandler()
+{
+    for (int i = 0;i < RegisteredWinsNum;i++)
+    {
+        if (RegisteredWinsArray[i]->Free) continue;
+        (*RegisteredWinsArray[i]->WinHostProc)(RegisteredWinsArray[i]);
+    }
+}
+
 _Atomic uint32_t NumProcessors = 0;
 void CoreStart()
 {
@@ -1122,8 +1141,6 @@ void CoreStart()
         SchedulerExecuteNext(&Scheduler);
     }
 }
-
-
 
 void OS_Start()
 {
@@ -1206,11 +1223,11 @@ void OS_Start()
                     switch (Keys[I].ASCII)
                     {
                         case 'd': {
-                            window* WinDel = &RegisteredWinsArray[RegisteredWinsNum - 1];
+                            window* WinDel = RegisteredWinsArray[RegisteredWinsNum - 1];
                             DestroyWindow(WinDel);
                         } break;
                         case 'm': {
-                            window* WinMin = &RegisteredWinsArray[RegisteredWinsNum - 1];
+                            window* WinMin = RegisteredWinsArray[RegisteredWinsNum - 1];
                             HideWindow(WinMin);
                         } break;
                         default:
@@ -1221,7 +1238,7 @@ void OS_Start()
                 {
                     if (Keys[I].Scancode == KEY_BACKSPACE)
                     {
-                        window* Win = &RegisteredWinsArray[RegisteredWinsNum - 1];
+                        window* Win = RegisteredWinsArray[RegisteredWinsNum - 1];
                         if (Win->ChQueueNum < 256)
                         {
                             Win->InCharacterQueue[Win->ChQueueNum] = 1 << 8;
@@ -1230,7 +1247,7 @@ void OS_Start()
                     }
                     if (Keys[I].ASCII)
                     {
-                        window* Win = &RegisteredWinsArray[RegisteredWinsNum - 1];
+                        window* Win = RegisteredWinsArray[RegisteredWinsNum - 1];
                         if (Win->ChQueueNum < 256)
                         {
                             Win->InCharacterQueue[Win->ChQueueNum] = Keys[I].ASCII | ((uint16_t)Keys[I].LCtrl << 8) | ((uint16_t)Keys[I].LAlt << 9);
@@ -1253,7 +1270,7 @@ void OS_Start()
         KeepMouseInScreen();
         MoveWinHandler();
         ClickHandler();
-
+        WinHostProcHandler();
         RenderDynamic();
         for (int i = 0;i < Scheduler.ProcessesCount;i++)
         {

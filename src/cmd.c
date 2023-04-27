@@ -13,6 +13,9 @@ typedef struct
     uint8_t *TxtBuff;
     size_t TxtBuffSize;
     int Blinker;
+    uint8_t InitFileman;
+    uint8_t InitPnt;
+    uint8_t InitSettings;
 } CmdReserve;
 
 extern uint16_t VESA_RES_X;
@@ -114,12 +117,33 @@ void CmdDraw(uint32_t Color, window* Win)
         DrawFontGlyphOnto(CurX, CurY, '_', 2, Color, Win->Framebuffer, CONSOLE_RES_X, CONSOLE_RES_Y);
     }
 }
+
+void CmdWinHostProc(window *Win)
+{
+    CmdReserve* rsrv = (CmdReserve*)Win->Reserved;
+    if (rsrv->InitFileman)
+    {
+        rsrv->InitFileman = 0;
+        FileManCreateWindow(100, 100);
+    }
+    if (rsrv->InitPnt)
+    {
+        rsrv->InitPnt = 0;
+        PntCreateWindow(100, 100);
+    }
+    if (rsrv->InitSettings)
+    {
+        rsrv->InitSettings = 0;
+        SettingsCreateWindow(100, 100);
+    }
+}
+
 extern int MouseX;
 extern int MouseY;
 
 void CmdProc(window* Win)
 {
-    CmdReserve rsrv = *(CmdReserve*)Win->Reserved;
+    CmdReserve* rsrv = (CmdReserve*)Win->Reserved;
     int I = 0;
     while (I < Win->ChQueueNum)
     {
@@ -130,17 +154,17 @@ void CmdProc(window* Win)
             CmdAddChar(C, Win);
             if (C == '\n')
             {
-                if (rsrv.TxtBuff[rsrv.TxtBuffSize - 1] == 'd')
+                if (rsrv->TxtBuff[rsrv->TxtBuffSize - 1] == 'd')
                 {
-                    PntCreateWindow(100, 100); 
+                    rsrv->InitPnt = 1;
                 }
-                if (rsrv.TxtBuff[rsrv.TxtBuffSize - 1] == 'f')
+                if (rsrv->TxtBuff[rsrv->TxtBuffSize - 1] == 'f')
                 {
-                    FileManCreateWindow(100, 100);
+                    rsrv->InitFileman = 1;
                 }
-                if (rsrv.TxtBuff[rsrv.TxtBuffSize - 1] == 's')
+                if (rsrv->TxtBuff[rsrv->TxtBuffSize - 1] == 's')
                 {
-                    SettingsCreateWindow(100, 100);
+                    rsrv->InitSettings = 1;
                 }
             }
             
@@ -167,5 +191,8 @@ void CmdCreateWindow(int X, int Y)
     memset(rsrv->TxtBuff, 0, 40000);
     rsrv->TxtBuffSize = 0;
     rsrv->Blinker = 0;
-    CreateWindow(Rect, &CmdProc, &CmdDestructor, "cmd", malloc(4), malloc(CONSOLE_RES_X * CONSOLE_RES_Y * 4), (uint8_t*)rsrv, sizeof(CmdReserve));
+    rsrv->InitFileman = 0;
+    rsrv->InitPnt = 1;
+    rsrv->InitSettings = 0;
+    CreateWindow(Rect, &CmdProc, &CmdWinHostProc, &CmdDestructor, "cmd", malloc(4), malloc(CONSOLE_RES_X * CONSOLE_RES_Y * 4), (uint8_t*)rsrv, sizeof(CmdReserve));
 }

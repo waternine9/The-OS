@@ -18,7 +18,7 @@ void memset(void *Destination_, uint8_t Val, size_t N)
 }
 
 // Each page is 4 kb
-uint8_t Pages[100000] = { 0 };
+uint8_t Pages[1000000] = { 0 };
 
 uint8_t IsInit = 0;
 
@@ -26,11 +26,11 @@ void *malloc(size_t Bytes)
 {
     if (!IsInit)
     {
-        memset(Pages, 0, 100000);
+        memset(Pages, 0, 1000000);
         IsInit = 1;
     }
     size_t PageCount = Bytes / 4096 + 1; 
-    for (int i = 0;i < 100000;i++)
+    for (int i = 0;i < 1000000;i++)
     {
         if (!Pages[i])
         {

@@ -22,14 +22,19 @@ void SettingsDestructor(window* Win)
 
 }
 
-void SettingsCreateWindow()
+void SettingsWinHostProc(window* Win)
+{
+
+}
+
+void SettingsCreateWindow(int x, int y)
 {
     rect* Rect = (rect*)malloc(sizeof(rect));
-    Rect->X = 100;
-    Rect->Y = 100;
+    Rect->X = x;
+    Rect->Y = y;
     Rect->W = 640;
     Rect->H = 480;
-    CreateWindow(Rect, &SettingsWindowProc, &SettingsDestructor, "settings", malloc(4), malloc(640 * 480 * 4), 0, 0);
+    CreateWindow(Rect, &SettingsWindowProc, &SettingsWinHostProc, &SettingsDestructor, "settings", malloc(4), malloc(640 * 480 * 4), 0, 0);
 }
 
 static void DrawSwitch(int X, int Y, bool Value, window *Win)

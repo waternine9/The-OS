@@ -14,6 +14,11 @@ void FileManDestructor()
     
 }
 
+void FileManWinHostProc(window* Win)
+{
+    
+}
+
 void FileManClearWinFramebuffer(window* Win, uint32_t Color)
 {
 
@@ -98,6 +103,6 @@ void FileManCreateWindow(int x, int y)
     Rect->W = FILEMAN_RES_X;
     Rect->H = FILEMAN_RES_Y;
     
-    CreateWindow(Rect, &FileManProc, &FileManDestructor, "fileman", malloc(4), malloc(FILEMAN_RES_X * FILEMAN_RES_Y * 4), 0, 0);
+    CreateWindow(Rect, &FileManProc, &FileManWinHostProc, &FileManDestructor, "fileman", malloc(4), malloc(FILEMAN_RES_X * FILEMAN_RES_Y * 4), 0, 0);
     
 }
