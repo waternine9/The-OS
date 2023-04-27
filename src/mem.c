@@ -53,7 +53,7 @@ void *malloc(size_t Bytes)
                 {
                     Pages[j] = 1;
                 }   
-                return (uint32_t*)(i * 4096 + 0x2000000);
+                return (uint32_t*)(i * 4096 + 0xA00000);
             }
         }
     }
@@ -63,7 +63,7 @@ void free(void *Buf, size_t Bytes)
 {
     size_t PageCount = Bytes / 4096 + 1;
 
-    uint32_t Page = ((uint32_t)Buf - 0x2000000) / 4096;
+    uint32_t Page = ((uint32_t)Buf - 0xA00000) / 4096;
     
     for (uint32_t i = Page;i < Page + PageCount;i++)
     {

@@ -39,7 +39,7 @@ typedef struct _mouse_hovering_anim
 struct _Resources
 {
     uint8_t Font[32 * 32 * (127 - 32)];
-    uint32_t Background[1920 * 1080];  
+    uint32_t Background[1920 * 1080];
 };
 
 

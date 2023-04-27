@@ -9,13 +9,14 @@
 #include "idt.h"
 #include "io.h"
 #include "rtc.h"
-#include "drivers/ata/ata.h"
 #include "pci.h"
 #include "bmp.h"
 #include "beescript.h"
 #include "cmd.h"
 #include "drivers/keyboard/keyboard.h"
 #include "drivers/mouse/mouse.h"
+#include "drivers/audio/sb16.h"
+#include "drivers/ata/ata.h"
 #include "OS.h"
 #include "mem.h"
 #include "fileman.h"
@@ -1147,6 +1148,7 @@ void CoreStart()
 
 void OS_Start()
 {
+    
     Scheduler = (scheduler){ 0 };
 
     // Initialize BSS
@@ -1203,6 +1205,12 @@ void OS_Start()
 
     RegisterRect(0, VESA_RES_Y / 2 - 16, VESA_RES_X, 40);
     DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, ResourcesAt.Background);
+    
+    SB16Init();
+
+    uint16_t* SoundBuff = malloc(0xFFFF);
+
+    SB16SetBuff((uint32_t)SoundBuff, 0xFFFF);
 
     while (1)
     {
