@@ -11,6 +11,7 @@
 typedef struct 
 {
     uint8_t *TxtBuff;
+    uint32_t *BackBuff;
     size_t TxtBuffSize;
     int Blinker;
     uint8_t InitFileman;
@@ -25,6 +26,7 @@ void CmdDestructor(window* Win)
 {
     CmdReserve rsrv = *(CmdReserve*)Win->Reserved;
     free((uint32_t*)rsrv.TxtBuff, 40000);
+    free((uint32_t*)rsrv.BackBuff, CONSOLE_RES_X * CONSOLE_RES_Y * 4);
 }
 
 void CmdAddChar(uint8_t thechar, window* Win)
@@ -46,16 +48,17 @@ void CmdBackspace(window* Win)
 
 void CmdClear(window* Win)
 {
+    CmdReserve *rsrv = (CmdReserve*)Win->Reserved;
     for (int i = 0;i < CONSOLE_RES_X * CONSOLE_RES_Y;i++)
     {
-        Win->Framebuffer[i] = 0;
+        rsrv->BackBuff[i] = 0;
     }
 }
 
 void CmdDraw(uint32_t Color, window* Win)
 {
     CmdReserve *rsrv = (CmdReserve*)Win->Reserved;
-    DrawFontGlyphOnto(0, 20, '>', 2, Color, Win->Framebuffer, CONSOLE_RES_X, CONSOLE_RES_Y);
+    DrawFontGlyphOnto(0, 20, '>', 2, Color, rsrv->BackBuff, CONSOLE_RES_X, CONSOLE_RES_Y);
 
     int CurX = 20;
     int CurY = 20;
@@ -70,7 +73,7 @@ void CmdDraw(uint32_t Color, window* Win)
             case '\n':
                 CurX = 10;
                 CurY += 25;
-                DrawFontGlyphOnto(CurX - 10, CurY, '>', 2, Color, Win->Framebuffer, CONSOLE_RES_X, CONSOLE_RES_Y);
+                DrawFontGlyphOnto(CurX - 10, CurY, '>', 2, Color, rsrv->BackBuff, CONSOLE_RES_X, CONSOLE_RES_Y);
                 CurX += 10;
                 if (CurY > (CONSOLE_RES_Y - 20))
                 {
@@ -90,7 +93,7 @@ void CmdDraw(uint32_t Color, window* Win)
                 }
                 break;
             default:
-                DrawFontGlyphOnto(CurX, CurY, *StepPtr, 2, Color, Win->Framebuffer, CONSOLE_RES_X, CONSOLE_RES_Y);
+                DrawFontGlyphOnto(CurX, CurY, *StepPtr, 2, Color, rsrv->BackBuff, CONSOLE_RES_X, CONSOLE_RES_Y);
                 CurX += 15;
                 if (CurX > (CONSOLE_RES_X - 20))
                 {
@@ -114,7 +117,7 @@ void CmdDraw(uint32_t Color, window* Win)
     if (rsrv->Blinker > 40) rsrv->Blinker = 0;
     if (rsrv->Blinker < 20)
     {
-        DrawFontGlyphOnto(CurX, CurY, '_', 2, Color, Win->Framebuffer, CONSOLE_RES_X, CONSOLE_RES_Y);
+        DrawFontGlyphOnto(CurX, CurY, '_', 2, Color, rsrv->BackBuff, CONSOLE_RES_X, CONSOLE_RES_Y);
     }
 }
 
@@ -154,15 +157,15 @@ void CmdProc(window* Win)
             CmdAddChar(C, Win);
             if (C == '\n')
             {
-                if (rsrv->TxtBuff[rsrv->TxtBuffSize - 1] == 'd')
+                if (rsrv->TxtBuff[rsrv->TxtBuffSize - 2] == 'd')
                 {
                     rsrv->InitPnt = 1;
                 }
-                if (rsrv->TxtBuff[rsrv->TxtBuffSize - 1] == 'f')
+                if (rsrv->TxtBuff[rsrv->TxtBuffSize - 2] == 'f')
                 {
                     rsrv->InitFileman = 1;
                 }
-                if (rsrv->TxtBuff[rsrv->TxtBuffSize - 1] == 's')
+                if (rsrv->TxtBuff[rsrv->TxtBuffSize - 2] == 's')
                 {
                     rsrv->InitSettings = 1;
                 }
@@ -172,11 +175,14 @@ void CmdProc(window* Win)
         uint16_t IsBackspace = packet & (1 << 8);
         if (IsBackspace) CmdBackspace(Win);
         I++;
+        
     }
     Win->ChQueueNum = 0;
 
     CmdClear(Win);
     CmdDraw(0xFFFFFFFF, Win);
+
+    memcpy(Win->Framebuffer, rsrv->BackBuff, CONSOLE_RES_X * CONSOLE_RES_Y * 4);
 }
 
 void CmdCreateWindow(int X, int Y)
@@ -187,12 +193,9 @@ void CmdCreateWindow(int X, int Y)
     Rect->W = CONSOLE_RES_X;
     Rect->H = CONSOLE_RES_Y;
     CmdReserve* rsrv = (CmdReserve*)malloc(sizeof(CmdReserve));
+    memset(rsrv, 0, sizeof(CmdReserve));
     rsrv->TxtBuff = (uint8_t*)malloc(40000);
     memset(rsrv->TxtBuff, 0, 40000);
-    rsrv->TxtBuffSize = 0;
-    rsrv->Blinker = 0;
-    rsrv->InitFileman = 0;
-    rsrv->InitPnt = 1;
-    rsrv->InitSettings = 0;
+    rsrv->BackBuff = malloc(CONSOLE_RES_X * CONSOLE_RES_Y * 4);
     CreateWindow(Rect, &CmdProc, &CmdWinHostProc, &CmdDestructor, "cmd", malloc(4), malloc(CONSOLE_RES_X * CONSOLE_RES_Y * 4), (uint8_t*)rsrv, sizeof(CmdReserve));
 }

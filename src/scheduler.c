@@ -123,11 +123,13 @@ bool SchedulerRemoveProcess(scheduler *Scheduler, process_id ID)
 
     scheduler_process *Process = GetProcessByID(Scheduler, ID);
     if (Process) {
+        MutexLock(&Process->Mux);
         size_t Generation = Process->ID.Generation;
         *Process = (scheduler_process) { 0 };
         Process->ID.Generation = Generation;
         Scheduler->ProcessesCount -= 1;
         RemoveFromRing(Scheduler, ID);
+        MutexRelease(&Process->Mux);
     }
 
     MutexRelease(&Scheduler->Mux);
@@ -143,17 +145,15 @@ void SchedulerExecuteNext(scheduler *Scheduler)
         }
     
         scheduler_process *Proc = GetProcessByID(Scheduler, Scheduler->ProcessRing[Scheduler->CurrentProcess]);
-        if (MutexTryLock(&Proc->Mux)) 
-        {
-            (*Proc->ProcessRequest)(Proc->Win);
-        }
-        
-        MutexLock(&Scheduler->Mux);
         Scheduler->CurrentProcess++;
+        
+        MutexLock(&Proc->Mux);
+        
+        if (Proc->ProcessRequest) (*Proc->ProcessRequest)(Proc->Win);
+        MutexRelease(&Proc->Mux);
         if (Scheduler->CurrentProcess >= Scheduler->ProcessRingLength) {
             Scheduler->CurrentProcess = 0;
         }
-        MutexRelease(&Scheduler->Mux);
     }
 
     

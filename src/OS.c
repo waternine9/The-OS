@@ -89,7 +89,7 @@ void RegisterRect(int x, int y, int w, int h)
     RegisterRectPtr++;
 }
 
-int RegisterWindow(window* _Window)
+int RegisterWindow(window* _Window, scheduler_process Proc)
 {
     _Window->ChQueueNum = 0;
     for (int i = 0;i < 256;i++)
@@ -103,12 +103,14 @@ int RegisterWindow(window* _Window)
         if (RegisteredWinsArray[WinsNum]->Free)
         {
             RegisteredWinsArray[WinsNum] = _Window;
+            RegisteredProcIDsArray[WinsNum] = SchedulerPushProcess(&Scheduler, Proc);
             return WinsNum;
         }
         WinsNum++;
     }
 
     RegisteredWinsArray[RegisteredWinsNum] = _Window;
+    RegisteredProcIDsArray[RegisteredWinsNum] = SchedulerPushProcess(&Scheduler, Proc);
     RegisteredWinsNum++;
     return RegisteredWinsNum - 1;
 }
@@ -130,7 +132,7 @@ window* CreateWindow(rect* Rectptr, void(*WinProc)(window*), void(*WinHostProc)(
     scheduler_process proc = { 0 };
     proc.ProcessRequest = WinProc;
     proc.Win = Win;
-    RegisteredProcIDsArray[RegisterWindow(Win)] = SchedulerPushProcess(&Scheduler, proc);
+    RegisterWindow(Win, proc);
     return Win;
 }
 
@@ -153,6 +155,7 @@ void DestroyWindow(window* _window)
     {
         if (RegisteredWinsArray[WinsNum] == _window)
         {
+            
             SchedulerRemoveProcess(&Scheduler, RegisteredProcIDsArray[WinsNum]);
             rect WinRect = *_window->Rect;
             RegisterRect(WinRect.X - 10, WinRect.Y - 40, WinRect.W + 20, WinRect.H + 80);
@@ -663,7 +666,7 @@ void ProbeAllPCIDevices()
                     break;
                 }
                 KPrintf("\nBUS %d | DEV %d | FUN %d | VEN %d | CLS %d | SUB %d | HED %d | +(",
-                
+
                         Bus, Device, I, Header.VendorId, Header.Class, Header.Subclass, Header.HeaderType);
                 if (Header.MultiFunction || I != 0)
                 {
@@ -1272,9 +1275,5 @@ void OS_Start()
         ClickHandler();
         WinHostProcHandler();
         RenderDynamic();
-        for (int i = 0;i < Scheduler.ProcessesCount;i++)
-        {
-             Scheduler.Processes[i].Mux.Taken = 0;
-        }
     }
 }
