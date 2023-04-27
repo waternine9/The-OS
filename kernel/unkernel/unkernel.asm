@@ -12,44 +12,6 @@ Boot:
     mov   ax, 0x2403
     int   0x15
 
-    mov cx, 4
-.FindRsdpOuter:    
-    ; Find rsdp
-    mov ax, 0x800
-    mul cx
-    add ax, 0xE000
-    mov es, ax
-    push cx
-    mov cx, 0x7FFF 
-    mov di, 0
-.FindRsdp:
-    mov eax, [es:di]
-    cmp eax, 'RSD '
-    jne .NotFound
-    mov eax, [es:di + 4]
-    cmp eax, 'PTR '
-    je .Found
-.NotFound:
-    inc di
-    loop .FindRsdp
-    pop cx
-    loop .FindRsdpOuter
-    cli
-    hlt
-.Found:
-    pop cx
-    mov si, rsdp
-
-    mov cx, 24
-.CopyLoop:
-    mov al, [es:di]
-    mov [si], al
-    inc si
-    inc di
-    loop .CopyLoop
-
-    mov eax, [rsdp + 16]
-
     ; NOTE: SETUP VBE
     jmp SetupVbe
     %include "kernel/unkernel/vesa_vbe_setup.asm"
@@ -63,8 +25,6 @@ SetupVbe:
     or    eax, 1
     mov   cr0, eax
     jmp   8:After
-
-RsdpSignature: db "RSD PTR "
 
 global DriveNumber
 DriveNumber: db 0
@@ -169,7 +129,7 @@ StartupCore: ; Startup code for each core
     mov    edi, ebx
 
     shl ebx, 15
-    add ebx, 0xA0000000
+    add ebx, 0x2000000
     mov esp, ebx
     jmp CoreStart
 %include "kernel/unkernel/vesa_vbe_setup_vars.asm"

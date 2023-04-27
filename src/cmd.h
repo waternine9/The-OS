@@ -10,5 +10,6 @@ extern uint32_t CmdDrawBuffer[1920 * 1080];
 void CmdCreateWindow(int X, int Y);
 void CmdBackspace(window*);
 void CmdAddChar(uint8_t, window*);
+void CmdProc(window* Win);
 
 #endif

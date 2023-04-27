@@ -78,8 +78,6 @@ window CmdWindow;
 rect CmdWindowRect;
 rect SettingsWindowRect = { 300, 300, 640, 480 };
 
-extern void CmdProc(int, int, struct _window*);
-
 extern uint8_t IsFirstTime;
 
 scheduler Scheduler;
@@ -1114,16 +1112,18 @@ volatile void RenderDynamic()
     RegisterRectPtr = RegisterRectArray;
 }
 
-_Atomic int NumProcessors;
-
+_Atomic uint32_t NumProcessors = 0;
 void CoreStart()
 {
     // THIS IS THE STARTUP CODE FOR ALL PROCESSORS EXCEPT THE BOOT PROCESSOR
     NumProcessors++;
     while (1)
     {
+        SchedulerExecuteNext(&Scheduler);
     }
 }
+
+
 
 void OS_Start()
 {
@@ -1132,6 +1132,8 @@ void OS_Start()
     // Initialize BSS
     memset((uint8_t*)0x100000, 0, 100000);
     
+    malloc(8 * (1 << 15)); // FIRST MALLOC ALLOCATES THE STACK FOR OTHER THREADS!
+
     BackBuffer = malloc(1920 * 1080 * 4);
     StaticBackBuffer = malloc(1920 * 1080 * 4);
 
@@ -1140,6 +1142,7 @@ void OS_Start()
 
     InitCores();
 
+    *(uint32_t*)VbeModeInfo.framebuffer = 0xFFFFFFFF;
     MouseInstall();
 
     MouseX = VESA_RES_X / 2;
@@ -1181,12 +1184,18 @@ void OS_Start()
     RegisterRect(0, VESA_RES_Y / 2 - 16, VESA_RES_X, 40);
     DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, ResourcesAt.Background);
 
-    
     while (1)
     {
         ClearScreen();
         DrawToolBar(2);
-        DrawFontGlyph(0, 0, '0' + NumProcessors, 4, 0xFF00FF00);
+        
+        char Buf[32] = { 0 };
+
+        FormatWriteString(Buf, 32, "ALTERNATE PROCESSORS: %d", NumProcessors);
+    
+        DrawFontString(0, 0, Buf, 4, 0xFF00FF00);
+        RegisterRect(0, 0, 1000, 80);
+    
         Keyboard_CollectEvents(&Kbd, Keys, 32, &KeysCount);
         for (int I = 0; I < KeysCount; I++)
         {
@@ -1231,7 +1240,11 @@ void OS_Start()
                 }
                 if (Keys[I].ASCII)
                 {
-                    if (Keys[I].ASCII == 'q' && Keys[I].LCtrl) CmdCreateWindow(VESA_RES_X / 2 - CONSOLE_RES_X / 2, VESA_RES_Y / 2 - CONSOLE_RES_Y / 2);
+                    if (Keys[I].ASCII == 'q' && Keys[I].LCtrl) 
+                    {
+                        CmdCreateWindow(VESA_RES_X / 2 - CONSOLE_RES_X / 2, VESA_RES_Y / 2 - CONSOLE_RES_Y / 2);
+                        
+                    }
                 }
             }
             
@@ -1242,5 +1255,9 @@ void OS_Start()
         ClickHandler();
 
         RenderDynamic();
+        for (int i = 0;i < Scheduler.ProcessesCount;i++)
+        {
+             Scheduler.Processes[i].Mux.Taken = 0;
+        }
     }
 }

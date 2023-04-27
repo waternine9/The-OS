@@ -10,7 +10,32 @@ out dx, al
 mov al, 1
 out dx, al
 
+; Find RSDP
+mov ecx, 0x20000
+mov esi, 0xE0000
+RSDPfind:
+mov eax, [esi]
+cmp eax, "RSD "
+jne .NotFound
+mov eax, [esi + 4]
+cmp eax, "PTR "
+je .Found
+.NotFound:
+inc esi
+loop RSDPfind
+mov eax, 0xEEEEEE
+cli
+hlt
+.Found:
+mov edi, rsdp
+mov ecx, 24
+.Copy:
+mov eax, [esi]
+mov [edi], eax
+inc esi
 
+inc edi
+loop .Copy
 mov edi, IsFirstTime
 mov ecx, 5
 

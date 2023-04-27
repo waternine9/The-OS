@@ -23,7 +23,7 @@ typedef struct
     uint8_t Checksum;
     char OEMID[6];
     uint8_t Revision;
-    acpi_sdt_header *Rsdt;
+    uint8_t *Rsdt;
 } __attribute__((packed)) rsdp_descriptor;
 
 extern rsdp_descriptor rsdp;
@@ -43,12 +43,12 @@ uint32_t bspid;
 
 void FindMadt()
 {
-    uint32_t NumEntries = (rsdp.Rsdt->Length - 36) / 4;
+    uint32_t NumEntries = 1000;
 
-    uint32_t *TablePtrs = (uint32_t *)((uintptr_t)rsdp.Rsdt + 36);
+    uint32_t *TablePtrs = (uint32_t*)((uintptr_t)(rsdp.Rsdt + 36));
     for (uint32_t i = 0; i < NumEntries; i++)
     {
-        acpi_sdt_header *TableHeader = (acpi_sdt_header *)(size_t)TablePtrs[i];
+        acpi_sdt_header *TableHeader = (acpi_sdt_header*)TablePtrs[i];
         if (CompareSignature(TableHeader->Signature, "APIC"))
         {
             Madt = (uint8_t *)(size_t)TablePtrs[i];
@@ -74,13 +74,14 @@ void InitCore(uint8_t id)
 	*((volatile uint32_t*)(0xFEE00000 + 0x310)) = (id << 24);      // select AP
     *((volatile uint32_t*)(0xFEE00000 + 0x300)) = 0x4500;          // trigger INIT IPI
     while (*((volatile uint32_t*)(0xFEE00000 + 0x300)) & (1 << 12));
-    
-	for(int j = 0; j < 1; j++) {
+    Timeout();
+	for(int j = 0; j < 2; j++) {
 		*((volatile uint32_t*)(0xFEE00000 + 0x310)) = (id << 24); // select AP
 		*((volatile uint32_t*)(0xFEE00000 + 0x300)) = 0x4608;  // trigger STARTUP IPI for F000:0000
         while (*((volatile uint32_t*)(0xFEE00000 + 0x300)) & (1 << 12));
                                                        // wait 200 usec
-	}                                                                                                                 // wait 10 msec
+        Timeout();
+    }                                                                                                                 // wait 10 msec
 }
 
 void WriteReg(uint32_t Reg, uint32_t Val)
@@ -106,7 +107,6 @@ void InitCores()
 {
     EnableApic();
     FindMadt();
-
     uint8_t *MadtEnd = Madt + 0x2C + *(uint32_t *)(Madt + 4);
     for (uint8_t *Ptr = Madt + 0x2C; Ptr < MadtEnd;Ptr += Ptr[1])
     {
@@ -116,7 +116,7 @@ void InitCores()
         }
     }
     bspdone = 0;
-    for (int i = 1;i < ProcessorCount;i++)
+    for (int i = 0;i < ProcessorCount;i++)
     {
         if (LocalApicIDs[i] == bspid) continue;
         InitCore(LocalApicIDs[i]);
