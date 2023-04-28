@@ -9,7 +9,7 @@ uint32_t FileSizes[256] = { 0 };
 
 extern struct _Resources ResourcesAt;
 
-void FileManDestructor()
+void FileManDestructor(window* Win)
 {
     
 }
@@ -31,7 +31,7 @@ void FileManDrawString(uint32_t x, uint32_t y, uint8_t* string, uint32_t color, 
     {
         if (x > FILEMAN_RES_X - 20) return;
         DrawFontGlyphOnto(x, y, *string, 2, color, Win->Framebuffer, FILEMAN_RES_X, FILEMAN_RES_Y);
-        x += 14;
+        x += 16;
         string++;
     }
 }

@@ -6,6 +6,9 @@
 
 #include "OS.h"
 
+#define SETTINGS_RES_X 640
+#define SETTINGS_RES_Y 480
+
 extern uint32_t SettingsDrawBuffer[640 * 480];
 
 typedef struct {

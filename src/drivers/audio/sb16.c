@@ -32,7 +32,7 @@ void SB16SetBuff(uint32_t Addr, uint16_t Len)
     Addr &= 0x00FFFFFF;
     IO_Out8(0xD4, 5); // Disable channel
     IO_Out8(0xD8, 1); // Flip flop
-    IO_Out8(0xD6, 0x49); // (0x48 for single mode, 0x58 for auto mode) + channel number
+    IO_Out8(0xD6, 0x59); // (0x48 for single mode, 0x58 for auto mode) + channel number
     IO_Out8(0x8B, Addr >> 12); // Send page number of addr
     IO_Out8(0xC4, Addr & 0xFF); // Send low bits of addr
     IO_Out8(0xC4, (Addr >> 8) & 0xFF); // Send middle bits of addr
@@ -44,9 +44,9 @@ void SB16SetBuff(uint32_t Addr, uint16_t Len)
 void SB16Program()
 {
     IO_Out8(0x22C, 0x40); // Set time constant
-    IO_Out8(0x22C, 165); // 10989 Hz
+    IO_Out8(0x22C, 255); // 10989 Hz
     IO_Out8(0x22C, 0xB0); // 16-bit sound
-    IO_Out8(0x22C, 0x00); // Mono and unsigned sound data
+    IO_Out8(0x22C, 0b10000); // Mono and signed sound data
     IO_Out8(0x22C, 0xFE); // Count low bits
     IO_Out8(0x22C, 0xFF); // Count high bits
 }

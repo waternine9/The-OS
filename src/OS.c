@@ -22,6 +22,7 @@
 #include "fileman.h"
 #include "settings.h"
 #include "scheduler.h"
+#include "math.h"
 
 extern click_animation ClickAnimation;
 extern uint8_t MousePointerBlack[8];
@@ -404,7 +405,7 @@ void DrawDragBar(int X, int Y, int W, int H)
     {
         for (int _X = X; _X < X + W; _X++)
         {
-            if (((_X-X)/20) % 2) {
+            if ((_Y-Y) % 2) {
                 SetAlphaPixel(_X, _Y, 0x44FFFFFF);
             } else {
                 SetAlphaPixel(_X, _Y, 0xAAFFFFFF);
@@ -1038,7 +1039,7 @@ volatile void RenderDynamic()
     uint32_t TaskbarLen = CountWindows();
     if (MouseX < TaskbarLen * 200 && MouseY > VESA_RES_Y - 50)
     {
-        MouseHoveringAnim.ticks += 2;
+        MouseHoveringAnim.ticks += 1;
         if (MouseHoveringAnim.ticks > 5) MouseHoveringAnim.ticks = 5;
         if (MouseHoveringAnim.win == -1 || MouseX / 200 != MouseHoveringAnim.win) MouseHoveringAnim.ticks = 0;
         MouseHoveringAnim.win = MouseX / 200;
@@ -1047,7 +1048,7 @@ volatile void RenderDynamic()
     {
         if (MouseHoveringAnim.win != -1)
         {
-            MouseHoveringAnim.ticks -= 2;
+            MouseHoveringAnim.ticks -= 1;
             if (MouseHoveringAnim.ticks < 0)
             {
                 MouseHoveringAnim.ticks = 0;
@@ -1146,6 +1147,19 @@ void CoreStart()
     }
 }
 
+void DrawTime()
+{
+    char Buf[128] = { 0 };
+    
+    uint8_t seconds, minutes, hour, day, weekday, month, year;
+
+    GetRTC(&seconds, &minutes, &hour, &day, &weekday, &month, &year);
+
+    FormatWriteString(Buf, 128, "%s %d", MonthName(month), day);
+
+    DrawFontString(200, 0, Buf, 2, 0xFFFFFFFF);
+}
+
 void OS_Start()
 {
     
@@ -1177,7 +1191,7 @@ void OS_Start()
 
     batch_script Script = {};
 
-    DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, ResourcesAt.Background);
+    DrawBackground(0, 0, 1280, 720, VESA_RES_X, VESA_RES_Y, ResourcesAt.Background);
     UpdateScreen();
     uint32_t KeysCount = 0;
     
@@ -1185,13 +1199,13 @@ void OS_Start()
     if (IsFirstTime)
     {
         DrawAlphaRect(0, VESA_RES_Y / 2 - 16, 1920, 32, 0x77000000);
-        DrawFontString(1920 / 2 - FormatCStringLength("Formatting...") * 16 + 32, VESA_RES_Y / 2 - 16, "Formatting...", 4, 0xFFFFFFFF);
+        DrawFontString(VESA_RES_X / 2 - FormatCStringLength("We're getting everything ready") * 16 + 32, VESA_RES_Y / 2 - 16, "We're getting everything ready", 4, 0xFFFFFFFF);
         UpdateScreen();
         FirstTimeSetup();
     }
     ClearScreen();
     DrawAlphaRect(0, VESA_RES_Y / 2 - 16, 1920, 32, 0x77000000);
-    DrawFontString(1920 / 2 - FormatCStringLength("Preparing...") * 16 + 32, VESA_RES_Y / 2 - 16, "Preparing...", 4, 0xFFFFFFFF);
+    DrawFontString(VESA_RES_X / 2 - FormatCStringLength("Just a moment") * 16 + 32, VESA_RES_Y / 2 - 16, "Just a moment", 4, 0xFFFFFFFF);
     UpdateScreen();
     uint8_t* FileAllocTableStep = (uint8_t*)FileAllocTable;
     for (int i = 6;i < 32 + 6;i++) // Get the FAT
@@ -1203,19 +1217,24 @@ void OS_Start()
     BakeAllocSectors();
 
     RegisterRect(0, VESA_RES_Y / 2 - 16, VESA_RES_X, 40);
-    DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, ResourcesAt.Background);
+    DrawBackground(0, 0, 1280, 720, VESA_RES_X, VESA_RES_Y, ResourcesAt.Background);
     
     while (1)
     {
         ClearScreen();
         DrawToolBar(2);
-        
+
         char Buf[32] = { 0 };
 
-        FormatWriteString(Buf, 32, "ALTERNATE PROCESSORS: %d", NumProcessors);
-    
-        DrawFontString(0, 0, Buf, 4, 0xFF00FF00);
-        RegisterRect(0, 0, 1000, 80);
+        DrawAlphaRect(0, 0, 300, 16, 0x77000000);
+
+        FormatWriteString(Buf, 32, "cpus: %d", NumProcessors);
+
+        DrawFontString(0, 0, Buf, 2, 0xFFFFFFFF);
+
+        DrawTime();
+
+        RegisterRect(0, 0, 300, 16);
     
         Keyboard_CollectEvents(&Kbd, Keys, 32, &KeysCount);
         for (int I = 0; I < KeysCount; I++)

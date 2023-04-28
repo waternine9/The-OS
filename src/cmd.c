@@ -6,6 +6,7 @@
 #include "mem.h"
 #include "fileman.h"
 #include "settings.h"
+#include "ide.h"
 #include "mutex.h"
 
 typedef struct 
@@ -14,58 +15,59 @@ typedef struct
     uint32_t *BackBuff;
     size_t TxtBuffSize;
     int Blinker;
-    uint8_t InitFileman;
-    uint8_t InitPnt;
-    uint8_t InitSettings;
-} CmdReserve;
+    _Atomic uint8_t InitFileman;
+    _Atomic uint8_t InitPnt;
+    _Atomic uint8_t InitIde;
+    _Atomic uint8_t InitSettings;
+} cmd_reserve;
 
 extern uint16_t VESA_RES_X;
 extern uint16_t VESA_RES_Y;
 
 void CmdDestructor(window* Win)
 {
-    CmdReserve rsrv = *(CmdReserve*)Win->Reserved;
-    free((uint32_t*)rsrv.TxtBuff, 40000);
-    free((uint32_t*)rsrv.BackBuff, CONSOLE_RES_X * CONSOLE_RES_Y * 4);
+    cmd_reserve Rsrv = *(cmd_reserve*)Win->Reserved;
+    free((uint32_t*)Rsrv.TxtBuff, 40000);
+    free((uint32_t*)Rsrv.BackBuff, CONSOLE_RES_X * CONSOLE_RES_Y * 4);
 }
 
 void CmdAddChar(uint8_t thechar, window* Win)
 {
-    CmdReserve *rsrv = (CmdReserve*)Win->Reserved;
+    cmd_reserve *Rsrv = (cmd_reserve*)Win->Reserved;
     if (thechar == 0) return;
-    rsrv->TxtBuff[rsrv->TxtBuffSize] = thechar;
-    rsrv->TxtBuffSize++;
-    rsrv->Blinker = 0;
+    Rsrv->TxtBuff[Rsrv->TxtBuffSize] = thechar;
+    Rsrv->TxtBuffSize++;
+    Rsrv->Blinker = 0;
 }
 
 void CmdBackspace(window* Win)
 {
-    CmdReserve *rsrv = (CmdReserve*)Win->Reserved;
-    if (rsrv->TxtBuff[rsrv->TxtBuffSize - 1] == '\n' || rsrv->TxtBuffSize == 0) return;
-    rsrv->TxtBuffSize--;
-    rsrv->Blinker = 0;
+    cmd_reserve *Rsrv = (cmd_reserve*)Win->Reserved;
+    if (Rsrv->TxtBuff[Rsrv->TxtBuffSize - 1] == '\n' || Rsrv->TxtBuffSize == 0) return;
+    Rsrv->TxtBuffSize--;
+    Rsrv->Blinker = 0;
 }
 
 void CmdClear(window* Win)
 {
-    CmdReserve *rsrv = (CmdReserve*)Win->Reserved;
+    cmd_reserve *Rsrv = (cmd_reserve*)Win->Reserved;
     for (int i = 0;i < CONSOLE_RES_X * CONSOLE_RES_Y;i++)
     {
-        rsrv->BackBuff[i] = 0;
+        Rsrv->BackBuff[i] = 0;
     }
 }
 
 void CmdDraw(uint32_t Color, window* Win)
 {
-    CmdReserve *rsrv = (CmdReserve*)Win->Reserved;
-    DrawFontGlyphOnto(0, 20, '>', 2, Color, rsrv->BackBuff, CONSOLE_RES_X, CONSOLE_RES_Y);
+    cmd_reserve *Rsrv = (cmd_reserve*)Win->Reserved;
+    DrawFontGlyphOnto(0, 20, '>', 2, Color, Rsrv->BackBuff, CONSOLE_RES_X, CONSOLE_RES_Y);
 
     int CurX = 20;
     int CurY = 20;
 
-    char* StepPtr = rsrv->TxtBuff;
+    char* StepPtr = Rsrv->TxtBuff;
     int StepCount = 0;
-    while (StepCount < rsrv->TxtBuffSize)
+    while (StepCount < Rsrv->TxtBuffSize)
     {
         StepCount++;
         switch (*StepPtr)
@@ -73,13 +75,13 @@ void CmdDraw(uint32_t Color, window* Win)
             case '\n':
                 CurX = 10;
                 CurY += 25;
-                DrawFontGlyphOnto(CurX - 10, CurY, '>', 2, Color, rsrv->BackBuff, CONSOLE_RES_X, CONSOLE_RES_Y);
+                DrawFontGlyphOnto(CurX - 10, CurY, '>', 2, Color, Rsrv->BackBuff, CONSOLE_RES_X, CONSOLE_RES_Y);
                 CurX += 10;
                 if (CurY > (CONSOLE_RES_Y - 20))
                 {
                     while (1)
                     {
-                        char C = *rsrv->TxtBuff++;
+                        char C = *Rsrv->TxtBuff++;
                         if (C == '\n') break;
                     }
                 }
@@ -93,7 +95,7 @@ void CmdDraw(uint32_t Color, window* Win)
                 }
                 break;
             default:
-                DrawFontGlyphOnto(CurX, CurY, *StepPtr, 2, Color, rsrv->BackBuff, CONSOLE_RES_X, CONSOLE_RES_Y);
+                DrawFontGlyphOnto(CurX, CurY, *StepPtr, 2, Color, Rsrv->BackBuff, CONSOLE_RES_X, CONSOLE_RES_Y);
                 CurX += 15;
                 if (CurX > (CONSOLE_RES_X - 20))
                 {
@@ -104,7 +106,7 @@ void CmdDraw(uint32_t Color, window* Win)
                 {
                     while (1)
                     {
-                        char C = *rsrv->TxtBuff++;
+                        char C = *Rsrv->TxtBuff++;
                         if (C == '\n') break;
                         if (C == 0) break;
                     }
@@ -113,30 +115,35 @@ void CmdDraw(uint32_t Color, window* Win)
         }   
         StepPtr++;
     }
-    rsrv->Blinker++;
-    if (rsrv->Blinker > 40) rsrv->Blinker = 0;
-    if (rsrv->Blinker < 20)
+    Rsrv->Blinker++;
+    if (Rsrv->Blinker > 40) Rsrv->Blinker = 0;
+    if (Rsrv->Blinker < 20)
     {
-        DrawFontGlyphOnto(CurX, CurY, '_', 2, Color, rsrv->BackBuff, CONSOLE_RES_X, CONSOLE_RES_Y);
+        DrawFontGlyphOnto(CurX, CurY, '_', 2, Color, Rsrv->BackBuff, CONSOLE_RES_X, CONSOLE_RES_Y);
     }
 }
 
 void CmdWinHostProc(window *Win)
 {
-    CmdReserve* rsrv = (CmdReserve*)Win->Reserved;
-    if (rsrv->InitFileman)
+    cmd_reserve* Rsrv = (cmd_reserve*)Win->Reserved;
+    if (Rsrv->InitFileman)
     {
-        rsrv->InitFileman = 0;
+        Rsrv->InitFileman = 0;
         FileManCreateWindow(100, 100);
     }
-    if (rsrv->InitPnt)
+    if (Rsrv->InitPnt)
     {
-        rsrv->InitPnt = 0;
+        Rsrv->InitPnt = 0;
         PntCreateWindow(100, 100);
     }
-    if (rsrv->InitSettings)
+    if (Rsrv->InitIde)
     {
-        rsrv->InitSettings = 0;
+        Rsrv->InitIde = 0;
+        IdeCreateWindow(100, 100);
+    }
+    if (Rsrv->InitSettings)
+    {
+        Rsrv->InitSettings = 0;
         SettingsCreateWindow(100, 100);
     }
 }
@@ -146,7 +153,7 @@ extern int MouseY;
 
 void CmdProc(window* Win)
 {
-    CmdReserve* rsrv = (CmdReserve*)Win->Reserved;
+    cmd_reserve* Rsrv = (cmd_reserve*)Win->Reserved;
     int I = 0;
     while (I < Win->ChQueueNum)
     {
@@ -157,17 +164,21 @@ void CmdProc(window* Win)
             CmdAddChar(C, Win);
             if (C == '\n')
             {
-                if (rsrv->TxtBuff[rsrv->TxtBuffSize - 2] == 'd')
+                if (Rsrv->TxtBuff[Rsrv->TxtBuffSize - 2] == 'd')
                 {
-                    rsrv->InitPnt = 1;
+                    Rsrv->InitPnt = 1;
                 }
-                if (rsrv->TxtBuff[rsrv->TxtBuffSize - 2] == 'f')
+                if (Rsrv->TxtBuff[Rsrv->TxtBuffSize - 2] == 'i')
                 {
-                    rsrv->InitFileman = 1;
+                    Rsrv->InitIde = 1;
                 }
-                if (rsrv->TxtBuff[rsrv->TxtBuffSize - 2] == 's')
+                if (Rsrv->TxtBuff[Rsrv->TxtBuffSize - 2] == 'f')
                 {
-                    rsrv->InitSettings = 1;
+                    Rsrv->InitFileman = 1;
+                }
+                if (Rsrv->TxtBuff[Rsrv->TxtBuffSize - 2] == 's')
+                {
+                    Rsrv->InitSettings = 1;
                 }
             }
             
@@ -182,7 +193,7 @@ void CmdProc(window* Win)
     CmdClear(Win);
     CmdDraw(0xFFFFFFFF, Win);
 
-    memcpy(Win->Framebuffer, rsrv->BackBuff, CONSOLE_RES_X * CONSOLE_RES_Y * 4);
+    memcpy(Win->Framebuffer, Rsrv->BackBuff, CONSOLE_RES_X * CONSOLE_RES_Y * 4);
 }
 
 void CmdCreateWindow(int X, int Y)
@@ -192,10 +203,10 @@ void CmdCreateWindow(int X, int Y)
     Rect->Y = Y;
     Rect->W = CONSOLE_RES_X;
     Rect->H = CONSOLE_RES_Y;
-    CmdReserve* rsrv = (CmdReserve*)malloc(sizeof(CmdReserve));
-    memset(rsrv, 0, sizeof(CmdReserve));
-    rsrv->TxtBuff = (uint8_t*)malloc(40000);
-    memset(rsrv->TxtBuff, 0, 40000);
-    rsrv->BackBuff = malloc(CONSOLE_RES_X * CONSOLE_RES_Y * 4);
-    CreateWindow(Rect, &CmdProc, &CmdWinHostProc, &CmdDestructor, "cmd", malloc(4), malloc(CONSOLE_RES_X * CONSOLE_RES_Y * 4), (uint8_t*)rsrv, sizeof(CmdReserve));
+    cmd_reserve* Rsrv = (cmd_reserve*)malloc(sizeof(cmd_reserve));
+    memset(Rsrv, 0, sizeof(cmd_reserve));
+    Rsrv->TxtBuff = (uint8_t*)malloc(40000);
+    memset(Rsrv->TxtBuff, 0, 40000);
+    Rsrv->BackBuff = malloc(CONSOLE_RES_X * CONSOLE_RES_Y * 4);
+    CreateWindow(Rect, &CmdProc, &CmdWinHostProc, &CmdDestructor, "cmd", malloc(4), malloc(CONSOLE_RES_X * CONSOLE_RES_Y * 4), (uint8_t*)Rsrv, sizeof(cmd_reserve));
 }

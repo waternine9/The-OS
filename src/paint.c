@@ -23,9 +23,9 @@ extern struct _Resources ResourcesAt;
 
 void PntDestructor(window* Win)
 {
-    PntReserve* rsrv = (PntReserve*)Win->Reserved;
-    WriteFile((uint8_t*)rsrv->ImgBuffer, PNT_RES_X * PNT_RES_Y * 4, rsrv->PntFileSelection);
-    free(rsrv->ImgBuffer, PNT_RES_X * PNT_RES_Y * 4);
+    PntReserve* Rsrv = (PntReserve*)Win->Reserved;
+    WriteFile((uint8_t*)Rsrv->ImgBuffer, PNT_RES_X * PNT_RES_Y * 4, Rsrv->PntFileSelection);
+    free(Rsrv->ImgBuffer, PNT_RES_X * PNT_RES_Y * 4);
 }
 
 void PntWinHostProc(window* Win)
@@ -53,14 +53,14 @@ uint32_t PntGetDigit(uint8_t x)
 
 uint32_t PntGetFileNum(window* Win)
 {
-    PntReserve* rsrv = (PntReserve*)Win->Reserved;
-    if (!rsrv->PntSelectingNumSize) return 0;
+    PntReserve* Rsrv = (PntReserve*)Win->Reserved;
+    if (!Rsrv->PntSelectingNumSize) return 0;
     uint32_t FileNum = 0;
     int Multiplier = 1;
-    int I = rsrv->PntSelectingNumSize - 1;
+    int I = Rsrv->PntSelectingNumSize - 1;
     while (I > -1)
     {
-        uint32_t Digit = PntGetDigit(rsrv->PntSelectingNum[I]);
+        uint32_t Digit = PntGetDigit(Rsrv->PntSelectingNum[I]);
         if (Digit == 0xFFFFFFFF) return 0;
         FileNum += Digit * Multiplier;
         Multiplier *= 10;
@@ -70,13 +70,13 @@ uint32_t PntGetFileNum(window* Win)
 }
 void PntDraw(uint32_t color, window *Win)
 {
-    PntReserve* rsrv = (PntReserve*)Win->Reserved;
-    memcpy(Win->Framebuffer, rsrv->ImgBuffer, 4 * PNT_RES_X * PNT_RES_Y);
+    PntReserve* Rsrv = (PntReserve*)Win->Reserved;
+    memcpy(Win->Framebuffer, Rsrv->ImgBuffer, 4 * PNT_RES_X * PNT_RES_Y);
 }
 
 void PntSelectDraw(uint32_t color, window *Win)
 {
-    PntReserve* rsrv = (PntReserve*)Win->Reserved;
+    PntReserve* Rsrv = (PntReserve*)Win->Reserved;
     PntClearWinFramebuffer(Win, 0xFFFFFFFF);
     int CurX = 0;
     char* StartStr = "GOTO: ";
@@ -86,9 +86,9 @@ void PntSelectDraw(uint32_t color, window *Win)
         CurX += 20;
     } while (*StartStr++);
     int I = 0;
-    while (I < rsrv->PntSelectingNumSize)
+    while (I < Rsrv->PntSelectingNumSize)
     {
-        DrawFontGlyphOnto(CurX, 0, rsrv->PntSelectingNum[I], 2, color, Win->Framebuffer, PNT_RES_X, PNT_RES_Y);
+        DrawFontGlyphOnto(CurX, 0, Rsrv->PntSelectingNum[I], 2, color, Win->Framebuffer, PNT_RES_X, PNT_RES_Y);
         CurX += 20;
         I++;
     }
@@ -96,29 +96,29 @@ void PntSelectDraw(uint32_t color, window *Win)
 
 void PntSwitchSelection(window *Win)
 {
-    PntReserve* rsrv = (PntReserve*)Win->Reserved;
-    if (!rsrv->PntIsSelecting)
+    PntReserve* Rsrv = (PntReserve*)Win->Reserved;
+    if (!Rsrv->PntIsSelecting)
     {
-        memset(rsrv->PntSelectingNum, 0, SELECT_NUM);
-        rsrv->PntSelectingNumSize = 0;
-        rsrv->PntIsSelecting = 1;
+        memset(Rsrv->PntSelectingNum, 0, SELECT_NUM);
+        Rsrv->PntSelectingNumSize = 0;
+        Rsrv->PntIsSelecting = 1;
     }
     else
     {
-        WriteFile((uint8_t*)rsrv->ImgBuffer, PNT_RES_X * PNT_RES_Y * 4, rsrv->PntFileSelection);
+        WriteFile((uint8_t*)Rsrv->ImgBuffer, PNT_RES_X * PNT_RES_Y * 4, Rsrv->PntFileSelection);
         
         uint32_t FileNum = PntGetFileNum(Win);
         
         size_t size;
-        ReadFile((uint8_t*)rsrv->ImgBuffer, &size, FileNum);
+        ReadFile((uint8_t*)Rsrv->ImgBuffer, &size, FileNum);
         
         if (size < 952500)
         {
-            memset((uint8_t*)rsrv->ImgBuffer, 0, PNT_RES_X * PNT_RES_Y * 4);
+            memset((uint8_t*)Rsrv->ImgBuffer, 0, PNT_RES_X * PNT_RES_Y * 4);
         }
 
-        rsrv->PntFileSelection = FileNum;
-        rsrv->PntIsSelecting = 0;
+        Rsrv->PntFileSelection = FileNum;
+        Rsrv->PntIsSelecting = 0;
     }
         
 }
@@ -128,7 +128,7 @@ uint8_t IsDrawing = 0;
 
 void DrawLine(int x1, int y1, int x2, int y2, window *Win)
 {
-    PntReserve* rsrv = (PntReserve*)Win->Reserved;
+    PntReserve* Rsrv = (PntReserve*)Win->Reserved;
     float StepX = x1;
     float StepY = y1;
 
@@ -139,7 +139,7 @@ void DrawLine(int x1, int y1, int x2, int y2, window *Win)
     int CurStep = 100;
     while (CurStep--)
     {
-        rsrv->ImgBuffer[(int)StepX + (int)StepY * PNT_RES_X] = rsrv->PntSelectedColor;
+        Rsrv->ImgBuffer[(int)StepX + (int)StepY * PNT_RES_X] = Rsrv->PntSelectedColor;
         StepX += dx;
         StepY += dy;
     }
@@ -149,7 +149,7 @@ extern int MouseY;
 
 void PntProc(window* Win)
 {
-    PntReserve* rsrv = (PntReserve*)Win->Reserved;
+    PntReserve* Rsrv = (PntReserve*)Win->Reserved;
     if (IsDrawing)
     {
         int RelX = MouseX - Win->Rect->X;
@@ -158,18 +158,18 @@ void PntProc(window* Win)
         if (RelX >= 0 && RelY >= 0 && RelX < PNT_RES_X && RelY < PNT_RES_Y)
         {
 
-            if (rsrv->PntLastX != -1)
+            if (Rsrv->PntLastX != -1)
             {
-                DrawLine(rsrv->PntLastX, rsrv->PntLastY, RelX, RelY, Win);
+                DrawLine(Rsrv->PntLastX, Rsrv->PntLastY, RelX, RelY, Win);
             }
-            rsrv->PntLastX = RelX;
-            rsrv->PntLastY = RelY;
+            Rsrv->PntLastX = RelX;
+            Rsrv->PntLastY = RelY;
         }
     }
     else
     {
-        rsrv->PntLastX = -1;
-        rsrv->PntLastY = -1;
+        Rsrv->PntLastX = -1;
+        Rsrv->PntLastY = -1;
     }
     if (*Win->Events)
     {
@@ -181,7 +181,7 @@ void PntProc(window* Win)
         }
     }
     
-    if (!rsrv->PntIsSelecting)
+    if (!Rsrv->PntIsSelecting)
     {
         int I = 0;
         while (I < Win->ChQueueNum)
@@ -192,7 +192,7 @@ void PntProc(window* Win)
             {
                 if (C == 'd' && packet & (1 << 9))
                 {
-                    WriteFile((uint8_t*)rsrv->ImgBuffer, PNT_RES_X * PNT_RES_Y * 4, rsrv->PntFileSelection);
+                    WriteFile((uint8_t*)Rsrv->ImgBuffer, PNT_RES_X * PNT_RES_Y * 4, Rsrv->PntFileSelection);
                     DestroyWindow(Win);
                     return;
                 }
@@ -209,7 +209,7 @@ void PntProc(window* Win)
                 if (C == 's' && packet & (1 << 8))
                 {
 
-                    WriteFile((uint8_t*)rsrv->ImgBuffer, PNT_RES_X * PNT_RES_Y * 4, rsrv->PntFileSelection);
+                    WriteFile((uint8_t*)Rsrv->ImgBuffer, PNT_RES_X * PNT_RES_Y * 4, Rsrv->PntFileSelection);
                     
                 }
             }
@@ -238,11 +238,11 @@ void PntProc(window* Win)
                 }
                 else
                 {
-                    rsrv->PntSelectingNum[rsrv->PntSelectingNumSize] = C;   
-                    rsrv->PntSelectingNumSize++;
-                    if (rsrv->PntSelectingNumSize > SELECT_NUM)
+                    Rsrv->PntSelectingNum[Rsrv->PntSelectingNumSize] = C;   
+                    Rsrv->PntSelectingNumSize++;
+                    if (Rsrv->PntSelectingNumSize > SELECT_NUM)
                     {
-                        rsrv->PntSelectingNumSize--;
+                        Rsrv->PntSelectingNumSize--;
                     }
                 }
                 
@@ -250,10 +250,10 @@ void PntProc(window* Win)
             else
             {
                 uint16_t IsBackspace = packet & (1 << 8);
-                if (IsBackspace) rsrv->PntSelectingNumSize--;
-                if (rsrv->PntSelectingNumSize < 0)
+                if (IsBackspace) Rsrv->PntSelectingNumSize--;
+                if (Rsrv->PntSelectingNumSize < 0)
                 {
-                    rsrv->PntSelectingNumSize = 0;
+                    Rsrv->PntSelectingNumSize = 0;
                 }
             }
         
@@ -273,22 +273,22 @@ void PntCreateWindow(int x, int y)
     Rect->Y = y;
     Rect->W = PNT_RES_X;
     Rect->H = PNT_RES_Y;
-    PntReserve* rsrv = (PntReserve*)malloc(sizeof(PntReserve));
-    rsrv->ImgBuffer = malloc(PNT_RES_X * PNT_RES_Y * 4);
+    PntReserve* Rsrv = (PntReserve*)malloc(sizeof(PntReserve));
+    Rsrv->ImgBuffer = malloc(PNT_RES_X * PNT_RES_Y * 4);
     size_t junk;
     if (!ReadFileSize(&junk, 0))
     {
         CreateFile(0);
     }
-    ReadFile((uint8_t*)rsrv->ImgBuffer, &junk, 0);
-    rsrv->PntFileSelection = 0;
-    rsrv->PntIsSelecting = 0;
-    rsrv->PntSelectedColor = 0xFFFFFFFF;
-    rsrv->PntLastX = -1;
-    rsrv->PntLastY = -1;
-    memset(rsrv->PntSelectingNum, 0, 3);
-    rsrv->PntSelectingNumSize = 0;
+    ReadFile((uint8_t*)Rsrv->ImgBuffer, &junk, 0);
+    Rsrv->PntFileSelection = 0;
+    Rsrv->PntIsSelecting = 0;
+    Rsrv->PntSelectedColor = 0xFFFFFFFF;
+    Rsrv->PntLastX = -1;
+    Rsrv->PntLastY = -1;
+    memset(Rsrv->PntSelectingNum, 0, 3);
+    Rsrv->PntSelectingNumSize = 0;
 
-    CreateWindow(Rect, &PntProc, &PntWinHostProc, &PntDestructor, "paint", malloc(4), malloc(PNT_RES_X * PNT_RES_Y * 4), (uint8_t*)rsrv, sizeof(rsrv));
+    CreateWindow(Rect, &PntProc, &PntWinHostProc, &PntDestructor, "paint", malloc(4), malloc(PNT_RES_X * PNT_RES_Y * 4), (uint8_t*)Rsrv, sizeof(Rsrv));
     
 }

@@ -65,11 +65,11 @@ cmp al, 24
 jne .loop
 
 mov ax, [VbeModeInfo.XResolution]
-cmp ax, 1920
+cmp ax, 1280
 jg .loop
 
 mov ax, [VbeModeInfo.YResolution]
-cmp ax, 1080
+cmp ax, 720
 jg .loop
 
 ; Check if supports linear frame buffer

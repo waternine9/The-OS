@@ -47,14 +47,14 @@ with open("background.bin", "wb") as output:
         # Clear the surface
         surface.fill((0, 0, 0, 0))
 
-        scaled_bg = pygame.transform.smoothscale(backgroundsurf, (1920, 1080))
+        scaled_bg = pygame.transform.smoothscale(backgroundsurf, (1280, 720))
         scaled_bg = pygame.transform.flip(scaled_bg, False, True)
         # Draw the scaled character on the surface
         surface.blit(scaled_bg, (0, 0))
 
         # Write the alpha values to the output file
-        for y in range(1080):
-            for x in range(1920):
+        for y in range(720):
+            for x in range(1280):
                 color = surface.get_at((x, y))
                 output.write(bytes([color.b, color.g, color.r, color.a]))
 
