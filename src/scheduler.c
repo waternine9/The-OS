@@ -147,10 +147,11 @@ void SchedulerExecuteNext(scheduler *Scheduler)
         scheduler_process *Proc = GetProcessByID(Scheduler, Scheduler->ProcessRing[Scheduler->CurrentProcess]);
         Scheduler->CurrentProcess++;
         
-        MutexLock(&Proc->Mux);
-        
-        if (Proc->ProcessRequest) (*Proc->ProcessRequest)(Proc->Win);
-        MutexRelease(&Proc->Mux);
+        if (MutexTryLock(&Proc->Mux))
+        {
+            if (Proc->ProcessRequest) (*Proc->ProcessRequest)(Proc->Win);
+            MutexRelease(&Proc->Mux);
+        }
         if (Scheduler->CurrentProcess >= Scheduler->ProcessRingLength) {
             Scheduler->CurrentProcess = 0;
         }

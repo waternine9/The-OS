@@ -1164,7 +1164,6 @@ void OS_Start()
 
     InitCores();
 
-    *(uint32_t*)VbeModeInfo.framebuffer = 0xFFFFFFFF;
     MouseInstall();
 
     MouseX = VESA_RES_X / 2;
@@ -1206,8 +1205,6 @@ void OS_Start()
     RegisterRect(0, VESA_RES_Y / 2 - 16, VESA_RES_X, 40);
     DrawBackground(0, 0, 1920, 1080, VESA_RES_X, VESA_RES_Y, ResourcesAt.Background);
     
-    SB16Init();
-
     while (1)
     {
         ClearScreen();
