@@ -61,7 +61,7 @@ with open("background.bin", "wb") as output:
 with open("background.bin", "rb") as _bg:
     with open("font.bin", "rb") as _font:
         with open("resources.bin", "wb") as out:
-            out.write(_font.read() + _bg.read() + _audio.read()[0:0xFFFF])
+            out.write(_font.read() + _bg.read())
     
 # Quit Pygame
 pygame.quit()

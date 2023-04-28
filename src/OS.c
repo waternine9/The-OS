@@ -1208,10 +1208,6 @@ void OS_Start()
     
     SB16Init();
 
-    uint16_t* SoundBuff = malloc(0xFFFF);
-
-    SB16SetBuff((uint32_t)SoundBuff, 0xFFFF);
-
     while (1)
     {
         ClearScreen();
