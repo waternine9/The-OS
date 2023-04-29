@@ -17,6 +17,7 @@ float InvSqrt(float x)
     y  = y * ( threehalfs - ( x2 * y * y ) );
     y  = y * ( threehalfs - ( x2 * y * y ) );
     y  = y * ( threehalfs - ( x2 * y * y ) );
+    y  = y * ( threehalfs - ( x2 * y * y ) );
 	return y;
 }
 

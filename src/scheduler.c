@@ -160,7 +160,6 @@ void SchedulerExecuteNext(scheduler *Scheduler)
         
         Proc->PriorityTimer = SchedulerTick - SchedulerTick;
 
-        if (Proc->PriorityTimer > 4) Proc->PriorityTimer = 4;
         Proc->Priority = 5 - ilog2(Proc->PriorityTimer);
         
         Proc->PrioritySteps++;
