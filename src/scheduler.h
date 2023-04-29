@@ -24,6 +24,7 @@ typedef struct {
     mutex Mux;
     _Atomic uint8_t Priority;
     _Atomic uint8_t PriorityTimer;
+    _Atomic uint8_t PrioritySteps;
 } scheduler_process;
 
 typedef struct {

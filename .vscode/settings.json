@@ -16,6 +16,7 @@
         "*.tcc": "c",
         "chrono": "c",
         "cstdint": "c",
-        "random": "c"
+        "random": "c",
+        "demo.h": "c"
     }
 }

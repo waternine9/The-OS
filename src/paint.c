@@ -17,6 +17,7 @@ typedef struct
     int PntLastX; // -1 default
     int PntLastY; // -1 default
     uint32_t PntSelectedColor; // 0xFFFFFFFF default
+    uint8_t IsDrawing;
 } PntReserve;
 
 extern struct _Resources ResourcesAt;
@@ -123,7 +124,6 @@ void PntSwitchSelection(window *Win)
         
 }
 
-uint8_t IsDrawing = 0;
 
 
 void DrawLine(int x1, int y1, int x2, int y2, window *Win)
@@ -150,7 +150,7 @@ extern int MouseY;
 void PntProc(window* Win)
 {
     PntReserve* Rsrv = (PntReserve*)Win->Reserved;
-    if (IsDrawing)
+    if (Rsrv->IsDrawing)
     {
         int RelX = MouseX - Win->Rect->X;
         int RelY = MouseY - Win->Rect->Y;
@@ -176,8 +176,8 @@ void PntProc(window* Win)
         if (*Win->Events & 1)
         {
             *Win->Events &= ~1;
-            if (IsDrawing) IsDrawing = 0;
-            else IsDrawing = 1;
+            if (Rsrv->IsDrawing) Rsrv->IsDrawing = 0;
+            else Rsrv->IsDrawing = 1;
         }
     }
     
@@ -288,6 +288,7 @@ void PntCreateWindow(int x, int y)
     Rsrv->PntLastY = -1;
     memset(Rsrv->PntSelectingNum, 0, 3);
     Rsrv->PntSelectingNumSize = 0;
+    Rsrv->IsDrawing = 0;
 
     CreateWindow(Rect, &PntProc, &PntWinHostProc, &PntDestructor, "paint", malloc(4), malloc(PNT_RES_X * PNT_RES_Y * 4), (uint8_t*)Rsrv, sizeof(Rsrv));
     

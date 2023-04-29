@@ -150,13 +150,7 @@ void SchedulerExecuteNext(scheduler *Scheduler)
     
         scheduler_process *Proc = SchedulerGetProcessByID(Scheduler, Scheduler->ProcessRing[Scheduler->CurrentProcess]);
     
-        Scheduler->CurrentProcessPriority++;
-
-        if (Scheduler->CurrentProcessPriority >= Proc->Priority) 
-        {
-            Scheduler->CurrentProcess++;
-            Scheduler->CurrentProcessPriority = 0;
-        }
+        
         
         MutexLock(&Proc->Mux);
 
@@ -168,6 +162,14 @@ void SchedulerExecuteNext(scheduler *Scheduler)
 
         if (Proc->PriorityTimer > 4) Proc->PriorityTimer = 4;
         Proc->Priority = 5 - ilog2(Proc->PriorityTimer);
+        
+        Proc->PrioritySteps++;
+
+        if (Proc->PrioritySteps >= Proc->Priority) 
+        {
+            Scheduler->CurrentProcess++;
+            Proc->PrioritySteps = 0;
+        }
         
         MutexRelease(&Proc->Mux);
         

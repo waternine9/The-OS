@@ -7,6 +7,7 @@
 #include "fileman.h"
 #include "settings.h"
 #include "ide.h"
+#include "demo.h"
 #include "mutex.h"
 
 typedef struct 
@@ -18,6 +19,7 @@ typedef struct
     _Atomic uint8_t InitFileman;
     _Atomic uint8_t InitPnt;
     _Atomic uint8_t InitIde;
+    _Atomic uint8_t InitDemo;
     _Atomic uint8_t InitSettings;
 } cmd_reserve;
 
@@ -141,6 +143,11 @@ void CmdWinHostProc(window *Win)
         Rsrv->InitIde = 0;
         IdeCreateWindow(100, 100);
     }
+    if (Rsrv->InitDemo)
+    {
+        Rsrv->InitDemo = 0;
+        DemoCreateWindow(100, 100);
+    }
     if (Rsrv->InitSettings)
     {
         Rsrv->InitSettings = 0;
@@ -171,6 +178,10 @@ void CmdProc(window* Win)
                 if (Rsrv->TxtBuff[Rsrv->TxtBuffSize - 2] == 'i')
                 {
                     Rsrv->InitIde = 1;
+                }
+                if (Rsrv->TxtBuff[Rsrv->TxtBuffSize - 2] == 'z')
+                {
+                    Rsrv->InitDemo = 1;
                 }
                 if (Rsrv->TxtBuff[Rsrv->TxtBuffSize - 2] == 'f')
                 {
