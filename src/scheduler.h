@@ -22,7 +22,8 @@ typedef struct {
     window *Win;
     scheduler_process_request ProcessRequest;
     mutex Mux;
-    uint8_t Priority;
+    _Atomic uint8_t Priority;
+    _Atomic uint8_t PriorityTimer;
 } scheduler_process;
 
 typedef struct {

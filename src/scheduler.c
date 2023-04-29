@@ -1,4 +1,5 @@
 #include "scheduler.h"
+#include "math.h"
 
 _Atomic uint32_t SchedulerTick = 0;
 
@@ -149,15 +150,6 @@ void SchedulerExecuteNext(scheduler *Scheduler)
     
         scheduler_process *Proc = SchedulerGetProcessByID(Scheduler, Scheduler->ProcessRing[Scheduler->CurrentProcess]);
     
-        
-        MutexLock(&Proc->Mux);
-
-        SchedulerTick = 0;
-
-        if (Proc->ProcessRequest) (*Proc->ProcessRequest)(Proc->Win);
-        
-        if (SchedulerTick > 4) SchedulerTick = 4;
-        Proc->Priority = 5 - SchedulerTick;
         Scheduler->CurrentProcessPriority++;
 
         if (Scheduler->CurrentProcessPriority >= Proc->Priority) 
@@ -165,6 +157,18 @@ void SchedulerExecuteNext(scheduler *Scheduler)
             Scheduler->CurrentProcess++;
             Scheduler->CurrentProcessPriority = 0;
         }
+        
+        MutexLock(&Proc->Mux);
+
+        Proc->PriorityTimer = SchedulerTick;
+
+        if (Proc->ProcessRequest) (*Proc->ProcessRequest)(Proc->Win);
+        
+        Proc->PriorityTimer = SchedulerTick - SchedulerTick;
+
+        if (Proc->PriorityTimer > 4) Proc->PriorityTimer = 4;
+        Proc->Priority = 5 - ilog2(Proc->PriorityTimer);
+        
         MutexRelease(&Proc->Mux);
         
     }

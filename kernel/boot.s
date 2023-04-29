@@ -3,12 +3,15 @@
 
 ; THE BOOTLOADER LOADS THIS CODE AT LBA 4 FOR 1 SECTOR, OUR TASK IS TO LOAD THE OS NOW
 
-; Use scancode set 1
+; Use scancode set 1 (PS/2 keyboard)
 mov dx, 0x60
 mov al, 0xF0
 out dx, al    
 mov al, 1
 out dx, al
+; Set PIT frequency divider
+mov ax, 40
+out 0x40, ax
 
 ; Find RSDP
 mov ecx, 0x20000

@@ -19,6 +19,14 @@ float cos(float x)
 {
     return sin(x + 1.57079f);
 }
+
+uint8_t ilog2(uint32_t val)
+{
+    uint8_t result = 0;
+    while (val >>= 1) result++;
+    return result;
+}
+
 uint32_t seed = 10;
 uint32_t rand()
 {
