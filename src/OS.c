@@ -434,13 +434,13 @@ void DrawOutline(int X, int Y, int W, int H, int thickness)
     {
         for (int _X = X - thickness; _X < X + W + thickness; _X++)
         {
-            SetAlphaPixel(_X, Y - thickness, 0x44FFFFFF);
-            SetAlphaPixel(_X, Y + H + thickness, 0x44FFFFFF);
+            SetAlphaPixel(_X, Y - thickness, 0xFFFFFFFF);
+            SetAlphaPixel(_X, Y + H + thickness, 0xFFFFFFFF);
         }
         for (int _Y = Y - thickness; _Y < Y + H + thickness; _Y++)
         {
-            SetAlphaPixel(X - thickness, _Y, 0x44FFFFFF);
-            SetAlphaPixel(X + W + thickness, _Y, 0x44FFFFFF);
+            SetAlphaPixel(X - thickness, _Y, 0xFFFFFFFF);
+            SetAlphaPixel(X + W + thickness, _Y, 0xFFFFFFFF);
         }
     }
 }
@@ -1073,7 +1073,19 @@ volatile void RenderDynamic()
         if (WinsNum == MouseHoveringAnim.win)
         {
             DrawOutlineColor(WinsNum * 200, VESA_RES_Y - 50, 200, 50, MouseHoveringAnim.ticks, 0xFFFFFFFF);
-        }        
+        }
+        
+        WinsNum++;
+    }
+    WinsNum = 0;
+    while (WinsNum < RegisteredWinsNum)
+    {
+        window* Win = RegisteredWinsArray[WinsNum];
+        if (Win->Free)
+        {
+            WinsNum++;
+            continue;
+        }
 
         if (Win->Hidden)
         {
