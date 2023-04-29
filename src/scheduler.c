@@ -1,5 +1,7 @@
 #include "scheduler.h"
 
+_Atomic uint32_t SchedulerTick = 0;
+
 void KernelPanic(const char *Fmt, ...)
 {
     // TODO: STUB
@@ -55,7 +57,7 @@ static process_id AllocProcessId(scheduler *Scheduler)
     return (process_id) { 0 };
 }
 
-static scheduler_process *GetProcessByID(scheduler *Scheduler, process_id ID)
+scheduler_process *SchedulerGetProcessByID(scheduler *Scheduler, process_id ID)
 {
     if ((ID.ID-1) >= Scheduler->ProcessesCapacity) {
         return NULL;
@@ -105,7 +107,7 @@ process_id SchedulerPushProcess(scheduler *Scheduler, scheduler_process Process)
     MutexLock(&Scheduler->Mux);
 
     process_id ID = AllocProcessId(Scheduler);
-    scheduler_process *ProcessPtr = GetProcessByID(Scheduler, ID);
+    scheduler_process *ProcessPtr = SchedulerGetProcessByID(Scheduler, ID);
 
     ProcessPtr->Win = Process.Win;
     ProcessPtr->ProcessRequest = Process.ProcessRequest;
@@ -121,7 +123,7 @@ bool SchedulerRemoveProcess(scheduler *Scheduler, process_id ID)
 {
     MutexLock(&Scheduler->Mux);
 
-    scheduler_process *Process = GetProcessByID(Scheduler, ID);
+    scheduler_process *Process = SchedulerGetProcessByID(Scheduler, ID);
     if (Process) {
         MutexLock(&Process->Mux);
         size_t Generation = Process->ID.Generation;
@@ -142,22 +144,38 @@ void SchedulerExecuteNext(scheduler *Scheduler)
         
         if (Scheduler->CurrentProcess >= Scheduler->ProcessRingLength) {
             Scheduler->CurrentProcess = 0;
+            Scheduler->CurrentProcessPriority = 0;
         }
     
-        scheduler_process *Proc = GetProcessByID(Scheduler, Scheduler->ProcessRing[Scheduler->CurrentProcess]);
-        Scheduler->CurrentProcess++;
+        scheduler_process *Proc = SchedulerGetProcessByID(Scheduler, Scheduler->ProcessRing[Scheduler->CurrentProcess]);
+    
         
-        if (MutexTryLock(&Proc->Mux))
-        {
-            if (Proc->ProcessRequest) (*Proc->ProcessRequest)(Proc->Win);
-            MutexRelease(&Proc->Mux);
-        }
-        if (Scheduler->CurrentProcess >= Scheduler->ProcessRingLength) {
-            Scheduler->CurrentProcess = 0;
-        }
-    }
+        MutexLock(&Proc->Mux);
 
-    
+        SchedulerTick = 0;
+
+        if (Proc->ProcessRequest) (*Proc->ProcessRequest)(Proc->Win);
+        
+        if (SchedulerTick > 4) SchedulerTick = 4;
+        Proc->Priority = 5 - SchedulerTick;
+        Scheduler->CurrentProcessPriority++;
+
+        if (Scheduler->CurrentProcessPriority >= Proc->Priority) 
+        {
+            Scheduler->CurrentProcess++;
+            Scheduler->CurrentProcessPriority = 0;
+        }
+        MutexRelease(&Proc->Mux);
+        
+    }
+}
+
+void SchedulerUnlockProcesses(scheduler *Scheduler)
+{
+    for (int I = 0;I < Scheduler->ProcessesCount;I++)
+    {
+        MutexRelease(&Scheduler->Processes[I].Mux);
+    }
 }
 
 scheduler SchedulerInit()

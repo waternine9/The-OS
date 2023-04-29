@@ -12,9 +12,12 @@ mutex PS2Mutex;
 
 extern int ConPrintf(const char *Fmt, ...);
 
+extern _Atomic uint32_t SchedulerTick;
+
 /* PIT Timer */
 void CHandlerIRQ0()
 {
+    SchedulerTick++;
     PIC_EndOfInterrupt(0);
 }
 /* Keyboard Interrupt */

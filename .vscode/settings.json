@@ -10,6 +10,12 @@
         "pic.h": "c",
         "rtc.h": "c",
         "stdint.h": "c",
-        "keyboard.h": "c"
+        "keyboard.h": "c",
+        "*.m": "c",
+        "atomic": "c",
+        "*.tcc": "c",
+        "chrono": "c",
+        "cstdint": "c",
+        "random": "c"
     }
 }

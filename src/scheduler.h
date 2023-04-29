@@ -22,6 +22,7 @@ typedef struct {
     window *Win;
     scheduler_process_request ProcessRequest;
     mutex Mux;
+    uint8_t Priority;
 } scheduler_process;
 
 typedef struct {
@@ -35,10 +36,14 @@ typedef struct {
     _Atomic size_t ProcessRingCapacity;
     _Atomic size_t ProcessRingLength;
     _Atomic size_t CurrentProcess;
+    _Atomic size_t CurrentProcessPriority;
 } scheduler;
 
 process_id SchedulerPushProcess(scheduler *Scheduler, scheduler_process Process);
 bool SchedulerRemoveProcess(scheduler *Scheduler, process_id ID);
 void SchedulerExecuteNext(scheduler *Scheduler);
+void SchedulerUnlockProcesses(scheduler *Scheduler);
+
+scheduler_process *SchedulerGetProcessByID(scheduler *Scheduler, process_id ID);
 scheduler SchedulerInit();
 #endif // H_TOS_SCHEDULER
