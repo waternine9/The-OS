@@ -23,6 +23,7 @@
 #include "settings.h"
 #include "scheduler.h"
 #include "math.h"
+#include "bflang/bflang.h"
 
 extern click_animation ClickAnimation;
 extern uint8_t MousePointerBlack[8];
@@ -76,13 +77,28 @@ window* RegisteredWinsArray[256];
 process_id RegisteredProcIDsArray[256];
 uint32_t RegisteredWinsNum = 0;
 
-window CmdWindow;
-rect CmdWindowRect;
+window *CmdWindow;
 rect SettingsWindowRect = { 300, 300, 640, 480 };
 
 extern uint8_t IsFirstTime;
 
 scheduler Scheduler;
+
+void OSPrintf(const char *Format, ...)
+{
+    // FIXME: For now using sufficently long buffer
+    char Buffer[1024];
+
+    va_list VaArgs;
+    va_start(VaArgs, Format);
+    FormatWriteStringVa(Buffer, 1024, Format, VaArgs);
+    va_end(VaArgs);
+
+    for (int I = 0; Buffer[I]; I++) {
+      CmdAddChar(Buffer[I], CmdWindow);
+    }
+}
+
 
 void RegisterRect(int x, int y, int w, int h)
 {
@@ -1232,6 +1248,15 @@ void OS_Start()
     RegisterRect(0, VESA_RES_Y / 2 - 16, VESA_RES_X, 40);
     DrawBackground(0, 0, 1280, 720, VESA_RES_X, VESA_RES_Y, ResourcesAt.Background);
     
+
+    CmdWindow = CmdCreateWindow(VESA_RES_X / 2 - CONSOLE_RES_X / 2, VESA_RES_Y / 2 - CONSOLE_RES_Y / 2);
+
+    char StringBuf[32];
+    const char *Source = "Func[x](x+2;)Main[](a=Func[2*2];b=(a*10)/20;)";
+
+    OSPrintf("Result: %d", BFRunSource(Source, strlen(Source)));
+
+
     while (1)
     {
         ClearScreen();

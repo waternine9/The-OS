@@ -9,4 +9,5 @@ void memset(void *Destination_, uint8_t Val, size_t N);
 void *malloc(size_t Bytes);
 void free(void *Buf, size_t Bytes);
 void *memmove(void *dest, const void *src, size_t n);
+int strlen(const char *s);
 #endif // H_TOS_MEM

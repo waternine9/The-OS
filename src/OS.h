@@ -55,5 +55,6 @@ uint8_t CreateFile(uint32_t FileNum);
 uint8_t ReadFileSize(size_t*, uint32_t);
 void HideWindow(window*);
 void DestroyWindow(window*);
+void OSPrintf(const char *Format, ...);
 
 #endif // H_TOS_OS

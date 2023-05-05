@@ -207,7 +207,7 @@ void CmdProc(window* Win)
     memcpy(Win->Framebuffer, Rsrv->BackBuff, CONSOLE_RES_X * CONSOLE_RES_Y * 4);
 }
 
-void CmdCreateWindow(int X, int Y)
+window* CmdCreateWindow(int X, int Y)
 {
     rect* Rect = (rect*)malloc(sizeof(rect));
     Rect->X = X;

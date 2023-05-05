@@ -57,7 +57,7 @@ static void DrawSwitch(int X, int Y, bool Value, window *Win)
         Color1 = 0xFF00FF00;
     }
     DrawRectOnto(X, Y, 40, 16, Color1, Rsrv->BackBuff, Win->Rect->W, Win->Rect->H);
-    DrawRectOnto(X + 2 + (Value ? 20 : 0), Y + 2, 18, 12, 0xFFFFFFFF, Rsrv->BackBuff, Win->Rect->W, Win->Rect->H);
+    DrawRectOnto(X + 2 + (Value ? 18 : 0), Y + 2, 18, 12, 0xFFFFFFFF, Rsrv->BackBuff, Win->Rect->W, Win->Rect->H);
 }
 
 static void DrawSwitchOption(settings_layout *Layout, const char *Name, bool *Value, window *Win, int MouseX, int MouseY, int LmbPressed)
