@@ -69,5 +69,5 @@ typedef struct
     size_t BFNumFunctions;
 } bf_tokenizer;
 
-int BFRunSource(char* code, size_t code_size);
+int BFRunSource(char* Code, size_t CodeSize);
 #endif

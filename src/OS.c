@@ -1306,6 +1306,42 @@ void OS_Start()
                             Win->ChQueueNum++;
                         }
                     }
+                    if (Keys[I].Scancode == KEY_RIGHT)
+                    {
+                        window* Win = RegisteredWinsArray[RegisteredWinsNum - 1];
+                        if (Win->ChQueueNum < 256)
+                        {
+                            Win->InCharacterQueue[Win->ChQueueNum] = 1 << 9;
+                            Win->ChQueueNum++;
+                        }
+                    }
+                    if (Keys[I].Scancode == KEY_LEFT)
+                    {
+                        window* Win = RegisteredWinsArray[RegisteredWinsNum - 1];
+                        if (Win->ChQueueNum < 256)
+                        {
+                            Win->InCharacterQueue[Win->ChQueueNum] = 1 << 10;
+                            Win->ChQueueNum++;
+                        }
+                    }
+                    if (Keys[I].Scancode == KEY_UP)
+                    {
+                        window* Win = RegisteredWinsArray[RegisteredWinsNum - 1];
+                        if (Win->ChQueueNum < 256)
+                        {
+                            Win->InCharacterQueue[Win->ChQueueNum] = 1 << 11;
+                            Win->ChQueueNum++;
+                        }
+                    }
+                    if (Keys[I].Scancode == KEY_DOWN)
+                    {
+                        window* Win = RegisteredWinsArray[RegisteredWinsNum - 1];
+                        if (Win->ChQueueNum < 256)
+                        {
+                            Win->InCharacterQueue[Win->ChQueueNum] = 1 << 12;
+                            Win->ChQueueNum++;
+                        }
+                    }
                     if (Keys[I].ASCII)
                     {
                         window* Win = RegisteredWinsArray[RegisteredWinsNum - 1];

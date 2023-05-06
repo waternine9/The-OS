@@ -9,6 +9,9 @@
 #include "ide.h"
 #include "demo.h"
 #include "mutex.h"
+#include "command.h"
+#include "bflang/bflang.h"
+#include "format.h"
 
 typedef struct 
 {
@@ -33,13 +36,23 @@ void CmdDestructor(window* Win)
     free((uint32_t*)Rsrv.BackBuff, CONSOLE_RES_X * CONSOLE_RES_Y * 4);
 }
 
-void CmdAddChar(uint8_t thechar, window* Win)
+void CmdAddChar(uint8_t Char, window* Win)
 {
     cmd_reserve *Rsrv = (cmd_reserve*)Win->Reserved;
-    if (thechar == 0) return;
-    Rsrv->TxtBuff[Rsrv->TxtBuffSize] = thechar;
+    if (Char == 0) return;
+    Rsrv->TxtBuff[Rsrv->TxtBuffSize] = Char;
     Rsrv->TxtBuffSize++;
     Rsrv->Blinker = 0;
+}
+
+void CmdAddString(uint8_t* Str, window* Win)
+{
+    cmd_reserve *Rsrv = (cmd_reserve*)Win->Reserved;
+    while (*Str)
+    {
+        CmdAddChar(*Str, Win);
+        Str++;
+    }
 }
 
 void CmdBackspace(window* Win)
@@ -171,26 +184,58 @@ void CmdProc(window* Win)
             CmdAddChar(C, Win);
             if (C == '\n')
             {
-                if (Rsrv->TxtBuff[Rsrv->TxtBuffSize - 2] == 'd')
+                uint8_t* CmdStart = Rsrv->TxtBuff + Rsrv->TxtBuffSize - 2;
+                while (*CmdStart != '\n' && CmdStart != Rsrv->TxtBuff - 1) CmdStart--;
+                CmdStart++;
+
+                
+                command CurCmd = CommandGet(CmdStart, (Rsrv->TxtBuff + Rsrv->TxtBuffSize - 2) - CmdStart);
+
+                switch (CurCmd.Type)
                 {
-                    Rsrv->InitPnt = 1;
+                    case COMMAND_NOT_FOUND: 
+                        CmdAddString("Command Not Found\n", Win);
+                        break;
+                    case COMMAND_BF:
+                        if (CurCmd.ArgCount != 1)
+                        {
+                            CmdAddString("Needs to have 1 argument\n", Win);
+                            break;
+                        }
+                        size_t FileSize;
+                        ReadFileSize(&FileSize, CurCmd.Args[0].Val);
+                        
+                        uint8_t* CodeBuf = malloc(FileSize + 508);
+                        ReadFile(CodeBuf, &FileSize, CurCmd.Args[0].Val);
+                        
+                        size_t CodeSize = 0;
+                        while (CodeBuf[CodeSize]) CodeSize++;
+                        
+                        int ExitCode = BFRunSource(CodeBuf, CodeSize); 
+                        char Buf[256];
+                        memset(Buf, 0, 256);
+                        FormatWriteString(Buf, 256, "Program exited with exit code %d\n", ExitCode);
+                        CmdAddString(Buf, Win);
+                        break;
+                    case COMMAND_DEMO:
+                        Rsrv->InitDemo = 1;
+                        break;
+                    case COMMAND_FILEMAN:
+                        Rsrv->InitFileman = 1;
+                        break;
+                    case COMMAND_IDE:
+                        Rsrv->InitIde = 1;
+                        break;
+                    case COMMAND_PAINT:
+                        Rsrv->InitPnt = 1;
+                        break;
+                    case COMMAND_SETTINGS:
+                        Rsrv->InitSettings = 1;
+                        break;
+                    default:
+                        break;
                 }
-                if (Rsrv->TxtBuff[Rsrv->TxtBuffSize - 2] == 'i')
-                {
-                    Rsrv->InitIde = 1;
-                }
-                if (Rsrv->TxtBuff[Rsrv->TxtBuffSize - 2] == 'z')
-                {
-                    Rsrv->InitDemo = 1;
-                }
-                if (Rsrv->TxtBuff[Rsrv->TxtBuffSize - 2] == 'f')
-                {
-                    Rsrv->InitFileman = 1;
-                }
-                if (Rsrv->TxtBuff[Rsrv->TxtBuffSize - 2] == 's')
-                {
-                    Rsrv->InitSettings = 1;
-                }
+                
             }
             
         }

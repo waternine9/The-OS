@@ -154,14 +154,16 @@ void SchedulerExecuteNext(scheduler *Scheduler)
         
         MutexLock(&Proc->Mux);
 
+        
         Proc->PriorityTimer = SchedulerTick;
 
         if (Proc->ProcessRequest) (*Proc->ProcessRequest)(Proc->Win);
         
         Proc->PriorityTimer = SchedulerTick - SchedulerTick;
 
-        Proc->Priority = 5 - ilog2(Proc->PriorityTimer);
+        Proc->Priority = 10 - ilog2(Proc->PriorityTimer);
         
+
         Proc->PrioritySteps++;
 
         if (Proc->PrioritySteps >= Proc->Priority) 

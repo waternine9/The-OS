@@ -1,6 +1,7 @@
 #include "bflang.h"
 #include "../mem.h"
 
+
 size_t BFCodeSize(uint8_t* Code)
 {
     size_t Size = 0;
@@ -128,9 +129,13 @@ bf_token* BFTokenizeFuncCall(bf_tokenizer* Tokenizer, bf_scope* CurrentScope)
 
     
     Tokenizer->At = NextSqrBr + 1;
+
     size_t NextCom = BFTellNextCom(Tokenizer);
+
     if (NextSqrBr + 1 == NextMatchingSqrBr) return Token;
+
     bool BreakOut = false;
+
     while (1)
     {
         bf_token* Param = BFTokenizeExpr(Tokenizer, CurrentScope);
@@ -138,7 +143,7 @@ bf_token* BFTokenizeFuncCall(bf_tokenizer* Tokenizer, bf_scope* CurrentScope)
         Token->Params[Token->NumParams++] = Param;
         bf_token** NewParams = (bf_token**)malloc((Token->NumParams + 1) * sizeof(bf_token*));
         memcpy(NewParams, Token->Params, Token->NumParams * sizeof(bf_token*));
-        free(Token->Params, Token->NumParams);
+        free(Token->Params, Token->NumParams * sizeof(bf_token*));
         Token->Params = NewParams;
 
         Tokenizer->At = NextCom + 1;
@@ -185,6 +190,7 @@ bf_token* BFTokenizeExpr(bf_tokenizer* Tokenizer, bf_scope* CurrentScope)
     {
         
         size_t NextMatching = BFTellNextMatching(Tokenizer, ')', '(');
+        
         if (NextMatching == 0xFFFFFFFF) 
         {
             return NULL;
@@ -201,26 +207,33 @@ bf_token* BFTokenizeExpr(bf_tokenizer* Tokenizer, bf_scope* CurrentScope)
         return Tok;
     }
 
-    
     size_t NextOp = BFFindNextOperator(Tokenizer);
     size_t NextSemi = BFTellNext(Tokenizer, ';');
     size_t NextBr = BFTellNext(Tokenizer, ')');
     size_t NextRSqrBr = BFTellNext(Tokenizer, ']');
     size_t NextCom = BFTellNext(Tokenizer, ',');
-    size_t NextSqrBr = BFTellNext(Tokenizer, '[');
     if (NextOp < NextBr) NextBr = NextOp;
     if (NextSemi < NextBr) NextBr = NextSemi;
     if (NextRSqrBr < NextBr) NextBr = NextRSqrBr;
     if (NextCom < NextBr) NextBr = NextCom;
-    if (NextSqrBr < NextBr) NextBr = NextSqrBr;
 
-    if (NextSqrBr == NextBr)
+    size_t NextSqrBr = BFTellNext(Tokenizer, '[');
+
+    if (NextSqrBr < NextBr && NextRSqrBr != 0xFFFFFFFF)
     {
-        size_t NextLBr = BFTellNext(Tokenizer, '(');
-        if (NextSqrBr < NextLBr)
-        {
-            return BFTokenizeFuncCall(Tokenizer, CurrentScope);
-        }        
+        
+        bf_token* MyTok = BFTokenizeFuncCall(Tokenizer, CurrentScope);
+        
+        if (NextRSqrBr == NextCom - 1 || NextRSqrBr == NextSemi - 1) return MyTok;
+
+        bf_token* SurroundToken = (bf_token*)malloc(sizeof(bf_token));
+        memset(SurroundToken, 0, sizeof(bf_token));
+        SurroundToken->First = MyTok;
+        Tokenizer->At = NextRSqrBr + 1;
+        SurroundToken->Type = BFGetOpType(Tokenizer->Code[Tokenizer->At]);
+        Tokenizer->At++;
+        SurroundToken->Second = BFTokenizeExpr(Tokenizer, CurrentScope);
+        return SurroundToken;        
     }
 
         
@@ -258,7 +271,7 @@ bf_token* BFTokenizeExpr(bf_tokenizer* Tokenizer, bf_scope* CurrentScope)
             CurrentScope->Vars[CurrentScope->VarsCount++] = NewVar;
             bf_variable** NewVars = (bf_variable**)malloc(sizeof(bf_variable*) * (CurrentScope->VarsCount + 1));
             memcpy(NewVars, CurrentScope->Vars, sizeof(bf_variable*) * CurrentScope->VarsCount);
-            free(CurrentScope->Vars, CurrentScope->VarsCount);
+            free(CurrentScope->Vars, sizeof(bf_variable*) * CurrentScope->VarsCount);
             CurrentScope->Vars = NewVars;
 
             Tok->IsVar = true;
@@ -303,6 +316,7 @@ void BFTokenizeFunction(bf_tokenizer* Tokenizer)
     CurrentFunction->RootScope.Parent = 0;
     Tokenizer->At = NextSqrBr + 1;
     size_t NextSqrBr2 = BFTellNext(Tokenizer, ']');
+    
     if (NextSqrBr2 == 0xFFFFFFFF) return;
 
 
@@ -328,7 +342,7 @@ void BFTokenizeFunction(bf_tokenizer* Tokenizer)
             CurrentFunction->RootScope.Vars[CurrentFunction->RootScope.ArgsCount++] = Var;
             bf_variable** NewArgs = (bf_variable**)malloc(sizeof(bf_variable*) * (CurrentFunction->RootScope.ArgsCount + 1));
             memcpy(NewArgs, CurrentFunction->RootScope.Vars, sizeof(bf_variable*) * CurrentFunction->RootScope.ArgsCount);
-            free(CurrentFunction->RootScope.Vars, CurrentFunction->RootScope.VarsCount);
+            free(CurrentFunction->RootScope.Vars, sizeof(bf_variable*) * CurrentFunction->RootScope.ArgsCount);
             CurrentFunction->RootScope.Vars = NewArgs;
             Tokenizer->At = NextCom + 1;
             if (BreakOut) break;
@@ -352,7 +366,7 @@ void BFTokenizeFunction(bf_tokenizer* Tokenizer)
         CurrentFunction->RootScope.Lines[CurrentFunction->RootScope.LineCount++] = BFTokenizeLine(Tokenizer, &CurrentFunction->RootScope);
         bf_token** NewLines = (bf_token**)malloc(sizeof(bf_token*) * (CurrentFunction->RootScope.LineCount + 1));
         memcpy(NewLines, CurrentFunction->RootScope.Lines, sizeof(bf_token*) * CurrentFunction->RootScope.LineCount);
-        free(CurrentFunction->RootScope.Lines, CurrentFunction->RootScope.LineCount);
+        free(CurrentFunction->RootScope.Lines, sizeof(bf_token*) * CurrentFunction->RootScope.LineCount);
         CurrentFunction->RootScope.Lines = NewLines;
 
         Tokenizer->At = NextSemi + 1;
@@ -362,7 +376,7 @@ void BFTokenizeFunction(bf_tokenizer* Tokenizer)
     bf_function** NewFuncs = (bf_function**)malloc(sizeof(bf_function*) * (Tokenizer->BFNumFunctions + 1));
     memset(NewFuncs, 0, sizeof(bf_function*) * (Tokenizer->BFNumFunctions + 1));
     memcpy(NewFuncs, Tokenizer->Functions, sizeof(bf_function*) * Tokenizer->BFNumFunctions);
-    free(Tokenizer->Functions, Tokenizer->BFNumFunctions);
+    free(Tokenizer->Functions, sizeof(bf_function*) * Tokenizer->BFNumFunctions);
     Tokenizer->Functions = NewFuncs;
 }
 
@@ -447,10 +461,19 @@ int BFRun(bf_function** Funcs)
     return 0;
 }
 
-int BFRunSource(char* code, size_t code_size)
+int BFRunSource(char* Code, size_t CodeSize)
 {
-    // REMOVE ALL SPACES, INDENTS, AND NEWLINES BEFORE TOKENIZING!
-    bf_function** Funcs = BFTokenize(code, code_size);
+    char* Sanitized = malloc(CodeSize);
+    size_t SanitizedSize = 0;
+    for (int I = 0;I < CodeSize;I++)
+    {
+        if (Code[I] != ' ' && Code[I] != '\t' && Code[I] != '\n')
+        {
+            Sanitized[SanitizedSize++] = Code[I];
+        }
+    }
+
+    bf_function** Funcs = BFTokenize(Sanitized, SanitizedSize);
     return BFRun(Funcs);
 }
 

@@ -8,6 +8,7 @@
 window* CmdCreateWindow(int X, int Y);
 void CmdBackspace(window*);
 void CmdAddChar(uint8_t, window*);
+void CmdAddString(uint8_t*, window*);
 void CmdProc(window* Win);
 
 #endif

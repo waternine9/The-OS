@@ -92,7 +92,7 @@ void PathTraceRay(ray Ray, size_t OutPtr, window* Win)
             vector3 IntersectionPoint = Add3(Ray.Position, Scale3(Ray.Direction, Distance));
             vector3 Normal = Normalize3(Sub3(IntersectionPoint, CollidedWith.Position));
             InitColor = Mul3(InitColor, CollidedWith.Color);
-            Ray.Position = IntersectionPoint;
+            Ray.Position = Add3(IntersectionPoint, Scale3(Normal, 0.001f));;
             Ray.Direction = Reflect(Ray.Direction, Normal);
             vector3 RandVec = { (rand() % 10000) / 10000.0f - 0.5f, (rand() % 10000) / 10000.0f - 0.5f, (rand() % 10000) / 10000.0f - 0.5f };
             Ray.Direction = Normalize3(Add3(Ray.Direction, Scale3(RandVec, CollidedWith.Roughness * 4)));
@@ -137,9 +137,9 @@ void PathProc(window* Win)
                     if (B > 254.0f) B = 254.0f;
                     if (FinalR + FinalG + FinalB < (R + G + B) / (abs(SubX - X) + abs(SubY - Y) + 1.0f))
                     {   
-                        FinalR += R;
-                        FinalG += G;
-                        FinalB += B;
+                        FinalR = R;
+                        FinalG = G;
+                        FinalB = B;
                     }
                 }
             }
@@ -204,9 +204,9 @@ void DemoCreateWindow(int x, int y)
 
     // Set up light source
 
-    Rsrv->PathSpheres[0].Position = (vector3){ 0, -10.0f, 10.0f };
-    Rsrv->PathSpheres[0].Color = (vector3){ 25600.0f, 25600.0f, 25600.0f };
-    Rsrv->PathSpheres[0].Radius = 4;
+    Rsrv->PathSpheres[0].Position = (vector3){ 0, -100.0f, 10.0f };
+    Rsrv->PathSpheres[0].Color = (vector3){ 256000.0f, 256000.0f, 256000.0f };
+    Rsrv->PathSpheres[0].Radius = 10;
 
     
     // Set up ground
