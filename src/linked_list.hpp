@@ -84,12 +84,14 @@ void LinkedList<T>::PushBack(T val)
         size++;
         begin->val = val;
         begin->next = (ListNode<T>*)kmalloc(sizeof(ListNode<T>));
+        kmemset(begin->next, 0, sizeof(ListNode<T>));
         end = begin->next;
         return;
     }
     size++;
     end->val = val;
     end->next = (ListNode<T>*)kmalloc(sizeof(ListNode<T>));
+    kmemset(end->next, 0, sizeof(ListNode<T>));
     end = end->next;
 }
 template<typename T>
@@ -103,9 +105,17 @@ void LinkedList<T>::PopBack()
     // This, this can be optimized.
     ListNode<T>* cur = begin;
     int steps = size;
+    if (steps == 0)
+    {
+        begin->next = NULL;
+        kfree(end);
+        end = begin;
+        return;
+    }
     while (steps--) cur = cur->next;
     kfree(cur->next);
     cur->next = NULL;
+    end = cur;
 }
 template<typename T>
 T& LinkedList<T>::operator[](int I)

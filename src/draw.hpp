@@ -39,7 +39,11 @@
 #define YELLOW_FG 14
 #define WHITE_FG 15
 
-void DrawCharacter(uint8_t c, size_t x, size_t y, uint8_t color);
-void DrawString(String s, size_t x, size_t y, uint8_t color);
-
+namespace Draw
+{
+    void DrawCharacter(uint8_t c, size_t x, size_t y, uint8_t color);
+    int DrawString(String s, size_t x, size_t y, uint8_t color);
+    void Clear(uint8_t with, uint8_t color);
+    void SwapBuffers();
+}
 #endif

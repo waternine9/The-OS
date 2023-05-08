@@ -8,6 +8,14 @@ Boot:
     ;       Preserve it for later 
     mov   [DriveNumber], dl
     
+    mov ah, 2
+    mov al, 63
+    mov ch, 0
+    mov cl, 2
+    mov dh, 0
+    mov dl, [DriveNumber]
+    mov bx, 0x7E00
+    int 0x13
 
     ; NOTE: Load GDT and activate protected mode
     cli
@@ -29,27 +37,58 @@ After:
     mov   fs, ax
     mov   gs, ax
     mov   ss, ax
-    
-    mov edi, unkernel_end
-    mov ecx, 4
-.ReadSector:
-    mov dl, [DriveNumber]
-    push edi
-    push ecx
-    call kernel_read_ata
-    pop ecx
-    pop edi
-    add edi, 512
-    inc ecx
-    cmp edi, OsEnd - 512
-    jl .ReadSector
 
-    mov dl, [DriveNumber]
-    mov edi, 0x8000
-    mov ecx, 2
-    call kernel_read_ata
+    ;mov edi, unkernel_end
+    ;mov ecx, 4
+;.ReadSector:
+    ;mov dl, [DriveNumber]
+    ;push edi
+    ;push ecx
+    ;call kernel_read_ata
+    ;pop ecx
+    ;pop edi
+    ;add edi, 512
+    ;inc ecx
+    ;cmp edi, OsEnd - 512
+    ;jl .ReadSector
+
+    ;mov dl, [DriveNumber]
+    ;mov edi, 0x8000
+    ;mov ecx, 2
+    ;call kernel_read_ata
+
+    ; Use scancode set 1 (PS/2 keyboard)
+    mov dx, 0x60
+    mov al, 0xF0
+    out dx, al
+    mov al, 1
+    out dx, al
+
+    ; Find RSDP
+    mov ecx, 0x20000
+    mov esi, 0xE0000
+    RSDPfind:
+    mov eax, [esi]
+    cmp eax, "RSD "
+    jne .NotFound
+    mov eax, [esi + 4]
+    cmp eax, "PTR "
+    je .Found
+    .NotFound:
+    inc esi
+    loop RSDPfind
+    mov eax, 0xEEEEEE
     cli
     hlt
+    .Found:
+    mov edi, rsdp
+    mov ecx, 24
+    .Copy:
+    mov eax, [esi]
+    mov [edi], eax
+    inc esi
+    inc edi
+    loop .Copy
 
     jmp 8:unkernel_end
 
@@ -152,7 +191,7 @@ call kmain
 cli
 hlt
 
-
+%include "src/boot/irq_handlers.asm"
 
 section .text
 

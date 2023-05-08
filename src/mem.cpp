@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "mem.hpp"
+#include "mutex.hpp"
+
 void kmemcpy(void *Destination_, const void *Source_, size_t N)
 {
     uint8_t *Destination = (uint8_t*)Destination_;
@@ -22,8 +24,11 @@ uint8_t Pages[1000000] = { 0 };
 
 uint8_t IsInit = 0;
 
+mutex MemMutex = { 0 };
+
 void *kmalloc(size_t Bytes)
 {
+    MutexLock(&MemMutex);
     if (!IsInit)
     {
         kmemset(Pages, 0, 1000000);
@@ -54,10 +59,12 @@ void *kmalloc(size_t Bytes)
                     Pages[j] = 1;
                 }   
                 *(uint32_t*)(i * 4096 + 0x2000000 - 4) = PageCount;
+                MutexRelease(&MemMutex);
                 return (uint32_t*)(i * 4096 + 0x2000000);
             }
         }
     }
+    MutexRelease(&MemMutex);
     return (uint32_t*)0;
 }
 void kfree(void *Buf)

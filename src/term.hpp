@@ -4,16 +4,15 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "string.hpp"
+#include "linked_list.hpp"
 
-class Terminal
+namespace Terminal
 {
-private:
-    
-public:
-    String CommandInput;
-    int PushString(String Str);
-    void PopBackString();
-    void UpdateString(String Str, int I);
-};
+    void PushNormal(String str);
+    void PushError(String str);
+    void PushWarning(String str);
+    void AttachCmdStr(String *str);
+    void Render();
+}
 
 #endif // H_TERM
