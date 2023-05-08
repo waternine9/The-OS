@@ -7,7 +7,6 @@
 #include "drivers/mouse/mouse.hpp"
 #include "drivers/keyboard/keyboard.hpp"
 #include "term.hpp"
-#include "apic.h"
 
 extern int32_t MouseX;
 extern int32_t MouseY;
@@ -26,20 +25,40 @@ extern "C" void CoreStart()
     }
 }
 
+void EchoHandler(LinkedList<Terminal::CommandArg> args)
+{
+    for (int i = 0;i < args.size;i++)
+    {
+        if (!args[i].isVal)
+        {
+            Terminal::PushNormal(args[i].str);
+        }
+        else
+        {
+            Terminal::PushNormal(StrFormat("%x", args[i].val));
+        }
+    }
+}
+
 extern "C" void kmain()
 {
+    kmemset((void*)0x1000000, 0, 70000);
+
+    Terminal::Init();
+
+    *(uint16_t*)0xB8000 = 0x0F49;
+
     PIC_Init();
     IDT_Init();
 
-    MouseInstall();
-
-    Terminal::PushNormal(StrFromCStr("Starting cores..."));
-
-    InitCores();
-
+    //MouseInstall();
     String commandStr = String();
     Terminal::AttachCmdStr(&commandStr);
 
+    Terminal::PushSuccess(StrFromCStr("Welcome to TheOS v0.1.0!"));
+    Terminal::PushNormal(StrFromCStr("Starting cores..."));
+    Terminal::PushCommand(EchoHandler, StrFromCStr("echo"));
+    Terminal::Render();
 
 
     while (1)
@@ -52,7 +71,14 @@ extern "C" void kmain()
             {
                 if (keys[I].ASCII)
                 {
-                    commandStr.PushBack(keys[I].ASCII);
+                    if (keys[I].ASCII == '\n')
+                    {
+                        Terminal::RunCommand();
+                    }
+                    else
+                    {
+                        commandStr.PushBack(keys[I].ASCII);
+                    }
                 }
                 if (keys[I].Scancode == KEY_BACKSPACE)
                 {

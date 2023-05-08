@@ -5,6 +5,7 @@
 #define LEVEL_NORMAL 0
 #define LEVEL_WARNING 1
 #define LEVEL_ERROR 2
+#define LEVEL_SUCCESS 3
 
 struct TermLine
 {
@@ -12,12 +13,18 @@ struct TermLine
     String str;
 };
 
+struct Command
+{
+    String name;
+    void(*callback)(LinkedList<Terminal::CommandArg>);
+};
+
 mutex PushMutex;
 
 LinkedList<TermLine> termStorage = LinkedList<TermLine>();
+LinkedList<Command*> cmdStorage = LinkedList<Command*>();
 
 String* commandStr = NULL;
-
 
 void TermPush(String str, uint8_t level)
 {
@@ -29,9 +36,74 @@ void TermPush(String str, uint8_t level)
     MutexRelease(&PushMutex);
 }
 
+bool ParseCommand(Command *found, LinkedList<Terminal::CommandArg> *foundArgs)
+{
+    int j = 0;
+    for (int i = 0;i < cmdStorage.size;i++)
+    {
+
+
+        if (StrStartsWith(*commandStr, cmdStorage[i]->name))
+        {
+            j = cmdStorage[i]->name.size + 1;
+            *found = *cmdStorage[i];
+        }
+    }
+    if (j == 0) return false;
+    while (j < commandStr->size)
+    {
+
+
+
+        while ((*commandStr)[j] == ' ') j++;
+        Terminal::CommandArg currentArg = Terminal::CommandArg();
+        if ((*commandStr)[j] == '-' || ((*commandStr)[j] >= '0' && (*commandStr)[j] <= '9'))
+        {
+            currentArg.isVal = true;
+
+            int sign = (*commandStr)[j] == '-' ? -1 : 1;
+            int val = 0;
+            int multiply = 1;
+
+            int k = j;
+            while (k != ' ' && k < (*commandStr).size) k++;
+            int oldK = k;
+            k--;
+            while (k >= j)
+            {
+                if ((*commandStr)[k] != '-')
+                {
+                    val += (int)((*commandStr)[k] - '0') * multiply;
+                    multiply *= 10;
+                }
+                k--;
+            }
+            val *= sign;
+            currentArg.val = val;
+            j = oldK;
+        }
+        else
+        {
+            currentArg.isVal = false;
+            while ((*commandStr)[j] != ' ' && j < (*commandStr).size)
+            {
+                currentArg.str.PushBack((*commandStr)[j]);
+                j++;
+            }
+        }
+        (*foundArgs).PushBack(currentArg);
+    }
+    return true;
+}
 
 namespace Terminal
 {
+    void Init()
+    {
+        cmdStorage = LinkedList<Command*>();
+        termStorage = LinkedList<TermLine>();
+    }
+
     void PushNormal(String str)
     {
         TermPush(str, LEVEL_NORMAL);
@@ -45,6 +117,34 @@ namespace Terminal
     void PushWarning(String str)
     {
         TermPush(str, LEVEL_WARNING);
+    }
+
+    void PushSuccess(String str)
+    {
+        TermPush(str, LEVEL_SUCCESS);
+    }
+
+    void PushCommand(void(*callback)(LinkedList<Terminal::CommandArg>), String name)
+    {
+        if (name.size == 0) return;
+        Command* cmd = (Command*)kmalloc(sizeof(Command));
+        cmd->name = name;
+        cmd->callback = callback;
+        cmdStorage.PushBack(cmd);
+    }
+
+    void RunCommand()
+    {
+        Command found;
+        LinkedList<Terminal::CommandArg> foundArgs;
+        if (ParseCommand(&found, &foundArgs))
+        {
+            found.callback(foundArgs);
+        }
+        else
+        {
+            PushError(StrFromCStr("ERR: Command Not Found"));
+        }
     }
 
     void AttachCmdStr(String *str)
@@ -71,9 +171,12 @@ namespace Terminal
                 case LEVEL_ERROR:
                     color = RED_FG;
                     break;
+                case LEVEL_SUCCESS:
+                    color = LIGHT_GREEN_FG;
+                    break;
             }
-
-            y += Draw::DrawString(termStorage[i].str, 0, y, color) + 1;
+            Draw::DrawCharacter('#', 0, y, LIGHT_CYAN_FG);
+            y += Draw::DrawString(termStorage[i].str, 2, y, color) + 1;
         }
         Draw::SwapBuffers();
     }

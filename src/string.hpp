@@ -8,5 +8,7 @@
 typedef LinkedList<uint8_t> String;
 
 String StrFromCStr(const char* str);
+bool StrStartsWith(String str, String startswith);
+String StrFormat(const char* Format, ...);
 
 #endif // H_STRING

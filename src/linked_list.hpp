@@ -69,6 +69,8 @@ void ListNode<T>::Free()
     kfree(this);
 }
 
+
+
 template<typename T>
 LinkedList<T>::LinkedList()
 {
@@ -76,6 +78,7 @@ LinkedList<T>::LinkedList()
     end = begin;
     size = 0;
 }
+
 template<typename T>
 void LinkedList<T>::PushBack(T val)
 {
