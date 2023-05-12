@@ -19,7 +19,7 @@ void kmemset(void *Destination_, uint8_t Val, size_t N)
     }
 }
 
-// Each page is 4 kb
+// Each page is 512 bytes
 uint8_t Pages[1000000] = { 0 };
 
 uint8_t IsInit = 0;
@@ -34,7 +34,7 @@ void *kmalloc(size_t Bytes)
         kmemset(Pages, 0, 1000000);
         IsInit = 1;
     }
-    size_t PageCount = Bytes / 4096 + 2; 
+    size_t PageCount = Bytes / 4096 + 1;
     for (int i = 0;i < 1000000;i++)
     {
         if (!Pages[i])
@@ -58,9 +58,9 @@ void *kmalloc(size_t Bytes)
                 {
                     Pages[j] = 1;
                 }   
-                *(uint32_t*)(i * 4096 + 0x2000000 - 4) = PageCount;
+                *(uint32_t*)(i * 512 + 0x2000000 - 4) = PageCount;
                 MutexRelease(&MemMutex);
-                return (uint32_t*)(i * 4096 + 0x2000000);
+                return (uint32_t*)(i * 512 + 0x2000000);
             }
         }
     }
@@ -69,9 +69,9 @@ void *kmalloc(size_t Bytes)
 }
 void kfree(void *Buf)
 {
-    size_t PageCount = *((uint32_t*)Buf - 1);
+    uint32_t PageCount = *(uint32_t*)(Buf - 4);
 
-    uint32_t Page = ((uint32_t)Buf - 0x2000000) / 4096;
+    uint32_t Page = ((uint32_t)Buf - 0x2000000) / 512;
     
     for (uint32_t i = Page;i < Page + PageCount;i++)
     {

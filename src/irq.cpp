@@ -6,6 +6,8 @@
 int32_t MouseX, MouseY;
 uint8_t MouseRmbClicked, MouseLmbClicked;
 
+int MouseSensitivity = 2;
+
 mutex PS2Mutex;
 
 /* PIT Timer */
@@ -87,8 +89,8 @@ extern "C" void CHandlerIRQ12()
         int8_t Byte2 = IO_In8(0x60);
         if ((Byte0 & 1) && Byte1 == 0 && Byte2 == 0) MouseLmbClicked = 1;
         if ((Byte0 & 2) && Byte1 == 0 && Byte2 == 0) MouseRmbClicked = 1;
-        MouseX += Byte1;
-        MouseY -= Byte2;
+        MouseX += Byte1 / MouseSensitivity;
+        MouseY -= Byte2 / MouseSensitivity;
     }
     MutexRelease(&PS2Mutex);
 

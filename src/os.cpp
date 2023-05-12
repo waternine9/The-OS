@@ -7,9 +7,13 @@
 #include "drivers/mouse/mouse.hpp"
 #include "drivers/keyboard/keyboard.hpp"
 #include "term.hpp"
+#include "apic.hpp"
+#include "bflang/bflang.hpp"
 
 extern int32_t MouseX;
 extern int32_t MouseY;
+
+extern int MouseSensitivity;
 
 Keyboard::KeyboardKey keys[32];
 Keyboard::Keyboard kbd = { 0 };
@@ -40,24 +44,51 @@ void EchoHandler(LinkedList<Terminal::CommandArg> args)
     }
 }
 
+void EvalHandler(LinkedList<Terminal::CommandArg> args)
+{
+    if (args.size != 1)
+    {
+        Terminal::PushError(StrFromCStr("eval: Expected 1 string argument"));
+    }
+    if (args[0].isVal)
+    {
+        Terminal::PushError(StrFromCStr("eval: Expected 1 string argument"));
+    }
+    Terminal::PushNormal(StrFormat("Result: %d", BFRunSource(args[0].str)));
+}
+
+void SetmsensHandler(LinkedList<Terminal::CommandArg> args)
+{
+    if (args.size != 1)
+    {
+        Terminal::PushError(StrFromCStr("setmsens: Expected 1 value argument"));
+    }
+    if (!args[0].isVal)
+    {
+        Terminal::PushError(StrFromCStr("setmsens: Expected 1 value argument"));
+    }
+    MouseSensitivity = args[0].val;
+}
+
 extern "C" void kmain()
 {
-    kmemset((void*)0x1000000, 0, 70000);
+    kmemset((void*)0x1000000 + 0x7C00, 0, 70000);
 
     Terminal::Init();
-
-    *(uint16_t*)0xB8000 = 0x0F49;
 
     PIC_Init();
     IDT_Init();
 
-    //MouseInstall();
+    MouseInstall();
     String commandStr = String();
     Terminal::AttachCmdStr(&commandStr);
 
     Terminal::PushSuccess(StrFromCStr("Welcome to TheOS v0.1.0!"));
     Terminal::PushNormal(StrFromCStr("Starting cores..."));
     Terminal::PushCommand(EchoHandler, StrFromCStr("echo"));
+    Terminal::PushCommand(EvalHandler, StrFromCStr("eval"));
+    Terminal::PushCommand(EchoHandler, StrFromCStr("help"));
+    Terminal::PushCommand(SetmsensHandler, StrFromCStr("setmsens"));
     Terminal::Render();
 
 

@@ -6,15 +6,17 @@ uint16_t BackBuf[80 * 25];
 
 namespace Draw
 {
-    void DrawCharacter(uint8_t c, size_t x, size_t y, uint8_t color)
+    void DrawCharacter(uint8_t c, int x, int y, uint8_t color)
     {
+        if (x < 0) return;
+        if (y < 0) return;
         if (x >= 80) return;
         if (y >= 25) return;
 
         BackBuf[x + y * 80] = ((uint16_t)color << 8) | c;
     }
 
-    int DrawString(String s, size_t x, size_t y, uint8_t color)
+    int DrawString(String s, int x, int y, uint8_t color)
     {
         if (x >= 80) return 0;
         if (y >= 25) return 0;

@@ -85,16 +85,26 @@ bool ParseCommand(Command *found, LinkedList<Terminal::CommandArg> *foundArgs)
         else
         {
             currentArg.isVal = false;
-            while ((*commandStr)[j] != ' ' && j < (*commandStr).size)
+            char stopAt = ' ';
+            if ((*commandStr)[j] == '"')
+            {
+                j++;
+                stopAt = '"';
+            }
+            while ((*commandStr)[j] != stopAt && j < (*commandStr).size)
             {
                 currentArg.str.PushBack((*commandStr)[j]);
                 j++;
             }
+            if (stopAt == '"') j++;
         }
         (*foundArgs).PushBack(currentArg);
     }
     return true;
 }
+
+extern int32_t MouseX;
+extern int32_t MouseY;
 
 namespace Terminal
 {
@@ -154,8 +164,9 @@ namespace Terminal
 
     void Render()
     {
+        if (MouseY < 0) MouseY = 0;
         Draw::Clear('_', DARK_GRAY_FG);
-        int y = 1 + Draw::DrawString(*commandStr, 0, 0, LIGHT_GRAY_FG);;
+        int y = 1 + Draw::DrawString(*commandStr, 0, -MouseY, LIGHT_GRAY_FG) - MouseY;
         for (int i = termStorage.size - 1;i >= 0 && y < 25;i--)
         {
             uint8_t color;
@@ -175,7 +186,7 @@ namespace Terminal
                     color = LIGHT_GREEN_FG;
                     break;
             }
-            Draw::DrawCharacter('#', 0, y, LIGHT_CYAN_FG);
+            Draw::DrawCharacter('-', 0, y, LIGHT_CYAN_BG);
             y += Draw::DrawString(termStorage[i].str, 2, y, color) + 1;
         }
         Draw::SwapBuffers();

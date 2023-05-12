@@ -41,8 +41,8 @@
 
 namespace Draw
 {
-    void DrawCharacter(uint8_t c, size_t x, size_t y, uint8_t color);
-    int DrawString(String s, size_t x, size_t y, uint8_t color);
+    void DrawCharacter(uint8_t c, int x, int y, uint8_t color);
+    int DrawString(String s, int x, int y, uint8_t color);
     void Clear(uint8_t with, uint8_t color);
     void SwapBuffers();
 }
